@@ -5,13 +5,14 @@ import { fetchDashboardData, DashboardFilters } from "@/lib/api";
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
+    const origin = new URL(req.url).origin;
     const lang = searchParams.get("lang") || "es";
 
     // 1. Fetch Printavo pipeline
     const printavoOrders = await fetchPipelineOrders();
 
     // 2. Fetch our production capacity globally
-    const mosData = await fetchDashboardData({ lang } as DashboardFilters);
+    const mosData = await fetchDashboardData({ lang, origin } as DashboardFilters);
 
     // 3. Extract the list of ALL active orders in our MOS currently in production
     // This looks at every machine running and aggregates the order numbers

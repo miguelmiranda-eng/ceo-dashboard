@@ -57,26 +57,20 @@ export interface DashboardFilters {
   date_from?: string
   date_to?: string
   lang?: string
+  origin?: string
 }
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
-import { headers } from "next/headers"
-
 /** Call our server-side MOS proxy route. Works in both client and server contexts. */
-async function mosProxy(endpoint: string, params: Record<string, string> = {}): Promise<unknown> {
+async function mosProxy(endpoint: string, params: Record<string, string> = {}, origin?: string): Promise<unknown> {
   let base = 'http://localhost:3000'
   if (typeof window !== 'undefined') {
     base = window.location.origin
-  } else {
-    try {
-      // In server context, explicitly read the absolute incoming host
-      const host = headers().get('host') || process.env.VERCEL_URL || 'localhost:3000'
-      const protocol = host.includes('localhost') ? 'http' : 'https'
-      base = `${protocol}://${host}`
-    } catch (e) {
-      base = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'
-    }
+  } else if (origin) {
+    base = origin
+  } else if (process.env.VERCEL_URL) {
+    base = `https://${process.env.VERCEL_URL}`
   }
   
   const url = new URL('/api/mos', base)
@@ -109,14 +103,15 @@ function pctDelta(current: number, previous: number): number {
 // ─── Main fetch function ───────────────────────────────────────────────────────
 
 export async function fetchDashboardData(filters: DashboardFilters = {}): Promise<DashboardData> {
+  const origin = filters.origin
   // Fetch all datasets in parallel for performance
   const [analyticsToday, analyticsWeek, analyticsMonth, analyticsAllTime, capacityPlan] =
     await Promise.all([
-      mosProxy('production-analytics', { preset: 'today' }),
-      mosProxy('production-analytics', { preset: filters.preset || 'week', ...filters }),
-      mosProxy('production-analytics', { preset: 'month' }),
-      mosProxy('production-analytics', {}),          // all-time (no preset = no date filter)
-      mosProxy('capacity-plan'),
+      mosProxy('production-analytics', { preset: 'today' }, origin),
+      mosProxy('production-analytics', { preset: filters.preset || 'week', ...filters as any }, origin),
+      mosProxy('production-analytics', { preset: 'month' }, origin),
+      mosProxy('production-analytics', {}, origin),          // all-time (no preset = no date filter)
+      mosProxy('capacity-plan', {}, origin),
     ])
 
   // ── Type-cast raw responses ────────────────────────────────────────────────
