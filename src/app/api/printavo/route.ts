@@ -206,9 +206,15 @@ export async function GET() {
           id: mosOrder.order_id || `mos-${mosId}`,
           visual_id: Number(mosId),
           printavo_id: pOrder?.id || null,
-          printavo_url: pOrder?.id
-            ? `https://prosper-mfg.printavo.com/merch_orders/${pOrder.id}`
-            : null,
+          // Extract the real Printavo work_order URL from the MOS job_title_a field
+          // e.g. "https://prosper-mfg.printavo.com/work_orders/f082c5471ec8e8811527ac08da5d347a"
+          printavo_url: (() => {
+            const jobTitle = String(mosOrder.job_title_a || mosOrder.job_title || "");
+            const match = jobTitle.match(/https:\/\/[^\s]*printavo\.com\/work_orders\/[a-f0-9]+/i);
+            if (match) return match[0];
+            if (pOrder?.public_url && String(pOrder.public_url).includes("work_orders")) return pOrder.public_url;
+            return `https://prosper-mfg.printavo.com/work_orders/${pOrder?.id || mosId}`;
+          })(),
           order_nickname:
             mosOrder.order_name ||
             pOrder?.order_nickname ||
