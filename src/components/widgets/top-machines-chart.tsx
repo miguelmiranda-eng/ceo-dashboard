@@ -24,6 +24,7 @@ const DEEP_NAVY = "#0B1F3A"
 
 // Custom dark tooltip matching the reference image style
 function CustomTooltip({ active, payload, label }: any) {
+  const { t } = useI18n()
   if (!active || !payload?.length) return null
   const d = payload[0]?.payload
   return (
@@ -42,7 +43,7 @@ function CustomTooltip({ active, payload, label }: any) {
         {label}
       </p>
       <p style={{ color: "#1E5BFF", fontSize: 11, fontWeight: 800, margin: "4px 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-        {t("producedTitle")} :{" "}
+        {t("piecesProduced")} :{" "}
         <span style={{ color: "#FFFFFF" }}>{d?.produced?.toLocaleString()}</span>
       </p>
       <p style={{ color: "#6B7280", fontSize: 11, fontWeight: 700, margin: "2px 0", textTransform: "uppercase", letterSpacing: "0.01em" }}>
