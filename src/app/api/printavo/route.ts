@@ -205,6 +205,10 @@ export async function GET() {
         const enrichedOrder: any = {
           id: mosOrder.order_id || `mos-${mosId}`,
           visual_id: Number(mosId),
+          printavo_id: pOrder?.id || null,
+          printavo_url: pOrder?.id
+            ? `https://prosper-mfg.printavo.com/merch_orders/${pOrder.id}`
+            : null,
           order_nickname:
             mosOrder.order_name ||
             pOrder?.order_nickname ||

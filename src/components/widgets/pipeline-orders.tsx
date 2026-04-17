@@ -99,9 +99,8 @@ export function PipelineOrders({ orders, tableros = [] }: PipelineOrdersProps) {
           </div>
         ) : (
           filteredOrders.map((o) => {
-            const printavoUrl = o.visual_id
-              ? `https://prosper-mfg.printavo.com/orders/${o.visual_id}`
-              : `https://prosper-mfg.printavo.com`;
+            const printavoUrl = (o as any).printavo_url
+              || (o.visual_id ? `https://prosper-mfg.printavo.com/merch_orders/${o.visual_id}` : `https://prosper-mfg.printavo.com`);
             return (
               <a
                 key={o.id}
