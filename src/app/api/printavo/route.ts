@@ -15,42 +15,47 @@ export async function GET(req: Request) {
     const mosData = await fetchDashboardData({ lang, origin } as DashboardFilters);
 
     // 3. Extract the list of ALL active orders in our MOS currently in production
-    // This looks at every machine running and aggregates the order numbers
-    const activeMosOrderNumbers = new Set<string>();
+    // Build a lookup map of MOS Order Number -> Machine Name
+    const orderToMachineMap = new Map<string, string>();
     let totalPiecesInQueue = 0;
 
     mosData.machinery.machines.forEach(machine => {
       // Add all pieces remaining on this machine
       totalPiecesInQueue += machine.remainingPieces || 0;
       
-      // Collect order references
+      // Collect order references to map them to this machine
       if (machine.activeOrders) {
-        machine.activeOrders.forEach(o => activeMosOrderNumbers.add(String(o).trim().toLowerCase()));
+        machine.activeOrders.forEach(o => {
+          orderToMachineMap.set(String(o).trim().toLowerCase(), machine.name);
+        });
       }
     });
+
+    const activeMosOrderNumbers = Array.from(orderToMachineMap.keys());
 
     // 4. Perform Matching and Calculate Metrics
     let projectedRevenue = 0;
     const matchedOrders: PrintavoOrder[] = [];
     const pipelineOrders: PrintavoOrder[] = [];
+    const foundTablerosSet = new Set<string>();
 
-    // Filter printavo orders. Printavo's order Nickname often contains the PO, 
-    // or the visual_po_number matches directly. We aggressively try to match.
     printavoOrders.forEach(order => {
-      // Only care about open/pending orders, usually anything that hasn't been purely archived
-      // For this, we'll assume any order in the pipeline feed is relevant to future load.
-      
       const pId = String(order.visual_id);
       const poNum = String(order.visual_po_number || "").toLowerCase().trim();
       const nickname = (order.order_nickname || "").toLowerCase();
 
-      // Check if this printavo order is currently actively listed in MOS machines
-      const isActiveInMos = Array.from(activeMosOrderNumbers).some(mosOrder => {
+      // Find if this order exists in some machine
+      const matchedMosOrderNumber = activeMosOrderNumbers.find(mosOrder => {
         return pId === mosOrder || (poNum && mosOrder.includes(poNum)) || nickname.includes(String(mosOrder));
       });
 
-      if (isActiveInMos) {
-        matchedOrders.push(order);
+      if (matchedMosOrderNumber) {
+        const machineName = orderToMachineMap.get(matchedMosOrderNumber);
+        if (machineName) {
+          order.mos_machine = machineName;
+          foundTablerosSet.add(machineName);
+          matchedOrders.push(order);
+        }
       }
       
       // We also aggregate all orders that aren't finished for the "Future Work" pipeline
@@ -63,15 +68,12 @@ export async function GET(req: Request) {
       }
     });
 
-    // We can also calculate standard estimated cross-border efficiency.
-    // For Prosper (Mexico -> US), transit is typically 3-5 days. Let's do 3 days baseline + queue time.
-    // Average daily production
+    // 5. Calculate cross-border efficiency
     const dailyCap = mosData.machinery.machines.reduce((sum, m) => sum + (m.avgDaily || 0), 0) || 5000;
     const daysInQueue = totalPiecesInQueue / dailyCap;
-    const crossBorderTransit = 3;
-    const totalEstimatedDeliveryDays = Math.max(1, Math.ceil(daysInQueue)) + crossBorderTransit;
+    const totalEstimatedDeliveryDays = Math.max(1, Math.ceil(daysInQueue)) + 3; // 3 days baseline transit
 
-    // 5. Generate Revenue Timeline for charts
+    // 6. Generate Revenue Timeline
     const timelineMap = new Map<string, number>();
     pipelineOrders.forEach(o => {
       if (!o.customer_due_date) return;
@@ -82,7 +84,6 @@ export async function GET(req: Request) {
     const timeline = Array.from(timelineMap.entries())
       .map(([date, revenue]) => ({ date, revenue }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      // Keep only first 14 days of due dates for immediate pipeline overview
       .slice(0, 14);
 
     return NextResponse.json({
@@ -91,6 +92,7 @@ export async function GET(req: Request) {
       volume: totalPiecesInQueue,
       delivery_days: totalEstimatedDeliveryDays,
       active_mos_orders_found: matchedOrders.length,
+      tableros: Array.from(foundTablerosSet),
       timeline,
       orders: pipelineOrders
     });

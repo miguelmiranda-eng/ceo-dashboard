@@ -17,6 +17,7 @@ export interface PrintavoOrder {
     name: string;
     color: string;
   };
+  mos_machine?: string;
 }
 
 export async function fetchPipelineOrders(): Promise<PrintavoOrder[]> {

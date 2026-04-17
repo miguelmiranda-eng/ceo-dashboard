@@ -142,7 +142,7 @@ export default function PipelinePage() {
                 {data?.orders?.length || 0} Orders
               </span>
             </div>
-            <PipelineOrders orders={data?.orders || []} />
+            <PipelineOrders orders={data?.orders || []} tableros={data?.tableros || []} />
           </div>
         </div>
         
