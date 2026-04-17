@@ -61,11 +61,24 @@ export interface DashboardFilters {
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
+import { headers } from "next/headers"
+
 /** Call our server-side MOS proxy route. Works in both client and server contexts. */
 async function mosProxy(endpoint: string, params: Record<string, string> = {}): Promise<unknown> {
-  const base = typeof window !== 'undefined' 
-    ? window.location.origin 
-    : (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+  let base = 'http://localhost:3000'
+  if (typeof window !== 'undefined') {
+    base = window.location.origin
+  } else {
+    try {
+      // In server context, explicitly read the absolute incoming host
+      const host = headers().get('host') || process.env.VERCEL_URL || 'localhost:3000'
+      const protocol = host.includes('localhost') ? 'http' : 'https'
+      base = `${protocol}://${host}`
+    } catch (e) {
+      base = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'
+    }
+  }
+  
   const url = new URL('/api/mos', base)
   url.searchParams.set('endpoint', endpoint)
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
