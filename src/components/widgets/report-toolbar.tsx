@@ -62,24 +62,35 @@ export function ReportToolbar({ onFilterChange, data, compact }: ReportToolbarPr
   const handleExport = async (type: 'excel' | 'pdf') => {
     if (!data) return
     setExporting(type)
-    
+
     try {
       if (type === 'excel') {
-        const params = new URLSearchParams()
-        if (selectedPreset) params.append('preset', selectedPreset)
-        if (dateFrom) params.append('date_from', dateFrom)
-        if (dateTo) params.append('date_to', dateTo)
-        
-        const url = `/api/descargar/Reporte_Produccion_MOS.xlsx?${params.toString()}`
-        const a = document.createElement('a')
-        a.style.display = 'none'
-        a.href = url
-        a.download = 'Reporte_Produccion_MOS.xlsx'
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        
-        await new Promise(r => setTimeout(r, 2000))
+        const XLSX = await import('xlsx')
+        const wb = XLSX.utils.book_new()
+
+        // Sheet 1: Production Summary
+        const wsProd = XLSX.utils.aoa_to_sheet([
+          ["Metric", "Value", "Baseline (80%)", "Status"],
+          ["Produced Today",  data.production.daily.value.toLocaleString(),   "80%", data.production.daily.delta  >= 0 ? "Above" : "Below"],
+          ["Produced This Week",  data.production.weekly.value.toLocaleString(),  "80%", data.production.weekly.delta >= 0 ? "Above" : "Below"],
+          ["Produced This Month", data.production.monthly.value.toLocaleString(), "80%", data.production.monthly.delta >= 0 ? "Above" : "Below"],
+          ["Global Efficiency", `${data.efficiency}%`, "-", "Nominal"],
+        ])
+        XLSX.utils.book_append_sheet(wb, wsProd, "Production Summary")
+
+        // Sheet 2: Machinery Audit
+        const wsMach = XLSX.utils.aoa_to_sheet([
+          ["Machine ID", "Current Load (%)", "Alert Status", "Pieces in Queue"],
+          ...data.machinery.machines.map(m => [
+            m.name,
+            `${m.capacity}%`,
+            m.loadStatus?.toUpperCase() || "OK",
+            m.remainingPieces || 0,
+          ])
+        ])
+        XLSX.utils.book_append_sheet(wb, wsMach, "Machinery Audit")
+
+        XLSX.writeFile(wb, "Reporte_Produccion_MOS.xlsx")
       } else {
         await new Promise(r => setTimeout(r, 800))
         window.print()
