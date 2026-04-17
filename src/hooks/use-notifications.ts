@@ -65,8 +65,8 @@ export function useNotifications() {
 
   useEffect(() => {
     checkAlerts()
-    // Check every 2 minutes
-    const interval = setInterval(checkAlerts, 2 * 60 * 1000)
+    // Check every 5 minutes (reduced from 2m to protect MOS load)
+    const interval = setInterval(checkAlerts, 5 * 60 * 1000)
     return () => clearInterval(interval)
   }, [checkAlerts])
 

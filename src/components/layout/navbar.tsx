@@ -29,14 +29,14 @@ export function Navbar() {
       <div className="flex items-center gap-4 xl:gap-6 flex-1 min-w-0">
         {/* Status Indicator */}
         <div className="flex flex-col shrink-0">
-          <h1 className="text-xs font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
+          <h1 className="text-xs font-semibold text-primary uppercase tracking-[0.2em] flex items-center gap-2">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
             </span>
             {t("connected")}
           </h1>
-          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.15em] leading-tight mt-1">PROSPER INTEL v4.0</p>
+          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-[0.15em] leading-tight mt-1">PROSPER INTEL v4.0</p>
         </div>
 
         {/* Global Toolbar Integration */}
@@ -57,10 +57,10 @@ export function Navbar() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="rounded-md bg-card border border-border text-foreground">
-            <DropdownMenuItem onClick={() => setLanguage("en")} className={cn(language === "en" ? "bg-accent" : "", "cursor-pointer font-bold uppercase text-[10px] tracking-widest")}>
+            <DropdownMenuItem onClick={() => setLanguage("en")} className={cn(language === "en" ? "bg-accent" : "", "cursor-pointer font-medium uppercase text-[10px] tracking-widest")}>
               English
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setLanguage("es")} className={cn(language === "es" ? "bg-accent" : "", "cursor-pointer font-bold uppercase text-[10px] tracking-widest")}>
+            <DropdownMenuItem onClick={() => setLanguage("es")} className={cn(language === "es" ? "bg-accent" : "", "cursor-pointer font-medium uppercase text-[10px] tracking-widest")}>
               Español
             </DropdownMenuItem>
           </DropdownMenuContent>

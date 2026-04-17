@@ -102,6 +102,9 @@ const translations = {
     syncEstablished: "Sync Established",
     forceRefresh: "Manual Override",
     units: "Units",
+    dineroEnProduccion: "Revenue in Production",
+    dineroGeneradoHoy: "Revenue Generated Today",
+    finishedToday: "FINISHED TODAY",
   },
   es: {
     dashboard: "Gráficos",
@@ -200,6 +203,9 @@ const translations = {
     syncEstablished: "Sincronización Establecida",
     forceRefresh: "Override Manual",
     units: "Unidades",
+    dineroEnProduccion: "Dinero en Producción",
+    dineroGeneradoHoy: "Dinero Generado Hoy",
+    finishedToday: "TERMINADO HOY",
   },
 }
 

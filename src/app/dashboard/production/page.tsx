@@ -8,7 +8,7 @@ import { TrendChart } from "@/components/widgets/trend-chart"
 import { MachineLoadBars } from "@/components/widgets/machine-load-bars"
 import { Button } from "@/components/ui/button"
 import { useDashboardFilters } from "@/lib/filter-context"
-import { Loader2, RefreshCw, Layers, TrendingUp, Timer, AlertCircle } from "lucide-react"
+import { Loader2, RefreshCw, Layers, TrendingUp, Timer, AlertCircle, DollarSign, BarChart3, CheckCircle } from "lucide-react"
 
 export default function ExecutiveInsightsPage() {
   const { t } = useI18n()
@@ -82,8 +82,8 @@ export default function ExecutiveInsightsPage() {
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-10 pb-20">
-      {/* KPI Row (4 Cards) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* KPI Row (5 Cards) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <MetricCard
           title={t("piecesProduced")}
           value={activeProducedValue.toLocaleString()}
@@ -92,18 +92,25 @@ export default function ExecutiveInsightsPage() {
           topRightBadge={t("liveRecords")}
         />
         <MetricCard
-          title={t("globalEfficiency")}
-          value={`${data.efficiency}%`}
+          title={t("dineroGeneradoHoy") || "DINERO GENERADO HOY"}
+          value={`$${(data.generatedRevenueToday || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
           icon={TrendingUp}
           iconColor="sky"
-          topRightBadge={t("vsGoal")}
+          topRightBadge={t("finishedToday") || "FINISHED TODAY"}
         />
         <MetricCard
-          title={t("averageSetup")}
-          value={`${data.avgSetup.toFixed(1)} min`}
-          icon={Timer}
-          iconColor="orange"
-          topRightBadge={t("perLabor")}
+          title={t("dineroEnProduccion") || "DINERO EN PRODUCCIÓN"}
+          value={`$${(data.revenueOnMachines || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
+          icon={DollarSign}
+          iconColor="emerald"
+          topRightBadge={t("activeMachines") || "ON MACHINES"}
+        />
+        <MetricCard
+          title={t("globalEfficiency")}
+          value={`${data.efficiency}%`}
+          icon={BarChart3}
+          iconColor="sky"
+          topRightBadge={t("vsGoal")}
         />
         <MetricCard
           title={t("estRemaining")}

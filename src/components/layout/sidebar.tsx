@@ -30,9 +30,9 @@ export function Sidebar() {
 
   const navItems = [
     { title: t("production"), icon: BarChart3, href: "/dashboard/production" },
+    { title: t("pipeline"), icon: Package, href: "/dashboard/pipeline" },
     { title: t("dashboard"), icon: LayoutDashboard, href: "/dashboard" },
     { title: t("machines"), icon: Cpu, href: "/dashboard/machinery" },
-    { title: t("pipeline"), icon: Package, href: "/dashboard/pipeline" },
   ]
 
   return (
@@ -55,8 +55,8 @@ export function Sidebar() {
               </svg>
             </div>
             <div className="flex flex-col">
-              <span className="font-black text-[20px] leading-tight tracking-[-0.02em] text-white uppercase">Prosper</span>
-              <span className="font-bold text-[11px] leading-none tracking-[0.15em] text-[#0EA5E9] uppercase mt-0.5">Manufacturing</span>
+              <span className="font-bold text-[20px] leading-tight tracking-[-0.02em] text-white uppercase">Prosper</span>
+              <span className="font-semibold text-[11px] leading-none tracking-[0.15em] text-[#0EA5E9] uppercase mt-0.5">Manufacturing</span>
             </div>
           </div>
         )}
@@ -95,7 +95,7 @@ export function Sidebar() {
                 isActive ? "text-white" : "group-hover:text-primary"
               )} />
               {!collapsed && <span className={cn(
-                "text-xs font-black uppercase tracking-[0.15em] transition-colors",
+                "text-xs font-bold uppercase tracking-[0.15em] transition-colors",
                 isActive ? "text-white" : "group-hover:text-white"
               )}>{item.title}</span>}
             </Link>
@@ -111,7 +111,7 @@ export function Sidebar() {
           {collapsed ? <ChevronRight className="h-5 w-5 mx-auto" strokeWidth={2.5} /> : (
             <>
               <ChevronLeft className="h-5 w-5" strokeWidth={2.5} />
-              <span className="text-xs font-bold uppercase tracking-widest">Collapse</span>
+              <span className="text-xs font-semibold uppercase tracking-widest">Collapse</span>
             </>
           )}
         </button>
@@ -121,7 +121,7 @@ export function Sidebar() {
           className="flex items-center gap-3 w-full px-3 py-2 rounded-xl hover:bg-rose-500/10 text-rose-500 hover:text-rose-600 transition-all duration-200"
         >
           <LogOut className="h-5 w-5 min-w-[20px]" />
-          {!collapsed && <span className="text-xs font-bold uppercase tracking-widest">{t("logout")}</span>}
+          {!collapsed && <span className="text-xs font-semibold uppercase tracking-widest">{t("logout")}</span>}
         </button>
       </div>
     </aside>

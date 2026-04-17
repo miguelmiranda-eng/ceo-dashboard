@@ -21,19 +21,41 @@ export function PipelineOrders({ orders, tableros = [] }: PipelineOrdersProps) {
     )
   }
 
+  // Count orders per category using the deep-scanned virtual_boards
+  const counts = tableros.reduce((acc, cat) => {
+    acc[cat] = orders.filter(o => 
+      (o as any).virtual_boards?.includes(cat) || 
+      (cat === "Maquinaria" && !!o.mos_machine)
+    ).length
+    return acc
+  }, {} as Record<string, number>)
+
   const filteredOrders = !selectedCategory 
     ? orders 
-    : selectedCategory === "Maquinaria"
-      ? orders.filter(o => !!o.mos_machine)
-      : orders.filter(o => o.orderstatus?.name?.toLowerCase().includes(selectedCategory.toLowerCase()))
+    : orders.filter(o => 
+        (o as any).virtual_boards?.includes(selectedCategory)
+      )
+
+  const totalRevenue = filteredOrders.reduce((sum, o) => sum + (o.order_total || 0), 0)
 
   return (
     <div className="space-y-6">
       {/* Filtering Navigation - Logistics Boards */}
-      <div className="space-y-3">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0B1F3A]/40 dark:text-slate-500 ml-1">
-          Flujo Logístico
-        </p>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between px-1">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0B1F3A]/40 dark:text-slate-500">
+            Centro de Control (Tableros)
+          </p>
+          <div className="flex flex-col items-end">
+            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600/60 mb-0.5">
+              Valor en Tablero: {selectedCategory || "TODOS"}
+            </span>
+            <span className="text-xl font-black text-[#0B1F3A] dark:text-white tracking-tighter">
+              ${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+        </div>
+        
         <div className="flex flex-wrap gap-2 pb-2">
           <button
             onClick={() => setSelectedCategory(null)}
@@ -44,7 +66,7 @@ export function PipelineOrders({ orders, tableros = [] }: PipelineOrdersProps) {
                 : "bg-white dark:bg-slate-900 text-[#0B1F3A]/60 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-blue-500/40"
             )}
           >
-            Todos
+            TODOS ({orders.length})
           </button>
           
           {tableros.map(cat => (
@@ -58,8 +80,8 @@ export function PipelineOrders({ orders, tableros = [] }: PipelineOrdersProps) {
                   : "bg-white dark:bg-slate-900 text-[#0B1F3A]/60 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-blue-500/40"
               )}
             >
-              {cat === "Maquinaria" ? <LayoutGrid className="h-3 w-3" /> : <Package className="h-3 w-3" />}
-              {cat}
+              {cat === "MAQUINARIA" ? <LayoutGrid className="h-3 w-3" /> : <Package className="h-3 w-3" />}
+              {cat} ({counts[cat] || 0})
             </button>
           ))}
         </div>
@@ -70,7 +92,9 @@ export function PipelineOrders({ orders, tableros = [] }: PipelineOrdersProps) {
           <div className="py-16 bg-[#0B1F3A]/5 dark:bg-slate-800/50 rounded-2xl border border-dashed border-[#0B1F3A]/10 dark:border-slate-700 flex flex-col items-center justify-center text-center px-6">
             <Package className="h-8 w-8 text-[#0B1F3A]/20 dark:text-slate-600 mb-3" />
             <p className="text-[10px] font-bold uppercase tracking-widest text-[#0B1F3A]/40 dark:text-slate-500">
-              No hay órdenes pendientes en este tablero
+              {selectedCategory === "Maquinaria" 
+                ? "No hay órdenes sincronizadas con máquinas en MOS" 
+                : `No hay órdenes en el estado "${selectedCategory}"`}
             </p>
           </div>
         ) : (
@@ -86,7 +110,7 @@ export function PipelineOrders({ orders, tableros = [] }: PipelineOrdersProps) {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-[10px] uppercase font-black tracking-widest text-blue-600 bg-blue-600/5 px-2.5 py-1 rounded-lg inline-block border border-blue-600/10">
-                      PO: {o.visual_po_number || o.visual_id}
+                      Invoice: #{o.visual_id}
                     </span>
                     <span 
                       className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded-lg inline-block border"
@@ -143,5 +167,6 @@ export function PipelineOrders({ orders, tableros = [] }: PipelineOrdersProps) {
     </div>
   )
 }
+
 
 

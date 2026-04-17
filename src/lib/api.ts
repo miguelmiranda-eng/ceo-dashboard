@@ -50,6 +50,10 @@ export interface DashboardData {
   topClients: { client: string; produced: number }[]
   /** Top machines by production this week */
   topMachines: { machine: string; produced: number; avg_setup: number }[]
+  /** Total value of orders currently on machines */
+  revenueOnMachines: number
+  /** Total value of orders finished today */
+  generatedRevenueToday: number
 }
 
 export interface DashboardFilters {
@@ -105,20 +109,24 @@ function pctDelta(current: number, previous: number): number {
 export async function fetchDashboardData(filters: DashboardFilters = {}): Promise<DashboardData> {
   const origin = filters.origin
   // Fetch all datasets in parallel for performance
-  const [analyticsToday, analyticsWeek, analyticsMonth, analyticsAllTime, capacityPlan] =
+    // Fetch all datasets in parallel for performance
+  const [analyticsToday, analyticsWeek, analyticsMonth, capacityPlan, printavoData] =
     await Promise.all([
       mosProxy('production-analytics', { preset: 'today' }, origin),
       mosProxy('production-analytics', { preset: filters.preset || 'week', ...filters as any }, origin),
       mosProxy('production-analytics', { preset: 'month' }, origin),
-      mosProxy('production-analytics', {}, origin),          // all-time (no preset = no date filter)
       mosProxy('capacity-plan', {}, origin),
+      fetch(`${filters.origin || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')}/api/printavo`, { cache: 'no-store' })
     ])
+
+  // ── Printavo Enrichment ────────────────────────────────────────────────────
+  const printavoRes = printavoData as Response
+  const printavo = printavoRes.ok ? await printavoRes.json() : { matched_revenue: 0, generated_revenue_today: 0 }
 
   // ── Type-cast raw responses ────────────────────────────────────────────────
   const today = analyticsToday as Record<string, unknown>
   const week = analyticsWeek as Record<string, unknown>
   const month = analyticsMonth as Record<string, unknown>
-  const allTime = analyticsAllTime as Record<string, unknown>
   const capacity = capacityPlan as {
     machines: Array<{
       machine: string
@@ -137,7 +145,7 @@ export async function fetchDashboardData(filters: DashboardFilters = {}): Promis
   const dailyValue = num(today.total_produced)
   const weeklyValue = num(week.total_produced)
   const monthlyValue = num(month.total_produced)
-  const annualValue = num(allTime.total_produced)
+  const annualValue = monthlyValue * 12 // Estimate annual from monthly to avoid heavy all-time query
 
   // For deltas, compare today to yesterday average, week to prior week, etc.
   // We approximate using the trend data already available in the analytics response.
@@ -321,5 +329,7 @@ export async function fetchDashboardData(filters: DashboardFilters = {}): Promis
     totalRemainingPieces: globalRemaining,
     topMachines,
     topClients,
+    revenueOnMachines: printavo.matched_revenue || 0,
+    generatedRevenueToday: printavo.generated_revenue_today || 0,
   }
 }

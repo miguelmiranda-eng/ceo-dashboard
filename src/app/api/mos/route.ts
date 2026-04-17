@@ -11,6 +11,10 @@ const MOS_SERVICE_PASSWORD = process.env.MOS_SERVICE_PASSWORD || ''
 let cachedToken: string | null = null
 let tokenExpiry: number = 0          // epoch ms when the cached token expires
 
+// Global memory cache for MOS responses (TTL: 2 minutes)
+const mosCache = new Map<string, { data: any; expiry: number }>()
+const MOS_CACHE_TTL = 2 * 60 * 1000 // 2 minutes
+
 async function getAuthToken(): Promise<string | null> {
   // 1. Try the internal sync token first (fastest — works if it's set in production)
   if (MOS_INTERNAL_TOKEN) {
@@ -122,11 +126,18 @@ export async function GET(request: NextRequest) {
   })
 
   try {
+    // 1. Check Cache
+    const cacheKey = upstream.toString();
+    const cached = mosCache.get(cacheKey);
+    if (cached && Date.now() < cached.expiry) {
+      // console.log(`[MOS Proxy] Serving ${endpoint} from cache`);
+      return Response.json(cached.data);
+    }
+
     const res = await fetch(upstream.toString(), {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
-        // Also send as cookie in case the backend prefers cookies
         Cookie: `session_token=${token}`,
       },
       cache: 'no-store',
@@ -135,7 +146,6 @@ export async function GET(request: NextRequest) {
     const data = await res.json()
 
     if (res.status === 401) {
-      // Token may have expired; clear cache and retry once
       cachedToken = null
       tokenExpiry = 0
       const freshToken = await loginAndCache()
@@ -149,6 +159,12 @@ export async function GET(request: NextRequest) {
           cache: 'no-store',
         })
         const retryData = await retry.json()
+        
+        // Cache successful retry
+        if (retry.ok) {
+           mosCache.set(cacheKey, { data: retryData, expiry: Date.now() + MOS_CACHE_TTL });
+        }
+        
         return Response.json(retryData, { status: retry.status })
       }
 
@@ -161,6 +177,9 @@ export async function GET(request: NextRequest) {
         { status: res.status }
       )
     }
+
+    // Update Cache
+    mosCache.set(cacheKey, { data, expiry: Date.now() + MOS_CACHE_TTL });
 
     return Response.json(data)
   } catch (err) {

@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { Blinker, Geist, Geist_Mono } from "next/font/google";
+import { Montserrat, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/lib/i18n";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-const blinker = Blinker({
-  variable: "--font-blinker",
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
   subsets: ["latin"],
-  weight: ["100", "200", "300", "400", "600", "700", "800", "900"],
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
 });
 
 const geistSans = Geist({
@@ -33,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${blinker.variable} ${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground font-blinker`}>
+      <body className={`${montserrat.variable} ${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground font-montserrat uppercase-none`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
