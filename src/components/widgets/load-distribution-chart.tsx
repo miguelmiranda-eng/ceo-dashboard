@@ -85,7 +85,7 @@ export function LoadDistributionChart({
                   ))}
                 </Pie>
                 <Tooltip 
-                  formatter={(value: number) => [value.toLocaleString(), t("units")]}
+                  formatter={(value) => [(value as number).toLocaleString(), t("units")]}
                   contentStyle={{ 
                     backgroundColor: 'var(--card)',
                     borderRadius: 12, 

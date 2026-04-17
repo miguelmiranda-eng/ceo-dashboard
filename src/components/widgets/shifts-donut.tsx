@@ -61,7 +61,7 @@ export function ShiftsDonut({ title, description }: ShiftsDonutProps) {
                 ))}
               </Pie>
               <Tooltip 
-                formatter={(value: number) => [`${value}%`, t("load")]}
+                formatter={(value) => [`${value}%`, t("load")]}
                 contentStyle={{ 
                    backgroundColor: 'var(--card)',
                    borderRadius: 12, 

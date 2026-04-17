@@ -12,12 +12,11 @@ import { Button } from "@/components/ui/button"
 import { useNotifications, Notification } from "@/hooks/use-notifications"
 import { useI18n } from "@/lib/i18n"
 import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area" // Assuming it exists, if not I'll use div
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 
 export function NotificationCenter() {
-  const { notifications, unreadCount, markAsRead, clearAll, loading } = useNotifications()
+  const { notifications, unreadCount, markAsRead, clearAll } = useNotifications()
   const { t } = useI18n()
 
   const getIcon = (type: Notification['type']) => {

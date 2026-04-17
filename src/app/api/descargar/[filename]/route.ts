@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import * as XLSX from "xlsx"
 import { fetchDashboardData } from "@/lib/api"
 
-export async function GET(req: NextRequest, { params }: { params: { filename: string } }) {
+export async function GET(req: NextRequest, ctx: RouteContext<'/api/descargar/[filename]'>) {
   try {
+    const { filename } = await ctx.params
     const { searchParams } = new URL(req.url)
     const filters = {
       preset: searchParams.get('preset') || undefined,
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: { filename: st
 
     // Fetch fresh data
     const data = await fetchDashboardData(filters)
-    
+
     // Create Workbook
     const wb = XLSX.utils.book_new()
 
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest, { params }: { params: { filename: st
     const uint8Array = new Uint8Array(buf)
     
     // Extract filename from URL params (e.g. Reporte_Produccion_MOS.xlsx)
-    const fileName = params.filename || "Reporte_MOS.xlsx"
+    const fileName = filename || "Reporte_MOS.xlsx"
     
     return new NextResponse(uint8Array, {
       status: 200,

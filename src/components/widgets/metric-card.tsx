@@ -7,7 +7,7 @@ interface MetricCardProps {
   title: string
   value: string | number
   icon: LucideIcon
-  iconColor?: "green" | "blue" | "orange" | "red"
+  iconColor?: keyof typeof colorMap
   topRightBadge?: string
   description?: string
   delta?: string | number

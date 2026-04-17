@@ -48,6 +48,8 @@ export interface DashboardData {
   totalRemainingPieces: number
   /** Top clients this month */
   topClients: { client: string; produced: number }[]
+  /** Top machines by production this week */
+  topMachines: { machine: string; produced: number; avg_setup: number }[]
 }
 
 export interface DashboardFilters {
