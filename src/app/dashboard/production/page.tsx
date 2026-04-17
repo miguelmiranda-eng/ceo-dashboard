@@ -115,15 +115,15 @@ export default function ExecutiveInsightsPage() {
       </div>
 
       {/* Middle Row: Trend & Machine Load */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-        <div className="lg:col-span-2 min-h-[420px]">
+      <div className="grid grid-cols-1 gap-8 items-stretch">
+        <div className="min-h-[420px]">
           <TrendChart 
             data={data.efficiencyTrends} 
             title={t("productionTrendTitle")} 
             description={t("industrialAnalyticsEngine")}
           />
         </div>
-        <div className="lg:col-span-1 min-h-[420px]">
+        <div className="min-h-[420px]">
            <MachineLoadBars 
              data={data.machinery.machines} 
              title={t("machineLoadTitle")}

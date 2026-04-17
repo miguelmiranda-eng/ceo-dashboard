@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 
-type Preset = "today" | "week" | "month"
+type Preset = "today" | "yesterday" | "week" | "month"
 
 interface ReportToolbarProps {
   onFilterChange: (filters: DashboardFilters) => void
@@ -99,7 +99,7 @@ export function ReportToolbar({ onFilterChange, data, compact }: ReportToolbarPr
       
       {/* Presets Segment */}
       <div className="flex items-center gap-1 px-1">
-        {(["today", "week", "month"] as Preset[]).map((p) => (
+        {(["today", "yesterday", "week", "month"] as Preset[]).map((p) => (
           <button
             key={p}
             onClick={() => handlePresetSelect(p)}

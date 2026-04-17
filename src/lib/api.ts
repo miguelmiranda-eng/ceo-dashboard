@@ -207,6 +207,12 @@ export async function fetchDashboardData(filters: DashboardFilters = {}): Promis
         ? 75 // Real load would be better, but we default to a safe yellow zone
         : 95 // Red alert
 
+    // Compute real remaining pieces from orders (total - produced per order)
+    const machineOrders = (m as any).orders_in_progress || []
+    const realRemaining = machineOrders.reduce((sum: number, o: any) => {
+      return sum + Math.max(0, num(o.total) - num(o.produced))
+    }, 0)
+
     return {
       id: m.machine,
       name: m.machine.replace('MAQUINA', 'Machine '),
@@ -214,10 +220,10 @@ export async function fetchDashboardData(filters: DashboardFilters = {}): Promis
       status: isActive || isWorking ? 'active' : 'inactive',
       estimatedDays: m.estimated_days,
       loadStatus: m.load_status,
-      remainingPieces: m.remaining_pieces,
+      remainingPieces: realRemaining,
       avgDaily: m.avg_daily_production,
       avgSetup: num(machineAnalytics.avg_setup),
-      activeOrders: (m.orders_in_progress || []).map((o: any) => o.order_number).filter(Boolean),
+      activeOrders: machineOrders.map((o: any) => o.order_number).filter(Boolean),
     }
   })
 
@@ -231,7 +237,10 @@ export async function fetchDashboardData(filters: DashboardFilters = {}): Promis
   const inactiveMachines = machineList.filter((m) => m.status === 'inactive').length
 
   // ── Top machines this week ─────────────────────────────────────────────────
-  const topMachines = byMachineRaw.slice(0, 8)
+  const topMachines = byMachineRaw.slice(0, 14).map((m: any) => ({
+    ...m,
+    avg_setup: num(analyticsByMachineMap.get(m.machine)?.avg_setup ?? 0),
+  }))
 
   // ── Top clients this month ─────────────────────────────────────────────────
   const byClient = (month.by_client as Array<{ client: string; produced: number }>) || []
