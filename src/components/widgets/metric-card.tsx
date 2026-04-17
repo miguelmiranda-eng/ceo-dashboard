@@ -18,6 +18,10 @@ const colorMap = {
   secondary: "text-primary border-primary/20 bg-primary/10",
   muted: "text-muted-foreground border-border bg-muted/50",
   dark: "text-white border-foreground bg-foreground",
+  emerald: "text-emerald-500 border-emerald-500/20 bg-emerald-500/10 shadow-[0_2px_10px_rgba(16,185,129,0.15)]",
+  sky: "text-sky-500 border-sky-500/20 bg-sky-500/10 shadow-[0_2px_10px_rgba(14,165,233,0.15)]",
+  orange: "text-orange-500 border-orange-500/20 bg-orange-500/10 shadow-[0_2px_10px_rgba(249,115,22,0.15)]",
+  red: "text-rose-500 border-rose-500/20 bg-rose-500/10 shadow-[0_2px_10px_rgba(244,63,94,0.15)]",
 }
 
 export function MetricCard({ 
