@@ -9,7 +9,7 @@ import { useI18n } from "@/lib/i18n"
 const chartConfig = {
   value: {
     label: "Units",
-    color: "#0ea5e9",
+    color: "#1E5BFF",
   },
 }
 
@@ -23,21 +23,21 @@ export function TrendChart({ data, title = "PRODUCTION TREND", description = "IN
   const { t } = useI18n()
 
   return (
-    <Card className="rounded-2xl border border-border bg-card overflow-hidden flex flex-col h-full shadow-sm relative group hover:shadow-md transition-all duration-300">
-      <CardHeader className="pb-0 z-10">
+    <Card className="rounded-md border border-border bg-card overflow-hidden flex flex-col h-full shadow-sm relative group hover:shadow-md transition-all duration-300">
+      <CardHeader className="pb-0 z-10 px-6">
         <div className="flex justify-between items-start">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-1 h-4 bg-primary rounded-sm" />
-              <CardTitle className="text-sm font-black uppercase tracking-widest text-foreground">{title}</CardTitle>
+              <div className="w-1.5 h-6 bg-primary rounded-none" />
+              <CardTitle className="text-sm font-extrabold uppercase tracking-[0.1em] text-foreground">{title}</CardTitle>
             </div>
-            <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-3">
+            <CardDescription className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground ml-3.5 mt-1">
               {description}
             </CardDescription>
           </div>
-          <div className="py-1 px-3 rounded-full bg-primary/5 border border-primary/10 flex items-center gap-1.5">
-            <TrendingUp className="h-3 w-3 text-primary" />
-            <span className="text-[9px] font-bold text-primary uppercase tracking-widest">{t("unitsDay")}</span>
+          <div className="py-1 px-3 rounded-none bg-primary text-white flex items-center gap-1.5 shadow-[0_4px_10px_rgba(30,91,255,0.3)]">
+            <TrendingUp className="h-3 w-3" />
+            <span className="text-[11px] font-bold uppercase tracking-[0.05em]">{t("unitsDay")}</span>
           </div>
         </div>
       </CardHeader>
@@ -51,9 +51,9 @@ export function TrendChart({ data, title = "PRODUCTION TREND", description = "IN
               margin={{ top: 20, right: 0, left: 0, bottom: 0 }}
             >
               <defs>
-                <linearGradient id="fillSkyGlow" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0.0} />
+                <linearGradient id="fillRoyalGlow" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#1E5BFF" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#1E5BFF" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
               <XAxis
@@ -61,14 +61,14 @@ export function TrendChart({ data, title = "PRODUCTION TREND", description = "IN
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(value) => value}
-                tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
-                dy={10}
+                tick={{ fontSize: 11, fill: 'var(--muted-foreground)', fontWeight: 600 }}
+                dy={12}
               />
               <YAxis 
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v) => v.toLocaleString()}
-                tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
+                tick={{ fontSize: 11, fill: 'var(--muted-foreground)', fontWeight: 600 }}
                 dx={-10}
                 orientation="left"
               />
@@ -79,10 +79,10 @@ export function TrendChart({ data, title = "PRODUCTION TREND", description = "IN
               <Area
                 type="monotone"
                 dataKey="value"
-                stroke="#0ea5e9"
+                stroke="#1E5BFF"
                 strokeWidth={3}
-                fill="url(#fillSkyGlow)"
-                style={{ filter: "drop-shadow(0px 0px 8px rgba(14,165,233,0.4))" }}
+                fill="url(#fillRoyalGlow)"
+                style={{ filter: "drop-shadow(0px 0px 10px rgba(30,91,255,0.5))" }}
               />
             </AreaChart>
           </ChartContainer>

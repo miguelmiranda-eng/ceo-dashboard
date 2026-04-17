@@ -23,20 +23,20 @@ export function EfficiencyRadialChart({
   const data = [
     {
       name: t("efficiency"),
-      value: efficiency > 100 ? 100 : efficiency, // Cap at 100% for the visual arc
-      fill: efficiency >= 80 ? "#0ea5e9" : "#f59e0b", // Prosper Sky or Amber 500
+      value: efficiency > 100 ? 100 : efficiency,
+      fill: "#1E5BFF",
     }
   ]
 
   return (
-    <Card className="rounded-2xl border border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col items-center relative h-full">
-      <CardHeader className="pb-0 w-full text-center z-10">
+    <Card className="rounded-md border border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col items-center relative h-full">
+      <CardHeader className="pb-0 w-full text-center z-10 px-6 mt-2">
         <div className="flex flex-col items-center justify-center gap-1">
           <div className="flex items-center gap-2">
             <Activity className="h-4 w-4 text-primary" />
-            <CardTitle className="text-sm font-black uppercase tracking-widest text-foreground">{displayTitle}</CardTitle>
+            <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-foreground">{displayTitle}</CardTitle>
           </div>
-          <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          <CardDescription className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground mt-1">
             {displayDesc}
           </CardDescription>
         </div>
@@ -62,10 +62,10 @@ export function EfficiencyRadialChart({
                  tick={false}
                />
                <RadialBar
-                 background={{ fill: 'var(--muted)', opacity: 0.1 }}
+                 background={{ fill: 'var(--muted)', opacity: 0.2 }}
                  dataKey="value"
-                 cornerRadius={12}
-                 style={{ filter: `drop-shadow(0 0 10px ${efficiency >= 80 ? 'rgba(14,165,233,0.4)' : 'rgba(245,158,11,0.3)'})` }}
+                 cornerRadius={0}
+                 style={{ filter: "drop-shadow(0 0 12px rgba(30,91,255,0.4))" }}
                />
              </RadialBarChart>
           </ResponsiveContainer>
@@ -74,13 +74,13 @@ export function EfficiencyRadialChart({
         {/* Center Text overlay */}
         <div className="absolute inset-0 flex flex-col items-center justify-center mt-8 pointer-events-none">
           <div className="flex items-baseline gap-0.5">
-            <span className="text-5xl font-black tracking-tighter text-foreground">
+            <span className="text-5xl font-extrabold tracking-tight text-foreground">
               {efficiency}
             </span>
             <span className="text-xl font-bold text-muted-foreground">%</span>
           </div>
-          <div className={`mt-2 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${
-            efficiency >= 80 ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
+          <div className={`mt-2 px-4 py-1.5 rounded-none border text-[11px] font-extrabold uppercase tracking-[0.05em] ${
+            efficiency >= 80 ? 'bg-primary text-white border-primary shadow-[0_4px_10px_rgba(30,91,255,0.4)]' : 'bg-background border-primary text-primary'
           }`}>
             {efficiency >= 80 ? t("statusOptimal") : t("statusRecovery")}
           </div>

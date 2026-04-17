@@ -104,8 +104,8 @@ export function ReportToolbar({ onFilterChange, data, compact }: ReportToolbarPr
 
   const content = (
     <div className={cn(
-      "bg-card/80 backdrop-blur-xl border border-border p-1 rounded-full flex items-center shadow-lg ring-1 ring-border flex-wrap justify-center sm:flex-nowrap transition-all duration-300",
-      compact ? "p-0.5" : "p-1.5"
+      "bg-card/80 backdrop-blur-xl border border-border rounded-full flex items-center shadow-md ring-1 ring-border flex-wrap justify-center sm:flex-nowrap transition-all duration-300",
+      compact ? "p-1 shadow-none ring-0 border-none bg-transparent w-full" : "p-1.5"
     )}>
       
       {/* Presets Segment */}
@@ -115,10 +115,10 @@ export function ReportToolbar({ onFilterChange, data, compact }: ReportToolbarPr
             key={p}
             onClick={() => handlePresetSelect(p)}
             className={cn(
-              "rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 relative overflow-hidden group whitespace-nowrap",
+              "rounded-full text-[11px] font-extrabold uppercase tracking-wide transition-all duration-300 relative overflow-hidden group whitespace-nowrap",
               compact ? "px-3 py-1.5" : "px-5 py-2",
               selectedPreset === p && !dateFrom
-                ? "bg-primary text-primary-foreground shadow-md z-10" 
+                ? "bg-primary text-primary-foreground shadow-sm z-10" 
                 : "text-muted-foreground hover:text-foreground hover:bg-accent"
             )}
           >
@@ -147,7 +147,7 @@ export function ReportToolbar({ onFilterChange, data, compact }: ReportToolbarPr
                 onChange={(e) => setDateFrom(e.target.value)}
                 onClick={(e) => e.stopPropagation()}
                 className={cn(
-                  "bg-transparent border-none p-0 text-[10px] font-bold text-foreground focus:ring-0 focus:outline-none placeholder:text-muted-foreground/30 pointer-events-auto",
+                  "bg-transparent border-none p-0 text-[11px] font-bold text-foreground focus:ring-0 focus:outline-none placeholder:text-muted-foreground/30 pointer-events-auto",
                   compact ? "w-16 sm:w-20" : "w-24"
                 )}
               />
@@ -164,7 +164,7 @@ export function ReportToolbar({ onFilterChange, data, compact }: ReportToolbarPr
           </PopoverContent>
         </Popover>
         
-        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-tighter">{t("to")}</span>
+        <span className="text-[11px] font-extrabold text-muted-foreground uppercase tracking-normal">{t("to")}</span>
         
         <Popover>
           <PopoverTrigger asChild>
@@ -178,7 +178,7 @@ export function ReportToolbar({ onFilterChange, data, compact }: ReportToolbarPr
                 onClick={(e) => e.stopPropagation()}
                 className={cn(
                   "bg-transparent border-none p-0 text-[11px] font-bold text-foreground focus:ring-0 focus:outline-none placeholder:text-muted-foreground/30 pointer-events-auto",
-                  compact ? "w-20" : "w-24"
+                  compact ? "w-16 sm:w-20" : "w-24"
                 )}
               />
             </div>
@@ -221,7 +221,7 @@ export function ReportToolbar({ onFilterChange, data, compact }: ReportToolbarPr
           ) : (
             <FileSpreadsheet className="h-3.5 w-3.5 group-hover:scale-110 transition-transform" />
           )}
-          <span className="text-[10px] font-black uppercase tracking-widest">{t("excel")}</span>
+          <span className="text-[11px] font-extrabold uppercase tracking-wide whitespace-nowrap">{t("excel")}</span>
         </button>
 
         <button
@@ -237,7 +237,7 @@ export function ReportToolbar({ onFilterChange, data, compact }: ReportToolbarPr
           ) : (
             <FileText className="h-3.5 w-3.5 group-hover:scale-110 transition-transform" />
           )}
-          <span className="text-[10px] font-black uppercase tracking-widest">{t("pdf")}</span>
+          <span className="text-[11px] font-extrabold uppercase tracking-wide whitespace-nowrap">{t("pdf")}</span>
         </button>
       </div>
     </div>

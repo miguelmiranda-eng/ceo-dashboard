@@ -14,10 +14,10 @@ interface MetricCardProps {
 }
 
 const colorMap = {
-  emerald: "text-emerald-500 border-emerald-500/50 bg-emerald-500/10",
-  sky: "text-[#0ea5e9] border-[#0ea5e9]/50 bg-[#0ea5e9]/10",
-  orange: "text-orange-500 border-orange-500/50 bg-orange-500/10",
-  red: "text-rose-500 border-rose-500/50 bg-rose-500/10",
+  primary: "text-white border-primary bg-primary shadow-[0_4px_10px_rgba(30,91,255,0.3)]",
+  secondary: "text-primary border-primary/20 bg-primary/10",
+  muted: "text-muted-foreground border-border bg-muted/50",
+  dark: "text-white border-foreground bg-foreground",
 }
 
 export function MetricCard({ 
@@ -28,34 +28,31 @@ export function MetricCard({
   topRightBadge,
 }: MetricCardProps) {
   // Use a fallback for iconColor if it's not in our map
-  const colorKey = (iconColor as any) in colorMap ? iconColor : "emerald"
+  const colorKey = (iconColor as any) in colorMap ? iconColor : "primary"
 
   return (
-    <Card className="rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group hover:border-primary/20">
+    <Card className="rounded-none border border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group hover:border-primary/40">
       {/* Subtle top glow line based on color - themed */}
       <div className={`absolute top-0 left-0 right-0 h-[2px] bg-primary opacity-0 group-hover:opacity-100 transition-opacity`} />
       
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-6">
-          {/* Icon Circle */}
-          <div className={`h-9 w-9 rounded-xl border flex items-center justify-center shadow-sm transition-transform group-hover:scale-110 ${colorMap[colorKey]}`}>
+          {/* Icon Box */}
+          <div className={`h-10 w-10 rounded-none border flex items-center justify-center transition-transform group-hover:scale-105 ${colorMap[colorKey as keyof typeof colorMap]}`}>
             <Icon className="h-5 w-5" />
           </div>
           
           {/* Top Right Badge / Metric */}
           {topRightBadge && (
-            <div className="py-1 px-3 rounded-full bg-muted/50 border border-border flex items-center gap-1.5 shadow-sm">
-              <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{topRightBadge}</span>
-              <div className="h-3 w-3 rounded-full border border-muted-foreground/30 flex items-center justify-center">
-                <span className="text-[6px] text-muted-foreground">i</span>
-              </div>
+            <div className="py-1 px-3 rounded-none bg-muted border border-border flex items-center gap-1.5 shadow-sm">
+              <span className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.05em]">{topRightBadge}</span>
             </div>
           )}
         </div>
 
         <div className="space-y-1.5">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/70">{title}</h3>
-          <div className="text-3xl font-black text-foreground tracking-tighter">
+          <h3 className="text-xs font-black uppercase tracking-[0.1em] text-muted-foreground/70">{title}</h3>
+          <div className="text-3xl font-extrabold text-foreground tracking-tight">
             {value}
           </div>
         </div>

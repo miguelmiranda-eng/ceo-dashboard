@@ -16,21 +16,21 @@ export function ShiftsDonut({ title, description }: ShiftsDonutProps) {
 
   // Data for operational shift balancer
   const data = [
-    { name: t("dayShift"), value: 75, color: "#0ea5e9" }, // Prosper Sky
-    { name: t("nightShift"), value: 25, color: "#64748b" } // Slate 500
+    { name: t("dayShift"), value: 75, color: "#1E5BFF" }, // Royal Blue
+    { name: t("nightShift"), value: 25, color: "#1A1A1A" } // Dark Gray
   ]
 
   return (
-    <Card className="rounded-2xl border border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden h-full flex flex-col relative group">
-      <CardHeader className="pb-0 z-10">
+    <Card className="rounded-md border border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden h-full flex flex-col relative group">
+      <CardHeader className="pb-0 z-10 px-6 mt-2">
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-orange-500/10 border border-orange-500/20">
-              <CalendarDays className="h-5 w-5 text-orange-500" />
+            <div className="p-2 rounded-none bg-primary text-white shadow-[0_4px_10px_rgba(30,91,255,0.3)]">
+              <CalendarDays className="h-5 w-5" />
             </div>
             <div>
-              <CardTitle className="text-sm font-black uppercase tracking-widest text-foreground">{displayTitle}</CardTitle>
-              <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              <CardTitle className="text-xs font-extrabold uppercase tracking-[0.1em] text-foreground">{displayTitle}</CardTitle>
+              <CardDescription className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground mt-1">
                 {displayDescription}
               </CardDescription>
             </div>
@@ -63,13 +63,13 @@ export function ShiftsDonut({ title, description }: ShiftsDonutProps) {
               <Tooltip 
                 formatter={(value) => [`${value}%`, t("load")]}
                 contentStyle={{ 
-                   backgroundColor: 'var(--card)',
-                   borderRadius: 12, 
-                   border: "1px solid var(--border)", 
+                   backgroundColor: '#0B1F3A',
+                   borderRadius: 4, 
+                   border: "1px solid #1E5BFF44", 
                    fontSize: 10,
                    fontWeight: "bold",
                    textTransform: "uppercase",
-                   color: "var(--foreground)"
+                   color: "#FFFFFF"
                 }}
               />
             </PieChart>

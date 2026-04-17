@@ -19,8 +19,8 @@ interface TopMachinesProps {
   description?: string
 }
 
-const PURPLE = "#7c3aed"
-const PURPLE_GLOW = "#a78bfa"
+const ROYAL_BLUE = "#1E5BFF"
+const DEEP_NAVY = "#0B1F3A"
 
 // Custom dark tooltip matching the reference image style
 function CustomTooltip({ active, payload, label }: any) {
@@ -29,24 +29,25 @@ function CustomTooltip({ active, payload, label }: any) {
   return (
     <div
       style={{
-        background: "#1a1a2e",
-        border: "1px solid #7c3aed44",
-        borderRadius: 10,
+        background: "#0B1F3A",
+        border: "1px solid #1E5BFF44",
+        borderRadius: 4,
         padding: "10px 14px",
         fontFamily: "inherit",
         minWidth: 140,
+        boxShadow: "0 10px 30px rgba(0,0,0,0.5)"
       }}
     >
-      <p style={{ color: "#a78bfa", fontWeight: 900, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>
+      <p style={{ color: "#FFFFFF", fontWeight: 800, fontSize: 13, letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6 }}>
         {label}
       </p>
-      <p style={{ color: "#a78bfa", fontSize: 11, fontWeight: 700, margin: "2px 0" }}>
-        produced :{" "}
-        <span style={{ color: "#a78bfa" }}>{d?.produced?.toLocaleString()}</span>
+      <p style={{ color: "#1E5BFF", fontSize: 11, fontWeight: 800, margin: "4px 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+        {t("producedTitle")} :{" "}
+        <span style={{ color: "#FFFFFF" }}>{d?.produced?.toLocaleString()}</span>
       </p>
-      <p style={{ color: "#f59e0b", fontSize: 11, fontWeight: 700, margin: "2px 0" }}>
-        setup :{" "}
-        <span style={{ color: "#f59e0b" }}>{d?.avg_setup?.toFixed ? d.avg_setup.toFixed(1) : (d?.avg_setup ?? "—")}</span>
+      <p style={{ color: "#6B7280", fontSize: 11, fontWeight: 700, margin: "2px 0", textTransform: "uppercase", letterSpacing: "0.01em" }}>
+        {t("averageSetup")} :{" "}
+        <span style={{ color: "#F5F7FA" }}>{d?.avg_setup?.toFixed ? d.avg_setup.toFixed(1) : (d?.avg_setup ?? "—")} min</span>
       </p>
     </div>
   )
@@ -71,15 +72,15 @@ export function TopMachinesChart({
   const maxVal = Math.max(...chartData.map((d) => d.produced), 1)
 
   return (
-    <Card className="rounded-2xl border border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full">
-      <CardHeader className="pb-2">
+    <Card className="rounded-md border border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full">
+      <CardHeader className="pb-2 px-6 mt-2">
         <div className="flex items-center gap-2 mb-1">
-          <div className="w-1 h-4 bg-violet-500 rounded-sm" />
-          <CardTitle className="text-sm font-black uppercase tracking-widest text-foreground">
+          <div className="w-1.5 h-6 bg-primary rounded-none" />
+          <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-foreground">
             {displayTitle}
           </CardTitle>
         </div>
-        <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-3">
+        <CardDescription className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground ml-3.5 mt-1">
           {displayDesc}
         </CardDescription>
       </CardHeader>
@@ -110,38 +111,37 @@ export function TopMachinesChart({
                   dataKey="name"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 10, fill: "#9ca3af", fontWeight: 700 }}
-                  dy={6}
+                  tick={{ fontSize: 12, fill: "#9ca3af", fontWeight: 700 }}
+                  dy={10}
                 />
 
                 <YAxis
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 10, fill: "#9ca3af", fontWeight: 600 }}
+                  tick={{ fontSize: 11, fill: "#9ca3af", fontWeight: 600 }}
                   tickFormatter={(v) =>
                     v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v
                   }
                   domain={[0, Math.ceil(maxVal * 1.15)]}
-                  width={36}
+                  width={40}
                 />
 
                 <Tooltip
                   content={<CustomTooltip />}
-                  cursor={{ fill: "#7c3aed18" }}
+                  cursor={{ fill: "rgba(30, 91, 255, 0.05)" }}
                 />
 
                 <Bar
                   dataKey="produced"
-                  radius={[4, 4, 0, 0]}
+                  radius={[2, 2, 0, 0]}
                   maxBarSize={48}
                 >
                   {chartData.map((entry, idx) => (
                     <Cell
                       key={`cell-${idx}`}
-                      fill={PURPLE}
-                      fillOpacity={0.9}
+                      fill={ROYAL_BLUE}
                       style={{
-                        filter: `drop-shadow(0 0 6px ${PURPLE_GLOW}88)`,
+                        filter: "drop-shadow(0 0 10px rgba(30,91,255,0.4))",
                       }}
                     />
                   ))}

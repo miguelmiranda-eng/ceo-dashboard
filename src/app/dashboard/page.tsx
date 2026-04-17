@@ -54,11 +54,14 @@ export default function AnalyticsDashboardPage() {
 
   if (loading && !data) {
     return (
-      <div className="flex h-[60vh] items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground animate-pulse">
-            INITIALIZING ANALYTICS ENGINE...
+      <div className="flex h-[80vh] items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-6">
+          <div className="relative">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <div className="absolute inset-0 bg-primary/20 blur-xl animate-pulse" />
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-foreground animate-pulse">
+            Booting Local & Transborder Intelligence...
           </p>
         </div>
       </div>
@@ -67,18 +70,18 @@ export default function AnalyticsDashboardPage() {
 
   if (error && !data) {
     return (
-      <div className="flex h-[60vh] items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4 text-center max-w-sm">
-          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shadow-[0_0_15px_rgba(14,165,233,0.3)]">
-            <Signal className="h-6 w-6 text-primary" />
+      <div className="flex h-[80vh] items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-6 text-center max-w-sm p-8 border border-destructive/20 bg-destructive/5">
+          <div className="h-14 w-14 rounded-none bg-destructive/10 flex items-center justify-center border border-destructive/20 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
+            <Signal className="h-7 w-7 text-destructive" />
           </div>
           <div>
-            <p className="font-black text-foreground uppercase tracking-tight">System Outage</p>
-            <p className="text-[10px] font-bold uppercase text-muted-foreground mt-1">{error}</p>
+            <p className="font-black text-foreground uppercase tracking-[0.2em] text-lg">Signal Lost</p>
+            <p className="text-[10px] font-bold uppercase text-muted-foreground mt-2 tracking-widest leading-relaxed">{error}</p>
           </div>
-          <Button variant="ghost" onClick={loadData} className="gap-2 text-primary hover:bg-primary/10 uppercase font-black text-[10px] tracking-widest">
-            <RefreshCw className="h-4 w-4" />
-            Reconnect
+          <Button variant="outline" onClick={loadData} className="rounded-none border-primary text-primary hover:bg-primary hover:text-white uppercase font-black text-[10px] tracking-[0.2em] h-11 px-8">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Re-Initialize Protocol
           </Button>
         </div>
       </div>
@@ -93,16 +96,16 @@ export default function AnalyticsDashboardPage() {
       {/* Control Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-2">
         <div>
-          <div className="flex items-center gap-3 mb-1">
-             <div className="w-1.5 h-6 bg-primary rounded-full shadow-[0_0_8px_rgba(14,165,233,0.4)]" />
-             <h3 className="text-2xl font-black tracking-tighter uppercase text-foreground">{t("dashboard")}</h3>
+          <div className="flex items-center gap-4 mb-1">
+             <div className="w-2 h-8 bg-primary rounded-none shadow-[0_0_15px_rgba(30,91,255,0.5)]" />
+             <h3 className="text-3xl font-extrabold tracking-tight uppercase text-foreground">{t("dashboard")}</h3>
           </div>
-          <div className="flex items-center gap-2 ml-4">
-            <span className="relative flex h-1.5 w-1.5">
+          <div className="flex items-center gap-2 ml-6">
+            <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
             </span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-80">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground opacity-90">
               {t("intelligenceHub")} · {lastUpdated && <>{t("syncEstablished")} {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</>}
             </span>
           </div>
@@ -114,9 +117,9 @@ export default function AnalyticsDashboardPage() {
             size="sm"
             onClick={loadData}
             disabled={loading}
-            className="rounded-xl border-border bg-card hover:bg-accent text-foreground gap-2 h-9 px-4 text-[10px] font-black uppercase tracking-[0.15em] shadow-sm transition-all"
+            className="rounded-none border-primary bg-background hover:bg-primary hover:text-white text-primary gap-3 h-11 px-6 text-[11px] font-black uppercase tracking-[0.2em] shadow-[0_4px_15px_rgba(30,91,255,0.2)] transition-all active:scale-95"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             {t("forceRefresh")}
           </Button>
         </div>

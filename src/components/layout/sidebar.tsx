@@ -12,6 +12,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Package,
   Globe2
 } from "lucide-react"
 import { useState } from "react"
@@ -31,6 +32,7 @@ export function Sidebar() {
     { title: t("production"), icon: BarChart3, href: "/dashboard/production" },
     { title: t("dashboard"), icon: LayoutDashboard, href: "/dashboard" },
     { title: t("machines"), icon: Cpu, href: "/dashboard/machinery" },
+    { title: t("pipeline"), icon: Package, href: "/dashboard/pipeline" },
   ]
 
   return (
@@ -41,42 +43,37 @@ export function Sidebar() {
       <div className="p-6 flex items-center justify-between">
         {!collapsed && (
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center">
-              <svg viewBox="0 0 100 100" className="w-9 h-9 drop-shadow-[0_2px_10px_rgba(14,165,233,0.3)]" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <mask id="globeMask">
-                    <circle cx="50" cy="50" r="46" fill="white" />
-                    <path d="M -5,45 C 35,5 75,50 105,25" fill="none" stroke="black" strokeWidth="12" strokeLinecap="round" />
-                    <path d="M -5,80 C 45,60 65,95 105,65" fill="none" stroke="black" strokeWidth="12" strokeLinecap="round" />
-                  </mask>
-                  <linearGradient id="logoBright" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0ea5e9" />
-                    <stop offset="100%" stopColor="#0284c7" />
-                  </linearGradient>
-                </defs>
-                <circle cx="50" cy="50" r="46" fill="url(#logoBright)" mask="url(#globeMask)" />
+            <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center text-[#0EA5E9]">
+              <svg viewBox="0 0 100 100" className="w-10 h-10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <mask id="globe-mask">
+                  <circle cx="50" cy="50" r="45" fill="white" />
+                  <path d="M -10 30 Q 40 5 110 35" stroke="black" strokeWidth="9" fill="none" strokeLinecap="round" />
+                  <path d="M -10 55 Q 45 30 110 60" stroke="black" strokeWidth="9" fill="none" strokeLinecap="round" />
+                  <path d="M -10 80 Q 50 55 110 85" stroke="black" strokeWidth="9" fill="none" strokeLinecap="round" />
+                </mask>
+                <circle cx="50" cy="50" r="45" fill="currentColor" mask="url(#globe-mask)" />
               </svg>
             </div>
             <div className="flex flex-col">
-              <span className="font-black text-[13px] leading-tight tracking-tight text-foreground uppercase">Prosper</span>
-              <span className="font-bold text-[8.5px] leading-none tracking-widest text-primary uppercase mt-0.5">Manufacturing</span>
+              <span className="font-black text-[20px] leading-tight tracking-[-0.02em] text-white uppercase">Prosper</span>
+              <span className="font-bold text-[11px] leading-none tracking-[0.15em] text-[#0EA5E9] uppercase mt-0.5">Manufacturing</span>
             </div>
           </div>
         )}
         {collapsed && (
-          <div className="w-10 h-10 mx-auto flex items-center justify-center">
-            <svg viewBox="0 0 100 100" className="w-8 h-8 drop-shadow-lg" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <mask id="globeMaskCollapsed">
-                  <circle cx="50" cy="50" r="46" fill="white" />
-                  <path d="M -5,45 C 35,5 75,50 105,25" fill="none" stroke="black" strokeWidth="12" strokeLinecap="round" />
-                  <path d="M -5,80 C 45,60 65,95 105,65" fill="none" stroke="black" strokeWidth="12" strokeLinecap="round" />
-                </mask>
-              </defs>
-              <circle cx="50" cy="50" r="46" fill="#0ea5e9" mask="url(#globeMaskCollapsed)" />
+          <div className="w-10 h-10 mx-auto flex items-center justify-center text-[#0EA5E9]">
+            <svg viewBox="0 0 100 100" className="w-8 h-8" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <mask id="globe-mask-collapsed">
+                <circle cx="50" cy="50" r="45" fill="white" />
+                <path d="M -10 30 Q 40 5 110 35" stroke="black" strokeWidth="9" fill="none" strokeLinecap="round" />
+                <path d="M -10 55 Q 45 30 110 60" stroke="black" strokeWidth="9" fill="none" strokeLinecap="round" />
+                <path d="M -10 80 Q 50 55 110 85" stroke="black" strokeWidth="9" fill="none" strokeLinecap="round" />
+              </mask>
+              <circle cx="50" cy="50" r="45" fill="currentColor" mask="url(#globe-mask-collapsed)" />
             </svg>
           </div>
         )}
+
       </div>
 
       <nav className="flex-1 px-4 space-y-2 mt-4">
@@ -87,22 +84,19 @@ export function Sidebar() {
               key={item.href} 
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 group relative",
+                "flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200 group relative",
                 isActive 
-                  ? "bg-primary/10 text-primary shadow-sm border border-primary/20" 
-                  : "hover:bg-accent text-muted-foreground hover:text-foreground"
+                  ? "bg-primary text-white shadow-[0_0_15px_rgba(30,91,255,0.4)]" 
+                  : "hover:bg-sidebar-accent text-sidebar-foreground/60 hover:text-white"
               )}
             >
-              {isActive && (
-                <div className="absolute left-0 w-1 h-5 bg-primary rounded-r-full shadow-[0_0_10px_rgba(14,165,233,0.8)]" />
-              )}
               <item.icon className={cn(
                 "h-5 w-5 min-w-[20px] transition-colors",
-                isActive ? "text-primary" : "group-hover:text-primary"
+                isActive ? "text-white" : "group-hover:text-primary"
               )} />
               {!collapsed && <span className={cn(
-                "text-[11px] font-black uppercase tracking-[0.15em] transition-colors",
-                isActive ? "text-foreground" : "group-hover:text-foreground"
+                "text-xs font-black uppercase tracking-[0.15em] transition-colors",
+                isActive ? "text-white" : "group-hover:text-white"
               )}>{item.title}</span>}
             </Link>
           )
@@ -117,7 +111,7 @@ export function Sidebar() {
           {collapsed ? <ChevronRight className="h-5 w-5 mx-auto" strokeWidth={2.5} /> : (
             <>
               <ChevronLeft className="h-5 w-5" strokeWidth={2.5} />
-              <span className="text-[11px] font-bold uppercase tracking-widest">Collapse</span>
+              <span className="text-xs font-bold uppercase tracking-widest">Collapse</span>
             </>
           )}
         </button>
@@ -127,7 +121,7 @@ export function Sidebar() {
           className="flex items-center gap-3 w-full px-3 py-2 rounded-xl hover:bg-rose-500/10 text-rose-500 hover:text-rose-600 transition-all duration-200"
         >
           <LogOut className="h-5 w-5 min-w-[20px]" />
-          {!collapsed && <span className="text-[11px] font-bold uppercase tracking-widest">{t("logout")}</span>}
+          {!collapsed && <span className="text-xs font-bold uppercase tracking-widest">{t("logout")}</span>}
         </button>
       </div>
     </aside>

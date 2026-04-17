@@ -10,10 +10,10 @@ interface LoadDistributionProps {
 }
 
 const COLORS = {
-  sky: "#0ea5e9",      // Prosper Sky
-  yellow: "#f59e0b",   // Amber 500  
-  red: "#f43f5e",      // Rose 500
-  idle: "#64748b",     // Slate 500
+  primary: "#1E5BFF",   // Royal Blue (Normal)
+  secondary: "#6B7280", // Gray (High)
+  active: "#FFFFFF",    // White (Critical - High Contrast)
+  muted: "#1A1A1A",     // Dark Gray (Idle)
 }
 
 export function LoadDistributionChart({ 
@@ -39,21 +39,21 @@ export function LoadDistributionChart({
     if (total === 0) return []
 
     return [
-      { name: t("statusNormal"), value: green, color: COLORS.sky },
-      { name: t("statusHigh"), value: yellow, color: COLORS.yellow },
-      { name: t("statusCritical"), value: red, color: COLORS.red },
-      { name: t("statusIdle"), value: idle, color: COLORS.idle },
+      { name: t("statusNormal"), value: green, color: COLORS.primary },
+      { name: t("statusHigh"), value: yellow, color: COLORS.secondary },
+      { name: t("statusCritical"), value: red, color: COLORS.active },
+      { name: t("statusIdle"), value: idle, color: COLORS.muted },
     ].filter(d => d.value > 0)
   }, [machines, t])
 
   return (
-    <Card className="rounded-2xl border border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full">
-      <CardHeader className="pb-2">
+    <Card className="rounded-md border border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full">
+      <CardHeader className="pb-2 px-6 mt-2">
         <div className="flex items-center gap-2 mb-1">
-          <div className="w-1 h-4 bg-primary rounded-sm" />
-          <CardTitle className="text-sm font-black uppercase tracking-widest text-foreground">{displayTitle}</CardTitle>
+          <div className="w-1.5 h-6 bg-primary rounded-none" />
+          <CardTitle className="text-xs font-extrabold uppercase tracking-[0.1em] text-foreground">{displayTitle}</CardTitle>
         </div>
-        <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-3">
+        <CardDescription className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground ml-3.5 mt-1">
           {displayDesc}
         </CardDescription>
       </CardHeader>
@@ -100,8 +100,8 @@ export function LoadDistributionChart({
                 <Legend 
                   verticalAlign="bottom" 
                   height={36} 
-                  iconType="circle"
-                  formatter={(value) => <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2">{value}</span>}
+                  iconType="square"
+                  formatter={(value) => <span className="text-[11px] font-extrabold uppercase tracking-wide text-muted-foreground px-2">{value}</span>}
                 />
               </PieChart>
             </ResponsiveContainer>
