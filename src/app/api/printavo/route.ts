@@ -37,14 +37,26 @@ export async function GET(req: Request) {
     let projectedRevenue = 0;
     const matchedOrders: PrintavoOrder[] = [];
     const pipelineOrders: PrintavoOrder[] = [];
-    const foundTablerosSet = new Set<string>();
+    
+    // Track unique categories for the filters
+    const foundCategoriesSet = new Set<string>();
+
+    const targetLogisticsStates = [
+      "Scheduling", 
+      "Blanks", 
+      "Screens", 
+      "Neck", 
+      "Final Bill", 
+      "Ready to Schedule"
+    ];
 
     printavoOrders.forEach(order => {
       const pId = String(order.visual_id);
       const poNum = String(order.visual_po_number || "").toLowerCase().trim();
       const nickname = (order.order_nickname || "").toLowerCase();
+      const statusName = (order.orderstatus?.name || "").toLowerCase();
 
-      // Find if this order exists in some machine
+      // Check if it's on a MOS machine (Production)
       const matchedMosOrderNumber = activeMosOrderNumbers.find(mosOrder => {
         return pId === mosOrder || (poNum && mosOrder.includes(poNum)) || nickname.includes(String(mosOrder));
       });
@@ -53,15 +65,19 @@ export async function GET(req: Request) {
         const machineName = orderToMachineMap.get(matchedMosOrderNumber);
         if (machineName) {
           order.mos_machine = machineName;
-          foundTablerosSet.add(machineName);
+          foundCategoriesSet.add("Maquinaria");
           matchedOrders.push(order);
+        }
+      } else {
+        // If not in production, check if it matches one of the requested logistics boards
+        const matchedState = targetLogisticsStates.find(s => statusName.includes(s.toLowerCase()));
+        if (matchedState) {
+          foundCategoriesSet.add(matchedState);
         }
       }
       
-      // We also aggregate all orders that aren't finished for the "Future Work" pipeline
-      const isCompleted = order.orderstatus?.name?.toLowerCase().includes("complete") || 
-                          order.orderstatus?.name?.toLowerCase().includes("done");
-
+      // Aggregate project revenue for all non-completed orders
+      const isCompleted = statusName.includes("complete") || statusName.includes("done");
       if (!isCompleted) {
         projectedRevenue += order.order_total || 0;
         pipelineOrders.push(order);
@@ -92,7 +108,7 @@ export async function GET(req: Request) {
       volume: totalPiecesInQueue,
       delivery_days: totalEstimatedDeliveryDays,
       active_mos_orders_found: matchedOrders.length,
-      tableros: Array.from(foundTablerosSet),
+      tableros: Array.from(foundCategoriesSet).sort(),
       timeline,
       orders: pipelineOrders
     });
