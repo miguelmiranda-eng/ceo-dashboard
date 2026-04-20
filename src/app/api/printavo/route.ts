@@ -209,10 +209,19 @@ export async function GET() {
           // Extract the real Printavo work_order URL from the MOS job_title_a field
           // e.g. "https://prosper-mfg.printavo.com/work_orders/f082c5471ec8e8811527ac08da5d347a"
           printavo_url: (() => {
-            const jobTitle = String(mosOrder.job_title_a || mosOrder.job_title || "");
-            const match = jobTitle.match(/https:\/\/[^\s]*printavo\.com\/work_orders\/[a-f0-9]+/i);
+            const jt = mosOrder.job_title_a;
+            // Case A: job_title_a is an object with a 'url' property
+            if (jt && typeof jt === 'object' && jt.url) return String(jt.url);
+            
+            // Case B: job_title_a is a string that contains the URL
+            const jobTitleStr = String(jt || mosOrder.job_title || "");
+            const match = jobTitleStr.match(/https:\/\/[^\s]*printavo\.com\/work_orders\/[a-f0-9]+/i);
             if (match) return match[0];
-            if (pOrder?.public_url && String(pOrder.public_url).includes("work_orders")) return pOrder.public_url;
+            
+            // Fallback 1: Use Printavo API public_url if available
+            if (pOrder?.public_url) return pOrder.public_url;
+            
+            // Fallback 2: Construct URL (last resort, might 404 if not a hash)
             return `https://prosper-mfg.printavo.com/work_orders/${pOrder?.id || mosId}`;
           })(),
           order_nickname:
