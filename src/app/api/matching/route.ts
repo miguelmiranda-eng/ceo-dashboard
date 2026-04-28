@@ -22,20 +22,9 @@ async function mosFetch(endpoint: string) {
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    let endpoint = "orders";
-    
-    // Pass along date filters if present
-    const params = new URLSearchParams();
-    if (searchParams.get("preset")) params.set("preset", searchParams.get("preset") as string);
-    if (searchParams.get("date_from")) params.set("date_from", searchParams.get("date_from") as string);
-    if (searchParams.get("date_to")) params.set("date_to", searchParams.get("date_to") as string);
-    
-    const queryString = params.toString();
-    if (queryString) {
-      endpoint += `?${queryString}`;
-    }
+    const endpoint = "orders";
 
-    console.log(`[Matching API] Fetching data for reconciliation... (${queryString || 'all time'})`);
+    console.log(`[Matching API] Fetching data for reconciliation... (Local Date Filtering)`);
 
     // Fetch MOS orders and Printavo orders in parallel
     // Fetch 10 pages (2000 orders max) to cover Goodie/Spencers history
