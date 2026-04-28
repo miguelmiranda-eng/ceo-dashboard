@@ -34,16 +34,24 @@ async function mosFetch(endpoint: string) {
     });
 
     if (loginRes.ok) {
-      const loginData = await loginRes.json();
-      cachedSessionToken = loginData.access_token;
+      const setCookie = loginRes.headers.get('set-cookie') || '';
+      const match = setCookie.match(/session_token=([^;]+)/);
       
-      // Retry the original request with the new token
-      res = await fetch(`${MOS_BACKEND_URL}/api/${endpoint}`, {
-        headers: { Authorization: `Bearer ${cachedSessionToken}` },
-        cache: "no-store",
-      });
+      if (match) {
+        cachedSessionToken = match[1];
+        console.log("[Matching API] Service login successful, token obtained from cookie.");
+        
+        // Retry the original request with the new token
+        res = await fetch(`${MOS_BACKEND_URL}/api/${endpoint}`, {
+          headers: { Authorization: `Bearer ${cachedSessionToken}` },
+          cache: "no-store",
+        });
+      } else {
+        console.error("[Matching API] Login succeeded but session_token cookie was missing.");
+      }
+    } else {
+      console.error("[Matching API] Service login failed status:", loginRes.status);
     }
-  }
 
   if (!res.ok) throw new Error(`MOS API error: ${res.status}`);
   return res.json();
