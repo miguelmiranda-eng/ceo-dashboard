@@ -31,6 +31,7 @@ export function Sidebar() {
   const navItems = [
     { title: t("production"), icon: BarChart3, href: "/dashboard/production" },
     { title: t("pipeline"), icon: Package, href: "/dashboard/pipeline" },
+    { title: t("matching"), icon: Globe2, href: "/dashboard/matching" },
     { title: t("dashboard"), icon: LayoutDashboard, href: "/dashboard" },
     { title: t("machines"), icon: Cpu, href: "/dashboard/machinery" },
   ]

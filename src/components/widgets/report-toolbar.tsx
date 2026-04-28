@@ -42,10 +42,18 @@ export function ReportToolbar({ onFilterChange, data, compact }: ReportToolbarPr
 
   // Handle preset change
   const handlePresetSelect = (p: Preset) => {
-    setSelectedPreset(p)
-    setDateFrom("")
-    setDateTo("")
-    onFilterChange({ preset: p })
+    if (selectedPreset === p) {
+      // Toggle off
+      setSelectedPreset("all" as Preset)
+      setDateFrom("")
+      setDateTo("")
+      onFilterChange({ preset: "all" })
+    } else {
+      setSelectedPreset(p)
+      setDateFrom("")
+      setDateTo("")
+      onFilterChange({ preset: p })
+    }
   }
 
   // Handle custom date apply
@@ -115,8 +123,8 @@ export function ReportToolbar({ onFilterChange, data, compact }: ReportToolbarPr
             key={p}
             onClick={() => handlePresetSelect(p)}
             className={cn(
-              "rounded-full text-[11px] font-extrabold uppercase tracking-wide transition-all duration-300 relative overflow-hidden group whitespace-nowrap",
-              compact ? "px-3 py-1.5" : "px-5 py-2",
+              "rounded-full font-extrabold uppercase transition-all duration-300 relative overflow-hidden group whitespace-nowrap",
+              compact ? "px-2 py-1.5 text-[10px] tracking-normal" : "px-5 py-2 text-[11px] tracking-wide",
               selectedPreset === p && !dateFrom
                 ? "bg-primary text-primary-foreground shadow-sm z-10" 
                 : "text-muted-foreground hover:text-foreground hover:bg-accent"
@@ -164,7 +172,7 @@ export function ReportToolbar({ onFilterChange, data, compact }: ReportToolbarPr
           </PopoverContent>
         </Popover>
         
-        <span className="text-[11px] font-extrabold text-muted-foreground uppercase tracking-normal">{t("to")}</span>
+        <span className="font-extrabold text-muted-foreground uppercase tracking-normal" style={{ fontSize: compact ? '10px' : '11px' }}>{t("to")}</span>
         
         <Popover>
           <PopoverTrigger asChild>
@@ -212,7 +220,7 @@ export function ReportToolbar({ onFilterChange, data, compact }: ReportToolbarPr
           onClick={() => handleExport('excel')}
           className={cn(
             "flex items-center gap-2 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 transition-all duration-300 group active:scale-95 disabled:opacity-50",
-            compact ? "px-3 py-1.5" : "px-4 py-2"
+            compact ? "px-2.5 py-1.5" : "px-4 py-2"
           )}
           disabled={!!exporting || !data}
         >
@@ -221,14 +229,14 @@ export function ReportToolbar({ onFilterChange, data, compact }: ReportToolbarPr
           ) : (
             <FileSpreadsheet className="h-3.5 w-3.5 group-hover:scale-110 transition-transform" />
           )}
-          <span className="text-[11px] font-extrabold uppercase tracking-wide whitespace-nowrap">{t("excel")}</span>
+          <span className={cn("font-extrabold uppercase tracking-wide whitespace-nowrap", compact ? "text-[10px]" : "text-[11px]")}>{t("excel")}</span>
         </button>
 
         <button
           onClick={() => handleExport('pdf')}
           className={cn(
             "flex items-center gap-2 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all duration-300 group active:scale-95 disabled:opacity-50",
-            compact ? "px-3 py-1.5" : "px-4 py-2"
+            compact ? "px-2.5 py-1.5" : "px-4 py-2"
           )}
           disabled={!!exporting || !data}
         >
@@ -237,7 +245,7 @@ export function ReportToolbar({ onFilterChange, data, compact }: ReportToolbarPr
           ) : (
             <FileText className="h-3.5 w-3.5 group-hover:scale-110 transition-transform" />
           )}
-          <span className="text-[11px] font-extrabold uppercase tracking-wide whitespace-nowrap">{t("pdf")}</span>
+          <span className={cn("font-extrabold uppercase tracking-wide whitespace-nowrap", compact ? "text-[10px]" : "text-[11px]")}>{t("pdf")}</span>
         </button>
       </div>
     </div>
