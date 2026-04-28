@@ -49,9 +49,8 @@ async function mosFetch(endpoint: string) {
       } else {
         console.error("[Matching API] Login succeeded but session_token cookie was missing.");
       }
-    } else {
-      console.error("[Matching API] Service login failed status:", loginRes.status);
     }
+  }
 
   if (!res.ok) throw new Error(`MOS API error: ${res.status}`);
   return res.json();
