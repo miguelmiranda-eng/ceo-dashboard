@@ -70,8 +70,15 @@ export async function GET(request: NextRequest) {
       fetchManyPages(10),
     ]);
 
-    // 2. Filter out excluded boards from MOS
-    const excludedBoards = ["RESPALDO MONDAY", "PAPELERA DE RECICLAJE"];
+    // 2. Filter out excluded boards from MOS (mirrors, backups, etc.)
+    const excludedBoards = [
+      "RESPALDO MONDAY", 
+      "PAPELERA DE RECICLAJE", 
+      "MASTER", 
+      "TABLERO MASTER", 
+      "EJEMPLOS",
+      "EJEMPLO"
+    ];
     let activeOrders = (mosOrders as any[]).filter(
       (o) => !excludedBoards.includes((o.board || "").toUpperCase())
     );
