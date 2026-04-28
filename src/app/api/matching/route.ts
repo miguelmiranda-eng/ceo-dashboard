@@ -91,6 +91,13 @@ export async function GET(request: NextRequest) {
     let results = activeOrders.map((mosOrder) => {
       const orderNum = String(mosOrder.order_number).trim();
       const pOrder = printavoMap.get(orderNum);
+      const filterDate = pOrder ? (pOrder.customer_due_date || pOrder.due_date) : mosOrder.created_at;
+
+      let inRange = true;
+      if (dateStart && dateEnd && filterDate) {
+        const d = new Date(filterDate);
+        inRange = d >= dateStart && d <= dateEnd;
+      }
 
       return {
         order_number: orderNum,
@@ -104,20 +111,12 @@ export async function GET(request: NextRequest) {
         printavo_url: pOrder ? `https://prosper-mfg.printavo.com/work_orders/${pOrder.id}` : null,
         invoice_url: pOrder?.public_url || null,
         updated_at: mosOrder.updated_at,
-        _filter_date: pOrder ? (pOrder.customer_due_date || pOrder.due_date) : mosOrder.created_at
+        _filter_date: filterDate,
+        is_in_date_range: inRange
       };
     });
 
-    // 5. Apply Date Filter
-    // 5. Apply Date Filter Flag (do not remove from array so Unbilled/Total remain intact)
-    results = results.map((r) => {
-      let inRange = true;
-      if (dateStart && dateEnd && r._filter_date) {
-        const d = new Date(r._filter_date);
-        inRange = d >= dateStart && d <= dateEnd;
-      }
-      return { ...r, is_in_date_range: inRange };
-    });
+    // 5. Date Filter Flag already applied during mapping
 
     // 6. Calculate Stats
     const stats = {
