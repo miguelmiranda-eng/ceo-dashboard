@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
         order_number: orderNum,
         client: mosOrder.client_name || mosOrder.client || "Unknown",
         mos_status: mosOrder.board,
-        mos_pieces: mosOrder.qty || mosOrder.QTY || mosOrder.total_pieces || 0,
+        mos_pieces: mosOrder.quantity || mosOrder.qty || mosOrder.QTY || mosOrder.total_pieces || 0,
         printavo_id: pOrder?.id || null,
         printavo_total: pOrder?.order_total || 0,
         printavo_status: pOrder?.orderstatus?.name || "Not Found",
