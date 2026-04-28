@@ -7,14 +7,44 @@ export const dynamic = 'force-dynamic';
 const MOS_BACKEND_URL =
   process.env.MOS_BACKEND_URL ||
   "https://mosdatabase-backend.k9pirj.easypanel.host";
-const MOS_INTERNAL_TOKEN = process.env.MOS_INTERNAL_TOKEN || "";
+const MOS_INTERNAL_TOKEN = process.env.MOS_INTERNAL_TOKEN || process.env.INTERNAL_SYNC_TOKEN || "";
+const MOS_SERVICE_EMAIL = process.env.MOS_SERVICE_EMAIL || "";
+const MOS_SERVICE_PASSWORD = process.env.MOS_SERVICE_PASSWORD || "";
 
-/** Internal MOS fetcher */
+// Simple in-memory cache for the session token
+let cachedSessionToken: string | null = null;
+
+/** Internal MOS fetcher with Auth Fallback */
 async function mosFetch(endpoint: string) {
-  const res = await fetch(`${MOS_BACKEND_URL}/api/${endpoint}`, {
-    headers: { Authorization: `Bearer ${MOS_INTERNAL_TOKEN}` },
+  // 1. Try with the internal token or cached session token
+  const token = cachedSessionToken || MOS_INTERNAL_TOKEN;
+  
+  let res = await fetch(`${MOS_BACKEND_URL}/api/${endpoint}`, {
+    headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
+
+  // 2. If 401 and we have credentials, try to login and retry
+  if (res.status === 401 && MOS_SERVICE_EMAIL && MOS_SERVICE_PASSWORD) {
+    console.log("[Matching API] Token expired or invalid, attempting service login...");
+    const loginRes = await fetch(`${MOS_BACKEND_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: MOS_SERVICE_EMAIL, password: MOS_SERVICE_PASSWORD }),
+    });
+
+    if (loginRes.ok) {
+      const loginData = await loginRes.json();
+      cachedSessionToken = loginData.access_token;
+      
+      // Retry the original request with the new token
+      res = await fetch(`${MOS_BACKEND_URL}/api/${endpoint}`, {
+        headers: { Authorization: `Bearer ${cachedSessionToken}` },
+        cache: "no-store",
+      });
+    }
+  }
+
   if (!res.ok) throw new Error(`MOS API error: ${res.status}`);
   return res.json();
 }
