@@ -1,0 +1,508 @@
+"use client"
+
+import React, { useState } from "react"
+import useSWR from "swr"
+import { 
+  Plus, 
+  Search, 
+  FileText, 
+  MoreVertical, 
+  ExternalLink, 
+  Filter,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  XCircle,
+  LayoutGrid,
+  List,
+  User,
+  ArrowUpDown,
+  Activity,
+  Zap,
+  Layers
+} from "lucide-react"
+import { 
+  fetchWorkOrders, 
+  WorkOrder,
+  createInvoice
+} from "@/lib/api"
+import { useI18n } from "@/lib/i18n"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import { InvoiceForm } from "@/components/dashboard/invoices/InvoiceForm"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { cn } from "@/lib/utils"
+import {
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+  SortingState,
+} from "@tanstack/react-table"
+
+const STATUS_COLUMNS = [
+  { id: 'artwork_pending', label: 'Art Pending', color: 'bg-slate-500', icon: FileText },
+  { id: 'artwork_approved', label: 'Art Approved', color: 'bg-blue-500', icon: CheckCircle2 },
+  { id: 'production', label: 'Production', color: 'bg-amber-500', icon: Zap },
+  { id: 'quality_check', label: 'QC', color: 'bg-purple-500', icon: Activity },
+  { id: 'completed', label: 'Done', color: 'bg-emerald-500', icon: CheckCircle2 },
+]
+
+export default function WorkOrdersPage() {
+  const { t } = useI18n()
+  const [search, setSearch] = useState("")
+  const [view, setView] = useState<'grid' | 'list'>('grid')
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [isCreating, setIsCreating] = useState(false)
+
+  const { data: workOrders, error, mutate } = useSWR(
+    ['work-orders', search],
+    () => fetchWorkOrders({ search })
+  )
+
+  const handleCreateOrder = async (data: any) => {
+    try {
+      await createInvoice(data)
+      setIsCreating(false)
+      mutate()
+    } catch (err) {
+      console.error(err)
+      alert("Error al crear la orden.")
+    }
+  }
+
+  const columns = [
+    {
+      accessorKey: "work_order_id",
+      header: ({ column }: any) => (
+        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="pl-0 font-black uppercase tracking-widest text-[10px] text-slate-500 hover:text-blue-600 transition-colors">
+          WO ID <ArrowUpDown className="ml-2 h-3 w-3" />
+        </Button>
+      ),
+      cell: ({ row }: any) => (
+        <div className="font-black text-blue-600 tracking-tighter text-sm">{row.getValue("work_order_id")}</div>
+      ),
+    },
+    {
+      accessorKey: "source_invoice_id",
+      header: () => <div className="font-black uppercase tracking-widest text-[10px] text-slate-500">Source ID</div>,
+      cell: ({ row }: any) => <div className="font-bold text-slate-400 text-[11px] uppercase tracking-tight">{row.getValue("source_invoice_id")}</div>,
+    },
+    {
+      accessorKey: "production_status",
+      header: () => <div className="font-black uppercase tracking-widest text-[10px] text-slate-500">Status</div>,
+      cell: ({ row }: any) => {
+        const status = row.getValue("production_status") as string
+        const woId = row.original.work_order_id
+        const config = STATUS_COLUMNS.find(c => c.id === status) || STATUS_COLUMNS[0]
+        const Icon = config.icon
+        
+        const handleStatusChange = async (newStatus: string) => {
+          try {
+            await fetch(`/api/mos?endpoint=work-orders/${woId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ production_status: newStatus })
+            })
+            mutate()
+          } catch (err) {
+            console.error(err)
+          }
+        }
+
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-auto p-0 hover:bg-transparent">
+                <Badge variant="outline" className={cn(
+                  "uppercase text-[9px] font-black px-2 py-1 flex items-center gap-1.5 w-fit border rounded-full bg-white shadow-sm cursor-pointer hover:scale-105 transition-all", 
+                  config.color.replace('bg-', 'text-')
+                )}>
+                  <Icon className="h-3 w-3" />
+                  {config.label}
+                </Badge>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="bg-white border-slate-200 shadow-xl min-w-[160px] p-1">
+              {STATUS_COLUMNS.map((opt) => (
+                <DropdownMenuItem 
+                  key={opt.id}
+                  onClick={() => handleStatusChange(opt.id)}
+                  className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-50 rounded-md transition-colors"
+                >
+                  <div className={cn("w-2 h-2 rounded-full", opt.color)} />
+                  <span className="text-[10px] font-black uppercase tracking-tight text-slate-700">{opt.label}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )
+      },
+    },
+    {
+      accessorKey: "assigned_operator",
+      header: () => <div className="font-black uppercase tracking-widest text-[10px] text-slate-500">Operator</div>,
+      cell: ({ row }: any) => (
+        <div className="flex items-center gap-2">
+           <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+              <User className="h-3 w-3" />
+           </div>
+           <span className="text-[11px] font-bold text-slate-700">{row.getValue("assigned_operator") || "Unassigned"}</span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "scheduled_date",
+      header: () => <div className="font-black uppercase tracking-widest text-[10px] text-slate-500 text-right">Scheduled</div>,
+      cell: ({ row }: any) => (
+        <div className="text-slate-500 text-[11px] text-right font-bold uppercase tracking-tight">{row.getValue("scheduled_date") || "TBD"}</div>
+      ),
+    },
+    {
+      id: "actions",
+      cell: ({ row }: any) => (
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-9 w-9 p-0 hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-all rounded-full">
+                <MoreVertical className="h-5 w-5" strokeWidth={2.5} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-white border-slate-200 text-slate-700 shadow-xl min-w-[180px]">
+              <DropdownMenuItem className="hover:bg-slate-50 cursor-pointer flex items-center gap-2 font-bold text-xs uppercase tracking-tight p-3">
+                <ExternalLink className="h-4 w-4 text-blue-600" /> View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem className="hover:bg-slate-50 cursor-pointer flex items-center gap-2 font-bold text-xs uppercase tracking-tight p-3">
+                <Clock className="h-4 w-4 text-amber-500" /> Reschedule
+              </DropdownMenuItem>
+              <DropdownMenuItem className="hover:bg-rose-50 text-rose-600 cursor-pointer flex items-center gap-2 font-bold text-xs uppercase tracking-tight p-3">
+                <XCircle className="h-4 w-4" /> Cancel Order
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ),
+    },
+  ]
+
+  const table = useReactTable({
+    data: workOrders || [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    onSortingChange: setSorting,
+    getSortedRowModel: getSortedRowModel(),
+    state: {
+      sorting,
+    },
+  })
+
+  const stats = workOrders?.reduce((acc: any, wo: any) => ({
+    total: acc.total + 1,
+    inProd: acc.inProd + (wo.production_status === 'production' ? 1 : 0),
+    completed: acc.completed + (wo.production_status === 'completed' ? 1 : 0)
+  }), { total: 0, inProd: 0, completed: 0 })
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-500 p-1">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+             <div className="w-2 h-10 bg-blue-600 rounded-full" />
+             <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">
+                {t("workOrders")}
+             </h1>
+          </div>
+          <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-5">
+            Production Pipeline &bull; Operational Control
+          </p>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-white p-1 rounded-xl shadow-sm border border-slate-100">
+             <Button 
+               variant="ghost" 
+               onClick={() => setView('grid')}
+               className={cn("h-10 px-4 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all", view === 'grid' ? "bg-slate-100 text-blue-600 shadow-inner" : "text-slate-400")}
+             >
+               <LayoutGrid className="mr-2 h-4 w-4" /> Grid
+             </Button>
+             <Button 
+               variant="ghost" 
+               onClick={() => setView('list')}
+               className={cn("h-10 px-4 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all", view === 'list' ? "bg-slate-100 text-blue-600 shadow-inner" : "text-slate-400")}
+             >
+               <List className="mr-2 h-4 w-4" /> List
+             </Button>
+          </div>
+
+          <Button 
+            onClick={() => setIsCreating(true)}
+            className="h-12 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-200 transition-all flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" strokeWidth={3} />
+            Nueva Orden
+          </Button>
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+         <Card className="bg-white border-slate-200 shadow-sm overflow-hidden group hover:shadow-md transition-all">
+            <CardContent className="p-0">
+               <div className="flex items-center">
+                  <div className="w-1.5 h-24 bg-blue-600" />
+                  <div className="p-6 flex items-center gap-5 w-full">
+                     <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                        <Layers className="h-6 w-6" />
+                     </div>
+                     <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Pipeline</p>
+                        <p className="text-2xl font-black text-slate-900">{stats?.total || 0} Orders</p>
+                     </div>
+                  </div>
+               </div>
+            </CardContent>
+         </Card>
+
+         <Card className="bg-white border-slate-200 shadow-sm overflow-hidden group hover:shadow-md transition-all">
+            <CardContent className="p-0">
+               <div className="flex items-center">
+                  <div className="w-1.5 h-24 bg-amber-500" />
+                  <div className="p-6 flex items-center gap-5 w-full">
+                     <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
+                        <Zap className="h-6 w-6" />
+                     </div>
+                     <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">In Production</p>
+                        <p className="text-2xl font-black text-slate-900">{stats?.inProd || 0} Units</p>
+                     </div>
+                  </div>
+               </div>
+            </CardContent>
+         </Card>
+
+         <Card className="bg-white border-slate-200 shadow-sm overflow-hidden group hover:shadow-md transition-all">
+            <CardContent className="p-0">
+               <div className="flex items-center">
+                  <div className="w-1.5 h-24 bg-emerald-500" />
+                  <div className="p-6 flex items-center gap-5 w-full">
+                     <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
+                        <CheckCircle2 className="h-6 w-6" />
+                     </div>
+                     <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Completed Today</p>
+                        <p className="text-2xl font-black text-slate-900">{stats?.completed || 0} Finished</p>
+                     </div>
+                  </div>
+               </div>
+            </CardContent>
+         </Card>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden">
+        <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Search work orders, POs..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-12 bg-white border-slate-200 text-slate-900 h-12 rounded-xl focus:ring-2 focus:ring-blue-500/20 transition-all border-2"
+            />
+          </div>
+          <Button variant="outline" className="border-slate-200 bg-white text-slate-600 hover:bg-slate-50 h-12 px-6 rounded-xl font-black text-xs uppercase tracking-widest">
+            <Filter className="mr-2 h-4 w-4" /> Filters
+          </Button>
+        </div>
+
+        {view === 'grid' ? (
+          <div className="p-8 grid grid-cols-1 md:grid-cols-5 gap-6 overflow-x-auto min-h-[600px] bg-slate-50/20">
+            {STATUS_COLUMNS.map((column) => (
+              <div key={column.id} className="flex flex-col min-w-[280px] space-y-4">
+                <div className="flex items-center justify-between px-2">
+                  <div className="flex items-center gap-2">
+                    <div className={cn("w-2 h-2 rounded-full", column.color)} />
+                    <h3 className="font-black text-slate-900 uppercase text-[10px] tracking-widest">{column.label}</h3>
+                  </div>
+                  <Badge variant="outline" className="bg-white text-slate-400 border-slate-200 text-[10px] font-black">
+                    {workOrders?.filter((wo: any) => wo.production_status === column.id).length || 0}
+                  </Badge>
+                </div>
+                
+                <div className="space-y-4">
+                  {workOrders?.filter((wo: any) => wo.production_status === column.id).map((wo: any) => (
+                    <WorkOrderCard key={wo.work_order_id} workOrder={wo} onUpdate={() => mutate()} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id} className="bg-slate-50/30">
+                    {headerGroup.headers.map((header) => (
+                      <th key={header.id} className="px-8 py-5 border-b border-slate-100">
+                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <tr key={row.id} className="hover:bg-blue-50/30 transition-colors group">
+                      {row.getVisibleCells().map((cell) => (
+                        <td key={cell.id} className="px-8 py-6 align-middle">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={columns.length} className="h-48 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+                       No active work orders
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <Dialog open={isCreating} onOpenChange={setIsCreating}>
+        <DialogContent className="max-w-none w-screen h-screen p-0 bg-transparent border-none shadow-none overflow-y-auto m-0 rounded-none flex flex-col">
+          <DialogTitle className="sr-only">Create New Production Order</DialogTitle>
+          <div className="flex-1 w-full max-w-[1600px] mx-auto py-10 px-6">
+            <InvoiceForm onSubmit={handleCreateOrder} onCancel={() => setIsCreating(false)} />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+function WorkOrderCard({ workOrder, onUpdate }: { workOrder: WorkOrder, onUpdate: () => void }) {
+  const config = STATUS_COLUMNS.find(c => c.id === workOrder.production_status) || STATUS_COLUMNS[0]
+  const Icon = config.icon
+
+  const handleStatusChange = async (newStatus: string) => {
+    try {
+      await fetch(`/api/mos?endpoint=work-orders/${workOrder.work_order_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ production_status: newStatus })
+      })
+      onUpdate()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  return (
+    <Card className="bg-white border-slate-200 shadow-sm hover:shadow-xl hover:border-blue-300 transition-all cursor-pointer group overflow-hidden">
+      <div className="p-4 space-y-4">
+        <div className="flex justify-between items-start">
+          <div className="space-y-1">
+            <p className="text-[11px] font-black text-blue-600 tracking-tighter">{workOrder.work_order_id}</p>
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">REF: {workOrder.source_invoice_id}</p>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                <MoreVertical className="h-4 w-4 text-slate-300" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-white border-slate-200 shadow-xl min-w-[140px] p-1">
+              <DropdownMenuItem className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-50 rounded-md">
+                <ExternalLink className="h-3 w-3 text-blue-600" /> 
+                <span className="text-[10px] font-bold uppercase">Details</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="flex items-center gap-2 p-2 cursor-pointer hover:bg-rose-50 text-rose-600 rounded-md">
+                <XCircle className="h-3 w-3" /> 
+                <span className="text-[10px] font-bold uppercase">Delete</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <div className="space-y-3">
+           <DropdownMenu>
+             <DropdownMenuTrigger asChild>
+               <Button variant="ghost" className="h-auto p-0 hover:bg-transparent block text-left">
+                  <Badge variant="outline" className={cn(
+                    "uppercase text-[8px] font-black px-2 py-0.5 flex items-center gap-1.5 w-fit border rounded-full bg-white shadow-sm cursor-pointer hover:scale-105 transition-all", 
+                    config.color.replace('bg-', 'text-')
+                  )}>
+                    <Icon className="h-2.5 w-2.5" />
+                    {config.label}
+                  </Badge>
+               </Button>
+             </DropdownMenuTrigger>
+             <DropdownMenuContent align="start" className="bg-white border-slate-200 shadow-xl min-w-[150px] p-1">
+               {STATUS_COLUMNS.map((opt) => (
+                 <DropdownMenuItem 
+                   key={opt.id}
+                   onClick={(e) => { e.stopPropagation(); handleStatusChange(opt.id); }}
+                   className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-50 rounded-md"
+                 >
+                   <div className={cn("w-2 h-2 rounded-full", opt.color)} />
+                   <span className="text-[9px] font-black uppercase tracking-tight text-slate-700">{opt.label}</span>
+                 </DropdownMenuItem>
+               ))}
+             </DropdownMenuContent>
+           </DropdownMenu>
+
+           <div className="space-y-2">
+             <div className="flex flex-wrap gap-1.5">
+                <Badge variant="outline" className="bg-slate-50 text-slate-500 border-slate-100 text-[8px] font-black uppercase px-1.5 py-0">
+                   {workOrder.packing_details?.bags || 'standard'}
+                </Badge>
+                <Badge variant="outline" className="bg-slate-50 text-slate-500 border-slate-100 text-[8px] font-black uppercase px-1.5 py-0">
+                   {workOrder.packing_details?.boxes || 'master'}
+                </Badge>
+             </div>
+             <p className="text-[11px] text-slate-600 font-bold line-clamp-2 leading-tight uppercase italic">
+                {workOrder.production_notes || "No additional production instructions."}
+             </p>
+           </div>
+        </div>
+
+        <div className="pt-3 border-t border-slate-50 flex items-center justify-between">
+           <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                 <User className="h-3 w-3" />
+              </div>
+              <span className="text-[9px] font-black text-slate-500 uppercase truncate max-w-[70px]">
+                 {workOrder.assigned_operator || "UNASSIGNED"}
+              </span>
+           </div>
+           <div className="flex items-center text-slate-400 gap-1 text-[9px] font-black uppercase">
+              <Clock className="h-3 w-3" />
+              {workOrder.scheduled_date || "TBD"}
+           </div>
+        </div>
+      </div>
+      <div className={cn("h-1 w-full bg-slate-100 group-hover:transition-colors", config.color)} />
+    </Card>
+  )
+}

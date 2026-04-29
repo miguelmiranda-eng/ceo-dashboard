@@ -14,6 +14,7 @@ export interface PrintavoOrder {
     last_name: string;
   };
   orderstatus: {
+    id: number;
     name: string;
     color: string;
   };
@@ -23,6 +24,13 @@ export interface PrintavoOrder {
     style_description?: string;
     category?: string;
   }[];
+}
+
+export interface PrintavoStatus {
+  id: number;
+  name: string;
+  color: string;
+  position: number;
 }
 
 export async function fetchPipelineOrders(): Promise<PrintavoOrder[]> {
@@ -72,5 +80,42 @@ export async function fetchManyPages(count: number = 5): Promise<PrintavoOrder[]
   } catch (error) {
     console.error("Failed mass fetch:", error);
     return [];
+  }
+}
+
+export async function fetchOrderStatuses(): Promise<PrintavoStatus[]> {
+  const email = (process.env.PRINTAVO_EMAIL || "").toLowerCase();
+  const token = (process.env.PRINTAVO_API_KEY || "").trim();
+
+  if (!email || !token) return [];
+
+  try {
+    const res = await fetch(`https://www.printavo.com/api/v1/order_statuses?email=${encodeURIComponent(email)}&token=${token}`, {
+      next: { revalidate: 3600 }
+    });
+    const data = await res.json();
+    return data.data || [];
+  } catch (error) {
+    console.error("Failed to fetch Printavo statuses:", error);
+    return [];
+  }
+}
+
+export async function updateOrderStatus(orderId: number, statusId: number): Promise<boolean> {
+  const email = (process.env.PRINTAVO_EMAIL || "").toLowerCase();
+  const token = (process.env.PRINTAVO_API_KEY || "").trim();
+
+  if (!email || !token) return false;
+
+  try {
+    const res = await fetch(`https://www.printavo.com/api/v1/orders/${orderId}?email=${encodeURIComponent(email)}&token=${token}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderstatus_id: statusId })
+    });
+    return res.ok;
+  } catch (error) {
+    console.error("Failed to update Printavo order status:", error);
+    return false;
   }
 }

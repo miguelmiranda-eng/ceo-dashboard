@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/lib/i18n";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "sonner";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
@@ -43,6 +44,7 @@ export default function RootLayout({
           <LanguageProvider>
             <TooltipProvider>
               {children}
+              <Toaster position="bottom-right" theme="dark" closeButton richColors />
             </TooltipProvider>
           </LanguageProvider>
         </ThemeProvider>

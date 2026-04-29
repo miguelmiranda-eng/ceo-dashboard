@@ -16,10 +16,9 @@ const mosCache = new Map<string, { data: any; expiry: number }>()
 const MOS_CACHE_TTL = 2 * 60 * 1000 // 2 minutes
 
 async function getAuthToken(): Promise<string | null> {
-  // 1. Try the internal sync token first (fastest — works if it's set in production)
+  // 1. Trust the internal sync token directly (no network verification needed)
   if (MOS_INTERNAL_TOKEN) {
-    const ok = await verifyToken(MOS_INTERNAL_TOKEN)
-    if (ok) return MOS_INTERNAL_TOKEN
+    return MOS_INTERNAL_TOKEN
   }
 
   // 2. Check the cached email/password session token
@@ -185,5 +184,135 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     console.error('[MOS Proxy] Fetch error:', err)
     return Response.json({ error: 'Failed to reach MOS backend' }, { status: 502 })
+  }
+}
+
+export async function POST(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
+  const endpoint = searchParams.get('endpoint')
+
+  if (!endpoint) {
+    return Response.json({ error: 'Missing endpoint param' }, { status: 400 })
+  }
+
+  // Obtain auth token — same as GET handler
+  const token = await getAuthToken()
+  if (!token) {
+    return Response.json({ error: 'MOS authentication failed. Set MOS_INTERNAL_TOKEN or MOS_SERVICE_EMAIL + MOS_SERVICE_PASSWORD in .env.local' }, { status: 401 })
+  }
+
+  const body = await request.json()
+  const upstream = `${MOS_BACKEND_URL}/api/${endpoint}`
+
+  try {
+    const res = await fetch(upstream, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        Cookie: `session_token=${token}`,
+      },
+      body: JSON.stringify(body),
+      cache: 'no-store',
+    })
+
+    let data;
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      data = await res.json();
+    } else {
+      data = { message: await res.text() };
+    }
+
+    if (res.ok) mosCache.clear() 
+    return Response.json(data, { status: res.status })
+  } catch (err: any) {
+    console.error('[MOS Proxy] POST error:', err)
+    return Response.json({ error: `Failed to reach MOS backend: ${err.message}`, endpoint: upstream }, { status: 502 })
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
+  const endpoint = searchParams.get('endpoint')
+
+  if (!endpoint) {
+    return Response.json({ error: 'Missing endpoint param' }, { status: 400 })
+  }
+
+  const token = await getAuthToken()
+  if (!token) {
+    return Response.json({ error: 'MOS authentication failed' }, { status: 401 })
+  }
+
+  const body = await request.json()
+  const upstream = `${MOS_BACKEND_URL}/api/${endpoint}`
+
+  try {
+    const res = await fetch(upstream, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        Cookie: `session_token=${token}`,
+      },
+      body: JSON.stringify(body),
+      cache: 'no-store',
+    })
+
+    let data;
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      data = await res.json();
+    } else {
+      data = { message: await res.text() };
+    }
+
+    if (res.ok) mosCache.clear() 
+    return Response.json(data, { status: res.status })
+  } catch (err: any) {
+    console.error('[MOS Proxy] PUT error:', err)
+    return Response.json({ error: `Failed to reach MOS backend: ${err.message}` }, { status: 502 })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
+  const endpoint = searchParams.get('endpoint')
+
+  if (!endpoint) {
+    return Response.json({ error: 'Missing endpoint param' }, { status: 400 })
+  }
+
+  const token = await getAuthToken()
+  if (!token) {
+    return Response.json({ error: 'MOS authentication failed' }, { status: 401 })
+  }
+
+  const upstream = `${MOS_BACKEND_URL}/api/${endpoint}`
+
+  try {
+    const res = await fetch(upstream, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Cookie: `session_token=${token}`,
+      },
+      cache: 'no-store',
+    })
+
+    let data;
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      data = await res.json();
+    } else {
+      data = { message: await res.text() };
+    }
+
+    if (res.ok) mosCache.clear() 
+    return Response.json(data, { status: res.status })
+  } catch (err: any) {
+    console.error('[MOS Proxy] DELETE error:', err)
+    return Response.json({ error: `Failed to reach MOS backend: ${err.message}` }, { status: 502 })
   }
 }

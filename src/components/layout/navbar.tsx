@@ -39,45 +39,20 @@ export function Navbar() {
           <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-[0.15em] leading-tight mt-1">PROSPER INTEL v4.0</p>
         </div>
 
-        {/* Global Toolbar Integration */}
-        <div className="hidden xl:flex flex-1 justify-center min-w-0">
-          <ReportToolbar 
-            onFilterChange={setFilters} 
-            data={exportData}
-            compact={true}
-          />
-        </div>
+        {/* Global Toolbar Integration - Hidden in Invoices */}
+        {!pathname.includes("/dashboard/invoices") && (
+          <div className="hidden xl:flex flex-1 justify-center min-w-0">
+            <ReportToolbar 
+              onFilterChange={setFilters} 
+              data={exportData}
+              compact={true}
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-4 shrink-0">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-md hover:bg-accent text-muted-foreground hover:text-foreground">
-              <Languages className="h-5 w-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="rounded-md bg-card border border-border text-foreground">
-            <DropdownMenuItem onClick={() => setLanguage("en")} className={cn(language === "en" ? "bg-accent" : "", "cursor-pointer font-medium uppercase text-[10px] tracking-widest")}>
-              English
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setLanguage("es")} className={cn(language === "es" ? "bg-accent" : "", "cursor-pointer font-medium uppercase text-[10px] tracking-widest")}>
-              Español
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        >
-          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-        </Button>
-
-        <NotificationCenter />
-
+        {/* Icons moved to sidebar */}
       </div>
     </header>
   )

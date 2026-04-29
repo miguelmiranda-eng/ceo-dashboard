@@ -120,6 +120,9 @@ const translations = {
     totalMosOrders: "Total MOS Orders",
     searchPlaceholder: "Search by order or client...",
     all: "All",
+    invoices: "Quotes & Invoices",
+    workOrders: "Work Orders",
+    automations: "Automations",
   },
   es: {
     dashboard: "Gráficos",
@@ -236,6 +239,9 @@ const translations = {
     totalMosOrders: "Total Órdenes MOS",
     searchPlaceholder: "Buscar por orden o cliente...",
     all: "Todos",
+    invoices: "Facturas y Cotizaciones",
+    workOrders: "Órdenes de Trabajo",
+    automations: "Automatizaciones",
   },
 }
 

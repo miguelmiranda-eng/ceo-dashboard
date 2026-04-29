@@ -56,6 +56,62 @@ export interface DashboardData {
   generatedRevenueToday: number
 }
 
+export interface InvoiceItem {
+  description: string
+  quantity: number
+  price: number
+  amount: number
+  sizes?: Record<string, number>
+}
+
+export interface Invoice {
+  invoice_id: string
+  order_number?: string
+  type: 'quote' | 'invoice'
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled'
+  client: string
+  customer_po?: string
+  dates: { created: string; due: string }
+  terms: string
+  amounts: { subtotal: number; tax: number; total: number }
+  billing_address: any
+  shipping_address: any
+  items: InvoiceItem[]
+  payment: { status: string; stripe_payment_intent_id?: string }
+  approval_status: 'pending' | 'approved' | 'rejected'
+  linked_work_orders: string[]
+  store_po?: string
+  design_num?: string
+  job_title_a?: { url: string; desc: string }
+  cancel_date?: string
+  sample?: string
+  style?: string
+  branding?: string
+  priority?: string
+  blank_status?: string
+  artwork_status?: string
+  color?: string
+  production_notes?: string
+  seps?: string
+  art_links?: string[]
+  created_at: string
+  updated_at: string
+}
+
+export interface WorkOrder {
+  work_order_id: string
+  source_invoice_id: string
+  production_status: 'artwork_pending' | 'artwork_approved' | 'production' | 'quality_check' | 'completed'
+  art_links: string[]
+  production_notes?: string
+  packing_details: { bags: string; labels: string; boxes: string }
+  assigned_operator?: string
+  scheduled_date?: string
+  completion_date?: string
+  created_at: string
+  updated_at: string
+}
+
 export interface DashboardFilters {
   preset?: string
   date_from?: string
@@ -332,4 +388,111 @@ export async function fetchDashboardData(filters: DashboardFilters = {}): Promis
     revenueOnMachines: printavo.matched_revenue || 0,
     generatedRevenueToday: printavo.generated_revenue_today || 0,
   }
+}
+
+// ─── Invoices & Work Orders ───────────────────────────────────────────────────
+
+export async function fetchInvoices(filters: { status?: string; type?: string; search?: string } = {}): Promise<Invoice[]> {
+  return mosProxy('invoices', filters as any) as Promise<Invoice[]>
+}
+
+export async function fetchInvoice(id: string): Promise<Invoice> {
+  return mosProxy(`invoices/${id}`) as Promise<Invoice>
+}
+
+export async function createInvoice(data: Partial<Invoice>): Promise<Invoice> {
+  const base = typeof window !== 'undefined' ? window.location.origin : ''
+  const res = await fetch(`${base}/api/mos?endpoint=invoices`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  if (!res.ok) {
+    // Capturar el error real del servidor para diagnóstico
+    let detail = `HTTP ${res.status}`
+    try {
+      const errBody = await res.json()
+      detail = JSON.stringify(errBody)
+    } catch {
+      detail = await res.text().catch(() => detail)
+    }
+    throw new Error(`Failed to create invoice [${detail}]`)
+  }
+  return res.json()
+}
+
+export async function updateInvoice(id: string, data: Partial<Invoice>): Promise<Invoice> {
+  const base = typeof window !== 'undefined' ? window.location.origin : ''
+  const res = await fetch(`${base}/api/mos?endpoint=invoices/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  if (!res.ok) throw new Error('Failed to update invoice')
+  return res.json()
+}
+
+export async function approveInvoice(id: string): Promise<any> {
+  const base = typeof window !== 'undefined' ? window.location.origin : ''
+  const res = await fetch(`${base}/api/mos?endpoint=invoices/${id}/approve`, {
+    method: 'POST',
+  })
+  if (!res.ok) throw new Error('Failed to approve invoice')
+  return res.json()
+}
+
+export async function fetchWorkOrders(filters: { status?: string; operator_id?: string; search?: string } = {}): Promise<WorkOrder[]> {
+  return mosProxy('work-orders', filters as any) as Promise<WorkOrder[]>
+}
+
+export async function updateWorkOrder(id: string, data: Partial<WorkOrder>): Promise<WorkOrder> {
+  const base = typeof window !== 'undefined' ? window.location.origin : ''
+  const res = await fetch(`${base}/api/mos?endpoint=work-orders/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  if (!res.ok) throw new Error('Failed to update work order')
+  return res.json()
+}
+
+// ─── Automations ──────────────────────────────────────────────────────────────
+
+export async function fetchAutomations(): Promise<any[]> {
+  return mosProxy('automations') as Promise<any[]>
+}
+
+export async function createAutomation(data: any): Promise<any> {
+  const base = typeof window !== 'undefined' ? window.location.origin : ''
+  const res = await fetch(`${base}/api/mos?endpoint=automations`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  if (!res.ok) throw new Error('Failed to create automation')
+  return res.json()
+}
+
+export async function updateAutomation(id: string, data: any): Promise<any> {
+  const base = typeof window !== 'undefined' ? window.location.origin : ''
+  const res = await fetch(`${base}/api/mos?endpoint=automations/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  if (!res.ok) throw new Error('Failed to update automation')
+  return res.json()
+}
+
+export async function deleteAutomation(id: string): Promise<any> {
+  const base = typeof window !== 'undefined' ? window.location.origin : ''
+  const res = await fetch(`${base}/api/mos?endpoint=automations/${id}`, {
+    method: 'DELETE',
+  })
+  if (!res.ok) throw new Error('Failed to delete automation')
+  return res.json()
+}
+
+export async function fetchOptions(): Promise<any> {
+  return mosProxy('config/options') as Promise<any>
 }
