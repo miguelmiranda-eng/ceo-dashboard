@@ -40,6 +40,8 @@ interface MatchingStats {
   total_value_matched: number
 }
 
+import { LoadingOverlay } from "@/components/ui/loading-overlay"
+
 export default function MatchingPage() {
   const { t } = useI18n()
   const { filters: globalFilters } = useDashboardFilters()
@@ -90,19 +92,11 @@ export default function MatchingPage() {
 
   const formatTotal = (val: number) => `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  if (loading) {
-    return (
-      <div className="p-8 flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="text-muted-foreground animate-pulse font-medium tracking-widest uppercase text-xs">
-          {t("exportingReport")}
-        </p>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen p-8 space-y-8 animate-in fade-in duration-700" style={{ background: "linear-gradient(135deg, #0B1F3A 0%, #0d2a52 40%, #0f2d5c 100%)" }}>
+      <LoadingOverlay isLoading={loading} message={t("exportingReport")} />
+      {!loading && (
+        <>
       <div className="flex flex-col gap-2">
         <h1 className="text-4xl font-black tracking-tight uppercase text-white">
           {t("matching")}
@@ -348,6 +342,8 @@ export default function MatchingPage() {
           </table>
         </div>
       </div>
+        </>
+      )}
     </div>
   )
 }

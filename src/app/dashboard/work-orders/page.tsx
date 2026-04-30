@@ -24,14 +24,15 @@ import {
 import { 
   fetchWorkOrders, 
   WorkOrder,
-  createInvoice
 } from "@/lib/api"
 import { useI18n } from "@/lib/i18n"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
 import { InvoiceForm } from "@/components/dashboard/invoices/InvoiceForm"
+import { LoadingOverlay } from "@/components/ui/loading-overlay"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,12 +61,120 @@ const STATUS_COLUMNS = [
   { id: 'completed', label: 'Done', color: 'bg-emerald-500', icon: CheckCircle2 },
 ]
 
+// ─── Simple Work Order Dialog ──────────────────────────────────────────────────
+function WorkOrderDialog({
+  open,
+  onOpenChange,
+  initialData,
+  onSave,
+  isSaving,
+}: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  initialData?: any
+  onSave: (data: any) => void
+  isSaving: boolean
+}) {
+  const isEditing = !!initialData
+  const [form, setForm] = React.useState({
+    source_invoice_id: initialData?.source_invoice_id || "",
+    production_status: initialData?.production_status || "artwork_pending",
+    production_notes: initialData?.production_notes || "",
+    assigned_operator: initialData?.assigned_operator || "",
+    scheduled_date: initialData?.scheduled_date || "",
+    art_links: (initialData?.art_links || []).join("\n"),
+  })
+
+  // Reset form when dialog opens with new data
+  React.useEffect(() => {
+    setForm({
+      source_invoice_id: initialData?.source_invoice_id || "",
+      production_status: initialData?.production_status || "artwork_pending",
+      production_notes: initialData?.production_notes || "",
+      assigned_operator: initialData?.assigned_operator || "",
+      scheduled_date: initialData?.scheduled_date || "",
+      art_links: (initialData?.art_links || []).join("\n"),
+    })
+  }, [initialData, open])
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onSave({
+      source_invoice_id: form.source_invoice_id || "MANUAL",
+      production_status: form.production_status,
+      production_notes: form.production_notes,
+      assigned_operator: form.assigned_operator,
+      scheduled_date: form.scheduled_date,
+      art_links: form.art_links ? form.art_links.split("\n").map(s => s.trim()).filter(Boolean) : [],
+      packing_details: initialData?.packing_details || { bags: "individual", labels: "hanging", boxes: "master" },
+    })
+  }
+
+  const f = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+    setForm(prev => ({ ...prev, [field]: e.target.value }))
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg bg-white border-slate-200">
+        <DialogTitle className="text-slate-900 font-black uppercase tracking-widest text-sm">
+          {isEditing ? `Edit: ${initialData?.work_order_id}` : "New Work Order"}
+        </DialogTitle>
+        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5 block">Source Invoice ID</Label>
+              <Input value={form.source_invoice_id} onChange={f("source_invoice_id")} placeholder="e.g. M-01 or MANUAL" className="h-9 text-xs border-slate-200" />
+            </div>
+            <div>
+              <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5 block">Status</Label>
+              <select value={form.production_status} onChange={f("production_status")}
+                className="w-full h-9 text-xs border border-slate-200 rounded-md px-2 bg-white text-slate-900 font-bold uppercase">
+                {STATUS_COLUMNS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5 block">Operator</Label>
+              <Input value={form.assigned_operator} onChange={f("assigned_operator")} placeholder="Name or email" className="h-9 text-xs border-slate-200" />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5 block">Scheduled Date</Label>
+              <Input type="date" value={form.scheduled_date} onChange={f("scheduled_date")} className="h-9 text-xs border-slate-200" />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5 block">Art Links (one per line)</Label>
+              <textarea value={form.art_links} onChange={f("art_links")} rows={3}
+                placeholder="https://..."
+                className="w-full text-xs border border-slate-200 rounded-md px-3 py-2 bg-white text-slate-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5 block">Production Notes</Label>
+              <textarea value={form.production_notes} onChange={f("production_notes")} rows={3}
+                placeholder="Special instructions..."
+                className="w-full text-xs border border-slate-200 rounded-md px-3 py-2 bg-white text-slate-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
+            </div>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <Button type="button" variant="outline" className="flex-1 h-9 text-xs font-black uppercase border-slate-200" onClick={() => onOpenChange(false)} disabled={isSaving}>
+              Cancel
+            </Button>
+            <Button type="submit" className="flex-1 h-9 text-xs font-black uppercase bg-blue-600 hover:bg-blue-700 text-white" disabled={isSaving}>
+              {isSaving ? "Saving..." : isEditing ? "Save Changes" : "Create Order"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export default function WorkOrdersPage() {
   const { t } = useI18n()
   const [search, setSearch] = useState("")
   const [view, setView] = useState<'grid' | 'list'>('grid')
   const [sorting, setSorting] = useState<SortingState>([])
   const [isCreating, setIsCreating] = useState(false)
+  const [editingOrder, setEditingOrder] = useState<any>(null)
+  const [isSaving, setIsSaving] = useState(false)
 
   const { data: workOrders, error, mutate } = useSWR(
     ['work-orders', search],
@@ -73,13 +182,60 @@ export default function WorkOrdersPage() {
   )
 
   const handleCreateOrder = async (data: any) => {
+    setIsSaving(true)
     try {
-      await createInvoice(data)
+      // Logic redirection: Creating an Invoice automatically generates the M-XX ID,
+      // syncs it to MOS production, and creates the associated Work Order.
+      console.log("[WorkOrders] Creating full Invoice/MOS/WO flow with data:", data)
+      console.log("[WorkOrders] URL: /api/mos?endpoint=invoices")
+
+      const res = await fetch(`/api/mos?endpoint=invoices`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      
+      const result = await res.json()
+      if (!res.ok) {
+        throw new Error(result.detail || result.error || JSON.stringify(result) || 'Error al procesar la orden completa')
+      }
+
+      console.log("[WorkOrders] Success! Created ID:", result.invoice_id)
       setIsCreating(false)
       mutate()
-    } catch (err) {
+    } catch (err: any) {
+      console.error("Full order creation flow failed:", err)
+      alert(`Error al procesar el flujo completo: ${err.message}`)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleUpdateOrder = async (data: any) => {
+    if (!editingOrder) return
+    setIsSaving(true)
+    try {
+      // Clean up data before sending to PUT
+      const { _id, created_at, updated_at, ...updateData } = data
+      
+      const res = await fetch(`/api/mos?endpoint=work-orders/${editingOrder.work_order_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData)
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || err.detail || 'Error al actualizar la orden')
+      }
+
+      setEditingOrder(null)
+      mutate()
+    } catch (err: any) {
       console.error(err)
-      alert("Error al crear la orden.")
+      alert(`Error al actualizar la orden: ${err.message}`)
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -110,6 +266,7 @@ export default function WorkOrdersPage() {
         const Icon = config.icon
         
         const handleStatusChange = async (newStatus: string) => {
+          setIsSaving(true)
           try {
             await fetch(`/api/mos?endpoint=work-orders/${woId}`, {
               method: 'PUT',
@@ -119,6 +276,8 @@ export default function WorkOrdersPage() {
             mutate()
           } catch (err) {
             console.error(err)
+          } finally {
+            setIsSaving(false)
           }
         }
 
@@ -181,13 +340,29 @@ export default function WorkOrdersPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-white border-slate-200 text-slate-700 shadow-xl min-w-[180px]">
-              <DropdownMenuItem className="hover:bg-slate-50 cursor-pointer flex items-center gap-2 font-bold text-xs uppercase tracking-tight p-3">
+              <DropdownMenuItem 
+                onClick={() => setEditingOrder(row.original)}
+                className="hover:bg-slate-50 cursor-pointer flex items-center gap-2 font-bold text-xs uppercase tracking-tight p-3"
+              >
                 <ExternalLink className="h-4 w-4 text-blue-600" /> View Details
               </DropdownMenuItem>
               <DropdownMenuItem className="hover:bg-slate-50 cursor-pointer flex items-center gap-2 font-bold text-xs uppercase tracking-tight p-3">
                 <Clock className="h-4 w-4 text-amber-500" /> Reschedule
               </DropdownMenuItem>
-              <DropdownMenuItem className="hover:bg-rose-50 text-rose-600 cursor-pointer flex items-center gap-2 font-bold text-xs uppercase tracking-tight p-3">
+              <DropdownMenuItem 
+                onClick={async () => {
+                  if (confirm("Are you sure you want to cancel/delete this order?")) {
+                    try {
+                      await fetch(`/api/mos?endpoint=work-orders/${row.original.work_order_id}`, { method: 'DELETE' })
+                      mutate()
+                    } catch (err) {
+                      console.error(err)
+                      alert("Error deleting order")
+                    }
+                  }
+                }}
+                className="hover:bg-rose-50 text-rose-600 cursor-pointer flex items-center gap-2 font-bold text-xs uppercase tracking-tight p-3"
+              >
                 <XCircle className="h-4 w-4" /> Cancel Order
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -216,6 +391,23 @@ export default function WorkOrdersPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 p-1">
+      <LoadingOverlay isLoading={isSaving} message="Updating Order..." />
+
+      {/* Full InvoiceForm Modal — Create & Edit */}
+      <Dialog open={isCreating || !!editingOrder} onOpenChange={(open) => { if (!open) { setIsCreating(false); setEditingOrder(null); } }}>
+        <DialogContent className="max-w-none w-screen h-screen p-0 bg-transparent border-none shadow-none overflow-y-auto m-0 rounded-none flex flex-col">
+          <DialogTitle className="sr-only">{editingOrder ? "Edit Production Order" : "Create New Production Order"}</DialogTitle>
+          <div className="flex-1 w-full max-w-[1600px] mx-auto py-10 px-6">
+            <InvoiceForm
+              initialData={editingOrder}
+              onSubmit={editingOrder ? handleUpdateOrder : handleCreateOrder}
+              onCancel={() => { setIsCreating(false); setEditingOrder(null); }}
+              isLoading={isSaving}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
         <div className="space-y-2">
@@ -345,7 +537,7 @@ export default function WorkOrdersPage() {
                 
                 <div className="space-y-4">
                   {workOrders?.filter((wo: any) => wo.production_status === column.id).map((wo: any) => (
-                    <WorkOrderCard key={wo.work_order_id} workOrder={wo} onUpdate={() => mutate()} />
+                    <WorkOrderCard key={wo.work_order_id} workOrder={wo} onUpdate={() => mutate()} onEdit={setEditingOrder} />
                   ))}
                 </div>
               </div>
@@ -389,23 +581,18 @@ export default function WorkOrdersPage() {
         )}
       </div>
 
-      <Dialog open={isCreating} onOpenChange={setIsCreating}>
-        <DialogContent className="max-w-none w-screen h-screen p-0 bg-transparent border-none shadow-none overflow-y-auto m-0 rounded-none flex flex-col">
-          <DialogTitle className="sr-only">Create New Production Order</DialogTitle>
-          <div className="flex-1 w-full max-w-[1600px] mx-auto py-10 px-6">
-            <InvoiceForm onSubmit={handleCreateOrder} onCancel={() => setIsCreating(false)} />
-          </div>
-        </DialogContent>
-      </Dialog>
+
     </div>
   )
 }
 
-function WorkOrderCard({ workOrder, onUpdate }: { workOrder: WorkOrder, onUpdate: () => void }) {
+function WorkOrderCard({ workOrder, onUpdate, onEdit }: { workOrder: WorkOrder, onUpdate: () => void, onEdit: (order: any) => void }) {
   const config = STATUS_COLUMNS.find(c => c.id === workOrder.production_status) || STATUS_COLUMNS[0]
   const Icon = config.icon
+  const [loading, setLoading] = useState(false)
 
   const handleStatusChange = async (newStatus: string) => {
+    setLoading(true)
     try {
       await fetch(`/api/mos?endpoint=work-orders/${workOrder.work_order_id}`, {
         method: 'PUT',
@@ -415,6 +602,8 @@ function WorkOrderCard({ workOrder, onUpdate }: { workOrder: WorkOrder, onUpdate
       onUpdate()
     } catch (err) {
       console.error(err)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -433,11 +622,27 @@ function WorkOrderCard({ workOrder, onUpdate }: { workOrder: WorkOrder, onUpdate
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-white border-slate-200 shadow-xl min-w-[140px] p-1">
-              <DropdownMenuItem className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-50 rounded-md">
+              <DropdownMenuItem 
+                onClick={() => onEdit(workOrder)}
+                className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-50 rounded-md"
+              >
                 <ExternalLink className="h-3 w-3 text-blue-600" /> 
                 <span className="text-[10px] font-bold uppercase">Details</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="flex items-center gap-2 p-2 cursor-pointer hover:bg-rose-50 text-rose-600 rounded-md">
+              <DropdownMenuItem 
+                onClick={async () => {
+                  if (confirm("Are you sure you want to delete this order?")) {
+                    try {
+                      await fetch(`/api/mos?endpoint=work-orders/${workOrder.work_order_id}`, { method: 'DELETE' })
+                      onUpdate()
+                    } catch (err) {
+                      console.error(err)
+                      alert("Error deleting order")
+                    }
+                  }
+                }}
+                className="flex items-center gap-2 p-2 cursor-pointer hover:bg-rose-50 text-rose-600 rounded-md"
+              >
                 <XCircle className="h-3 w-3" /> 
                 <span className="text-[10px] font-bold uppercase">Delete</span>
               </DropdownMenuItem>

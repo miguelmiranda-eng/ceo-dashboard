@@ -190,19 +190,22 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const endpoint = searchParams.get('endpoint')
+  const upstream = `${MOS_BACKEND_URL}/api/${endpoint}`
+  
+  console.log(`\x1b[33m[MOS Proxy] ATTEMPTING POST TO: ${upstream}\x1b[0m`)
 
   if (!endpoint) {
     return Response.json({ error: 'Missing endpoint param' }, { status: 400 })
   }
 
-  // Obtain auth token — same as GET handler
   const token = await getAuthToken()
   if (!token) {
-    return Response.json({ error: 'MOS authentication failed. Set MOS_INTERNAL_TOKEN or MOS_SERVICE_EMAIL + MOS_SERVICE_PASSWORD in .env.local' }, { status: 401 })
+    console.error(`[MOS Proxy] Auth failed for ${upstream}`)
+    return Response.json({ error: 'MOS authentication failed' }, { status: 401 })
   }
 
   const body = await request.json()
-  const upstream = `${MOS_BACKEND_URL}/api/${endpoint}`
+  console.log(`[MOS Proxy] Body keys:`, Object.keys(body))
 
   try {
     const res = await fetch(upstream, {
@@ -216,18 +219,22 @@ export async function POST(request: NextRequest) {
       cache: 'no-store',
     })
 
-    let data;
     const contentType = res.headers.get("content-type");
+    let data;
     if (contentType && contentType.includes("application/json")) {
       data = await res.json();
     } else {
       data = { message: await res.text() };
     }
 
+    if (!res.ok) {
+      console.error(`\x1b[31m[MOS Proxy] UPSTREAM ERROR (${res.status}) from ${upstream}:\x1b[0m`, data)
+    }
+
     if (res.ok) mosCache.clear() 
     return Response.json(data, { status: res.status })
   } catch (err: any) {
-    console.error('[MOS Proxy] POST error:', err)
+    console.error(`\x1b[31m[MOS Proxy] FETCH CRASH for ${upstream}:\x1b[0m`, err.message)
     return Response.json({ error: `Failed to reach MOS backend: ${err.message}`, endpoint: upstream }, { status: 502 })
   }
 }

@@ -432,6 +432,18 @@ export async function updateInvoice(id: string, data: Partial<Invoice>): Promise
   return res.json()
 }
 
+export async function deleteInvoice(id: string): Promise<any> {
+  const base = typeof window !== 'undefined' ? window.location.origin : ''
+  const res = await fetch(`${base}/api/mos?endpoint=invoices/${id}`, {
+    method: 'DELETE',
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || data.detail || 'Failed to delete invoice')
+  }
+  return res.json()
+}
+
 export async function approveInvoice(id: string): Promise<any> {
   const base = typeof window !== 'undefined' ? window.location.origin : ''
   const res = await fetch(`${base}/api/mos?endpoint=invoices/${id}/approve`, {

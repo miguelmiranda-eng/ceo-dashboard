@@ -17,12 +17,14 @@ import {
   ArrowUpDown,
   Printer,
   DollarSign,
-  Briefcase
+  Briefcase,
+  Eye
 } from "lucide-react"
 import { 
   fetchInvoices, 
   createInvoice,
   updateInvoice,
+  deleteInvoice,
   Invoice 
 } from "@/lib/api"
 import { cn } from "@/lib/utils"
@@ -101,8 +103,17 @@ export default function InvoicesPage() {
       setIsCreating(false)
       mutate()
     } catch (err: any) {
-      console.error(err)
       alert("Error saving the order. Please verify the data.")
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this order? This action cannot be undone.")) return;
+    try {
+      await deleteInvoice(id)
+      mutate()
+    } catch (err: any) {
+      alert(`Error deleting the order: ${err.message}`)
     }
   }
 
@@ -218,9 +229,15 @@ export default function InvoicesPage() {
               <DropdownMenuContent align="end" className="bg-white border-slate-200 text-slate-700 shadow-xl min-w-[200px]">
                 <DropdownMenuItem 
                   onClick={() => setPreviewInvoice(invoice)}
+                  className="hover:bg-blue-50 text-blue-600 cursor-pointer flex items-center gap-2 font-black text-[10px] uppercase tracking-widest p-3 border-b border-slate-50"
+                >
+                  <Eye className="h-4 w-4" /> View Invoice
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setPreviewInvoice(invoice)}
                   className="hover:bg-slate-50 cursor-pointer flex items-center gap-2 font-bold text-xs uppercase tracking-tight p-3"
                 >
-                  <Printer className="h-4 w-4 text-blue-600" /> Print Prosper Invoice
+                  <Printer className="h-4 w-4 text-slate-400" /> Print Prosper Invoice
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={() => setIsCreating(invoice)}
@@ -234,8 +251,11 @@ export default function InvoicesPage() {
                 >
                   <Download className="h-4 w-4 text-blue-600" /> Download PDF
                 </DropdownMenuItem>
-                <DropdownMenuItem className="hover:bg-rose-50 text-rose-600 cursor-pointer flex items-center gap-2 font-bold text-xs uppercase tracking-tight p-3">
-                  <XCircle className="h-4 w-4" /> Cancel Order
+                <DropdownMenuItem 
+                  onClick={() => handleDelete(invoice.invoice_id)}
+                  className="hover:bg-rose-50 text-rose-600 cursor-pointer flex items-center gap-2 font-bold text-xs uppercase tracking-tight p-3"
+                >
+                  <XCircle className="h-4 w-4" /> Delete Order
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -15,7 +15,8 @@ import {
   Image as ImageIcon,
   FileSpreadsheet,
   FileText as FilePdf,
-  Paperclip
+  Paperclip,
+  Loader2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -36,13 +37,16 @@ interface InvoiceFormProps {
   initialData?: Partial<Invoice>
   onSubmit: (data: Partial<Invoice>) => void
   onCancel: () => void
+  isLoading?: boolean
 }
 
 const SIZE_KEYS = ["XS", "S", "M", "L", "XL", "2X", "3X", "4X", "5X"]
 
-export function InvoiceForm({ initialData, onSubmit, onCancel }: InvoiceFormProps) {
+export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false }: InvoiceFormProps) {
   // Aseguramos que TODO tenga un valor inicial definido para evitar el error de React
   const [formData, setFormData] = useState<Partial<Invoice>>({
+    invoice_id: initialData?.invoice_id,
+    _id: initialData?._id,
     client: initialData?.client || "",
     client_email: initialData?.client_email || "",
     type: initialData?.type || "quote",
@@ -145,7 +149,14 @@ export function InvoiceForm({ initialData, onSubmit, onCancel }: InvoiceFormProp
     item.amount = (Number(item.quantity) || 0) * (Number(item.price) || 0)
     
     newItems[index] = item
-    setFormData({ ...formData, items: newItems })
+    
+    const updates: any = { items: newItems }
+    if (index === 0) {
+      if (field === "item_number") updates.garment_info = value
+      if (field === "description") updates.print_location = value
+    }
+    
+    setFormData({ ...formData, ...updates })
   }
 
   const updateSize = (itemIndex: number, size: string, value: string) => {
@@ -438,30 +449,35 @@ export function InvoiceForm({ initialData, onSubmit, onCancel }: InvoiceFormProp
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Estilo</Label>
                   <Input 
                     value={formData.garment_info || ""}
-                    onChange={e => setFormData({...formData, garment_info: e.target.value})}
+                    onChange={e => {
+                      const val = e.target.value;
+                      const newItems = [...(formData.items || [])];
+                      if (newItems.length > 0) {
+                        newItems[0] = { ...newItems[0], item_number: val };
+                      }
+                      setFormData({...formData, garment_info: val, items: newItems});
+                    }}
                     placeholder="e.g. ALSTYLE 1301 - BLACK"
                     className="bg-slate-950 border-slate-800 text-white h-9 text-xs font-bold"
-                  />
-                </div>
-                <div>
-                  <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Status Art</Label>
-                  <Input 
-                    value={formData.art_name || ""}
-                    onChange={e => setFormData({...formData, art_name: e.target.value})}
-                    placeholder="e.g. Approved / In Review"
-                    className="bg-slate-950 border-slate-800 text-white h-9 text-xs"
                   />
                 </div>
                 <div>
                   <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Descripción</Label>
                   <Input 
                     value={formData.print_location || ""}
-                    onChange={e => setFormData({...formData, print_location: e.target.value})}
+                    onChange={e => {
+                      const val = e.target.value;
+                      const newItems = [...(formData.items || [])];
+                      if (newItems.length > 0) {
+                        newItems[0] = { ...newItems[0], description: val };
+                      }
+                      setFormData({...formData, print_location: val, items: newItems});
+                    }}
                     placeholder="e.g. Pierce the Veil Tee - Front Print"
                     className="bg-slate-950 border-slate-800 text-white h-9 text-xs"
                   />
@@ -560,7 +576,22 @@ export function InvoiceForm({ initialData, onSubmit, onCancel }: InvoiceFormProp
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
+                {formData.invoice_id ? (
+                  <div>
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Order #</Label>
+                    <div className="bg-slate-900/50 border border-slate-800 text-blue-400 h-11 rounded-md px-3 flex items-center font-mono font-black text-lg">
+                      {formData.invoice_id}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Order #</Label>
+                    <div className="bg-slate-950 border border-slate-800 text-slate-500 h-11 rounded-md px-3 flex items-center font-mono font-bold text-xs italic">
+                      Auto-generated
+                    </div>
+                  </div>
+                )}
                 <div>
                   <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Type</Label>
                   <Select 
@@ -759,9 +790,15 @@ export function InvoiceForm({ initialData, onSubmit, onCancel }: InvoiceFormProp
         </Button>
         <Button 
           onClick={() => onSubmit(formData)} 
-          className="bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest text-xs h-12 px-12 shadow-[0_0_30px_rgba(16,185,129,0.3)]"
+          disabled={isLoading}
+          className="bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest text-xs h-12 px-12 shadow-[0_0_30px_rgba(16,185,129,0.3)] disabled:opacity-50"
         >
-          <Save className="mr-3 h-5 w-5" strokeWidth={3} /> Commit Order
+          {isLoading ? (
+            <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+          ) : (
+            <Save className="mr-3 h-5 w-5" strokeWidth={3} />
+          )}
+          {isLoading ? "Committing..." : "Commit Order"}
         </Button>
       </div>
     </div>

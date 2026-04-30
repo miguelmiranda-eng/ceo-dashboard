@@ -140,32 +140,6 @@ export function ProductionSheet({ invoice }: ProductionSheetProps) {
         <div className="text-[11px] font-bold text-slate-400">Thank you for your business!</div>
       </div>
 
-      {/* Technical Specifications - Industrial Grid (only shown when data exists) */}
-      {((invoice as any)?.art_name || (invoice as any)?.print_location || (invoice as any)?.ink_colors || (invoice as any)?.garment_info || (invoice as any)?.finishing_notes) && (
-        <div className="grid grid-cols-5 gap-0 border-2 border-slate-900 mb-10 overflow-hidden rounded-sm">
-          <div className="border-r-2 border-slate-900 p-3 bg-slate-50">
-            <p className="text-[9px] font-black uppercase text-slate-500 mb-1">Art Name</p>
-            <p className="text-[11px] font-black uppercase italic">{(invoice as any)?.art_name || 'N/A'}</p>
-          </div>
-          <div className="border-r-2 border-slate-900 p-3 bg-white">
-            <p className="text-[9px] font-black uppercase text-slate-500 mb-1">Location</p>
-            <p className="text-[11px] font-black uppercase">{(invoice as any)?.print_location || 'N/A'}</p>
-          </div>
-          <div className="border-r-2 border-slate-900 p-3 bg-slate-50">
-            <p className="text-[9px] font-black uppercase text-slate-500 mb-1">Ink / Pantones</p>
-            <p className="text-[11px] font-black uppercase">{(invoice as any)?.ink_colors || 'N/A'}</p>
-          </div>
-          <div className="border-r-2 border-slate-900 p-3 bg-white">
-            <p className="text-[9px] font-black uppercase text-slate-500 mb-1">Garment Detail</p>
-            <p className="text-[11px] font-black uppercase text-blue-600">{(invoice as any)?.garment_info || 'N/A'}</p>
-          </div>
-          <div className="p-3 bg-slate-50">
-            <p className="text-[9px] font-black uppercase text-slate-500 mb-1">Finishing</p>
-            <p className="text-[11px] font-black uppercase">{(invoice as any)?.finishing_notes || 'N/A'}</p>
-          </div>
-        </div>
-      )}
-
       {/* Address & Logistics Grid */}
       <div className="grid grid-cols-3 gap-8 mb-5 text-[11px] leading-tight">
         <div>
@@ -233,13 +207,13 @@ export function ProductionSheet({ invoice }: ProductionSheetProps) {
                 {(invoice as any)?.garment_info && (
                   <p><span className="font-black text-slate-400 uppercase">Estilo: </span><span className="font-bold uppercase">{(invoice as any).garment_info}</span></p>
                 )}
-                {(invoice as any)?.art_name && (
-                  <p><span className="font-black text-slate-400 uppercase">Status Art: </span><span className="font-bold uppercase">{(invoice as any).art_name}</span></p>
+                {(invoice as any)?.artwork_status && (
+                  <p><span className="font-black text-slate-400 uppercase">Art Status: </span><span className="font-bold uppercase">{(invoice as any).artwork_status}</span></p>
                 )}
                 {(invoice as any)?.print_location && (
                   <p><span className="font-black text-slate-400 uppercase">Descripción: </span><span className="font-bold uppercase">{(invoice as any).print_location}</span></p>
                 )}
-                {!(invoice as any)?.garment_info && !(invoice as any)?.art_name && !(invoice as any)?.print_location && (
+                {!(invoice as any)?.garment_info && !(invoice as any)?.artwork_status && !(invoice as any)?.print_location && (
                   <span className="text-slate-300 italic">—</span>
                 )}
               </td>
