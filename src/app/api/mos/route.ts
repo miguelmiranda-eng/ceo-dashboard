@@ -126,12 +126,16 @@ export async function GET(request: NextRequest) {
 
   try {
     // 1. Check Cache
+    // CRUCIAL FIX: Bypass cache for invoices to prevent stale data rendering after edits
+    const isInvoiceEndpoint = endpoint.startsWith('invoices')
     const cacheKey = upstream.toString();
     const cached = mosCache.get(cacheKey);
-    if (cached && Date.now() < cached.expiry) {
+    
+    if (!isInvoiceEndpoint && cached && Date.now() < cached.expiry) {
       // console.log(`[MOS Proxy] Serving ${endpoint} from cache`);
       return Response.json(cached.data);
     }
+
 
     const res = await fetch(upstream.toString(), {
       headers: {
@@ -253,6 +257,21 @@ export async function PUT(request: NextRequest) {
   }
 
   const body = await request.json()
+  
+  // CAJA NEGRA: Log payload on the server to see what the frontend actually transmitted
+  console.log(`\x1b[36m[MOS Proxy PUT] Received update for endpoint: ${endpoint}\x1b[0m`)
+  console.log(`[MOS Proxy PUT] Body items:`, JSON.stringify(body.items, null, 2))
+  
+  try {
+    const fs = require('fs')
+    fs.writeFileSync('C:\\Users\\Miguel Miranda\\Desktop\\mos-system\\backend\\caja_negra.json', JSON.stringify(body, null, 2))
+  } catch(e) {}
+  
+  // CRUCIAL FIX: Never send the MongoDB _id during an update, it causes silent failures.
+  if (body._id) {
+    delete body._id;
+  }
+  
   const upstream = `${MOS_BACKEND_URL}/api/${endpoint}`
 
   try {
@@ -275,13 +294,15 @@ export async function PUT(request: NextRequest) {
       data = { message: await res.text() };
     }
 
-    if (res.ok) mosCache.clear() 
+    // Force clear the memory cache to ensure the next GET hits the database
+    mosCache.clear() 
     return Response.json(data, { status: res.status })
   } catch (err: any) {
     console.error('[MOS Proxy] PUT error:', err)
     return Response.json({ error: `Failed to reach MOS backend: ${err.message}` }, { status: 502 })
   }
 }
+
 
 export async function DELETE(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams

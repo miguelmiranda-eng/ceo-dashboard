@@ -57,53 +57,54 @@ export default function StatusLabelsPage() {
     <div className="space-y-8 animate-in fade-in duration-500 p-1">
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
         <div className="space-y-2">
-          <div className="flex items-center gap-3">
-             <div className="w-2 h-10 bg-primary rounded-full" />
-             <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">
+          <div className="flex items-center gap-4">
+             <div className="w-2.5 h-12 bg-[#0091D5] rounded-full shadow-[0_0_20px_rgba(0,145,213,0.4)]" />
+             <h1 className="text-5xl font-black text-[#0F172A] tracking-tighter uppercase italic leading-none">
                 Administrar Etiquetas
              </h1>
+
           </div>
-          <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-5">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-6 opacity-70">
             Personalización de Flujos de Trabajo &bull; Identidad Visual
           </p>
         </div>
         <Button 
           onClick={handleSave} 
           disabled={saving}
-          className="bg-primary hover:bg-primary/90 text-white font-black uppercase text-xs tracking-widest px-8 h-12 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center gap-2"
+          className="bg-[#0091D5] hover:bg-[#0081C0] text-white font-black uppercase text-xs tracking-widest px-8 h-14 rounded-2xl shadow-lg shadow-blue-500/20 transition-all flex items-center gap-3"
         >
-          {saving ? <Clock className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {saving ? <Clock className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
           Guardar Cambios
         </Button>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Invoice Statuses */}
-        <Card className="bg-white border-slate-200 shadow-xl rounded-2xl overflow-hidden">
+        <Card className="bg-white border-slate-200 shadow-xl shadow-slate-200/50 rounded-[2rem] overflow-hidden">
           <CardHeader className="p-8 border-b border-slate-100 bg-slate-50/50">
             <div className="flex items-center gap-4">
-               <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
-                  <FileText className="h-6 w-6" />
+               <div className="w-14 h-14 bg-blue-50 rounded-[1.25rem] flex items-center justify-center text-[#0091D5] shadow-inner">
+                  <FileText className="h-7 w-7" />
                </div>
                <div>
-                  <CardTitle className="text-xl font-black uppercase tracking-tight text-slate-900">Estados de Facturación</CardTitle>
+                  <CardTitle className="text-xl font-black uppercase tracking-tight text-[#0F172A]">Estados de Facturación</CardTitle>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Lifecycle de Documentos Comerciales</p>
                </div>
             </div>
           </CardHeader>
           <CardContent className="p-8 space-y-6">
             {invoiceStatuses.map((status, index) => (
-              <div key={status.id} className="group flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/10 transition-all shadow-sm">
-                <GripVertical className="h-5 w-5 text-slate-200 group-hover:text-slate-400 cursor-move transition-colors" />
-                <div className="flex-1 space-y-3">
+              <div key={status.id} className="group flex items-center gap-4 p-5 rounded-2xl border border-slate-100 hover:border-[#0091D5]/30 hover:bg-blue-50/30 transition-all shadow-sm">
+                <GripVertical className="h-5 w-5 text-slate-200 group-hover:text-[#0091D5] cursor-move transition-colors" />
+                <div className="flex-1 space-y-4">
                   <div className="flex items-center justify-between">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado ID: {status.id}</p>
-                    <Badge variant="outline" className={cn(status.color, status.text, "font-black uppercase text-[9px] px-2 py-0.5 border")}>
+                    <Badge variant="outline" className={cn(status.color, status.text, "font-black uppercase text-[10px] px-3 py-1 border")}>
                        Preview: {status.label}
                     </Badge>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
                        <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Etiqueta Visual</label>
                        <Input 
                          value={status.label} 
@@ -112,10 +113,10 @@ export default function StatusLabelsPage() {
                            newStatuses[index].label = e.target.value
                            setInvoiceStatuses(newStatuses)
                          }}
-                         className="h-10 bg-white border-slate-200 font-bold text-xs uppercase rounded-lg focus:ring-2 focus:ring-blue-500/20"
+                         className="h-12 bg-white border-slate-200 font-bold text-xs uppercase rounded-xl focus:ring-2 focus:ring-[#0091D5]/20"
                        />
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                        <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Estilo (Tailwind Class)</label>
                        <Input 
                          value={status.color} 
@@ -124,45 +125,45 @@ export default function StatusLabelsPage() {
                            newStatuses[index].color = e.target.value
                            setInvoiceStatuses(newStatuses)
                          }}
-                         className="h-10 bg-white border-slate-200 font-mono text-[10px] rounded-lg focus:ring-2 focus:ring-blue-500/20"
+                         className="h-12 bg-white border-slate-200 font-mono text-[10px] rounded-xl focus:ring-2 focus:ring-[#0091D5]/20"
                        />
                     </div>
                   </div>
                 </div>
               </div>
             ))}
-            <Button variant="outline" className="w-full border-dashed border-2 border-slate-200 text-slate-400 font-black uppercase text-[10px] h-12 rounded-xl hover:border-blue-300 hover:text-blue-600 transition-all">
-               <Plus className="mr-2 h-4 w-4" /> Añadir Nuevo Estado de Factura
+            <Button variant="outline" className="w-full border-dashed border-2 border-slate-200 text-slate-400 font-black uppercase text-[10px] tracking-widest h-14 rounded-2xl hover:border-[#0091D5]/50 hover:text-[#0091D5] transition-all bg-slate-50/50">
+               <Plus className="mr-2 h-5 w-5" strokeWidth={3} /> Añadir Nuevo Estado de Factura
             </Button>
           </CardContent>
         </Card>
 
         {/* Production Statuses */}
-        <Card className="bg-white border-slate-200 shadow-xl rounded-2xl overflow-hidden">
+        <Card className="bg-white border-slate-200 shadow-xl shadow-slate-200/50 rounded-[2rem] overflow-hidden">
           <CardHeader className="p-8 border-b border-slate-100 bg-slate-50/50">
             <div className="flex items-center gap-4">
-               <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600 shadow-sm border border-amber-100">
-                  <Zap className="h-6 w-6" />
+               <div className="w-14 h-14 bg-amber-50 rounded-[1.25rem] flex items-center justify-center text-amber-500 shadow-inner">
+                  <Zap className="h-7 w-7" />
                </div>
                <div>
-                  <CardTitle className="text-xl font-black uppercase tracking-tight text-slate-900">Estados de Producción</CardTitle>
+                  <CardTitle className="text-xl font-black uppercase tracking-tight text-[#0F172A]">Estados de Producción</CardTitle>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Pipeline Operativo de Manufactura</p>
                </div>
             </div>
           </CardHeader>
           <CardContent className="p-8 space-y-6">
             {productionStatuses.map((status, index) => (
-              <div key={status.id} className="group flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-amber-200 hover:bg-amber-50/10 transition-all shadow-sm">
-                <GripVertical className="h-5 w-5 text-slate-200 group-hover:text-slate-400 cursor-move transition-colors" />
-                <div className="flex-1 space-y-3">
+              <div key={status.id} className="group flex items-center gap-4 p-5 rounded-2xl border border-slate-100 hover:border-amber-300 hover:bg-amber-50/30 transition-all shadow-sm">
+                <GripVertical className="h-5 w-5 text-slate-200 group-hover:text-amber-500 cursor-move transition-colors" />
+                <div className="flex-1 space-y-4">
                   <div className="flex items-center justify-between">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Fase ID: {status.id}</p>
-                    <Badge variant="outline" className={cn(status.color, status.text, "font-black uppercase text-[9px] px-2 py-0.5 border shadow-sm")}>
+                    <Badge variant="outline" className={cn(status.color, status.text, "font-black uppercase text-[10px] px-3 py-1 border shadow-sm")}>
                        Pipeline: {status.label}
                     </Badge>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
                        <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Nombre de la Fase</label>
                        <Input 
                          value={status.label} 
@@ -171,10 +172,10 @@ export default function StatusLabelsPage() {
                            newStatuses[index].label = e.target.value
                            setProductionStatuses(newStatuses)
                          }}
-                         className="h-10 bg-white border-slate-200 font-bold text-xs uppercase rounded-lg focus:ring-2 focus:ring-amber-500/20"
+                         className="h-12 bg-white border-slate-200 font-bold text-xs uppercase rounded-xl focus:ring-2 focus:ring-amber-500/20"
                        />
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                        <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Color de Fondo</label>
                        <Input 
                          value={status.color} 
@@ -183,15 +184,15 @@ export default function StatusLabelsPage() {
                            newStatuses[index].color = e.target.value
                            setProductionStatuses(newStatuses)
                          }}
-                         className="h-10 bg-white border-slate-200 font-mono text-[10px] rounded-lg focus:ring-2 focus:ring-amber-500/20"
+                         className="h-12 bg-white border-slate-200 font-mono text-[10px] rounded-xl focus:ring-2 focus:ring-amber-500/20"
                        />
                     </div>
                   </div>
                 </div>
               </div>
             ))}
-            <Button variant="outline" className="w-full border-dashed border-2 border-slate-200 text-slate-400 font-black uppercase text-[10px] h-12 rounded-xl hover:border-amber-300 hover:text-amber-600 transition-all">
-               <Plus className="mr-2 h-4 w-4" /> Añadir Nueva Fase de Producción
+            <Button variant="outline" className="w-full border-dashed border-2 border-slate-200 text-slate-400 font-black uppercase text-[10px] tracking-widest h-14 rounded-2xl hover:border-amber-400 hover:text-amber-600 transition-all bg-slate-50/50">
+               <Plus className="mr-2 h-5 w-5" strokeWidth={3} /> Añadir Nueva Fase de Producción
             </Button>
           </CardContent>
         </Card>

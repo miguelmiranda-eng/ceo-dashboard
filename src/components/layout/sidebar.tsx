@@ -64,7 +64,7 @@ export function Sidebar() {
       <div className="p-6 flex items-center justify-between">
         {!collapsed && (
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center text-[#0EA5E9]">
+            <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center text-[#0091D5]">
               <svg viewBox="0 0 100 100" className="w-10 h-10" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <mask id="globe-mask">
                   <circle cx="50" cy="50" r="45" fill="white" />
@@ -76,8 +76,8 @@ export function Sidebar() {
               </svg>
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-[20px] leading-tight tracking-[-0.02em] text-white uppercase">Prosper</span>
-              <span className="font-semibold text-[11px] leading-none tracking-[0.15em] text-[#0EA5E9] uppercase mt-0.5">Manufacturing</span>
+               <span className="font-black text-[20px] leading-tight tracking-[-0.03em] text-white uppercase italic">Prosper</span>
+               <span className="font-black text-[10px] leading-none tracking-[0.3em] text-[#0091D5] uppercase mt-1">Manufacturing</span>
             </div>
           </div>
         )}
@@ -97,7 +97,7 @@ export function Sidebar() {
 
       </div>
 
-      <nav className="flex-1 px-4 space-y-2 mt-4">
+      <nav className="flex-1 px-4 space-y-3 mt-8">
         {navItems.map((item) => {
           const isActive = pathname === item.href
           return (
@@ -105,18 +105,24 @@ export function Sidebar() {
               key={item.href} 
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200 group relative",
+                "flex items-center gap-4 px-4 py-3.5 rounded-[1.25rem] transition-all duration-300 group relative overflow-hidden",
                 isActive 
-                  ? "bg-primary text-white shadow-[0_0_15px_rgba(30,91,255,0.4)]" 
-                  : "hover:bg-sidebar-accent text-sidebar-foreground/60 hover:text-white"
+                  ? "bg-gradient-to-br from-[#0091D5] to-[#006A9C] text-white shadow-[0_8px_30px_-4px_rgba(0,145,213,0.5)] border border-white/10 scale-[1.02]" 
+                  : "text-slate-400 hover:text-white hover:bg-white/5 hover:scale-[1.01]"
               )}
             >
+              {isActive && (
+                <div className="absolute left-0 top-0 w-1.5 h-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
+              )}
+              {isActive && (
+                <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
+              )}
               <item.icon className={cn(
-                "h-5 w-5 min-w-[20px] transition-colors",
-                isActive ? "text-white" : "group-hover:text-primary"
+                "h-5 w-5 min-w-[20px] transition-transform duration-300",
+                isActive ? "text-white scale-110" : "group-hover:text-[#0091D5] group-hover:scale-110"
               )} />
               {!collapsed && <span className={cn(
-                "text-xs font-bold uppercase tracking-[0.15em] transition-colors",
+                "text-[11px] font-black uppercase tracking-[0.15em] transition-colors",
                 isActive ? "text-white" : "group-hover:text-white"
               )}>{item.title}</span>}
             </Link>
@@ -124,7 +130,7 @@ export function Sidebar() {
         })}
 
         {/* Tools Folder */}
-        <div className="space-y-1">
+        <div className="space-y-2 pt-4">
           <button
             onClick={() => {
               if (collapsed) {
@@ -135,27 +141,29 @@ export function Sidebar() {
               }
             }}
             className={cn(
-              "w-full flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200 group",
-              (toolsExpanded && !collapsed) ? "bg-sidebar-accent/50 text-white" : "text-sidebar-foreground/60 hover:text-white hover:bg-sidebar-accent"
+              "w-full flex items-center gap-4 px-4 py-3.5 rounded-[1.25rem] transition-all duration-300 group relative overflow-hidden",
+              (toolsExpanded && !collapsed) 
+                ? "bg-white/5 text-white border border-white/5" 
+                : "text-slate-400 hover:text-white hover:bg-white/5 hover:scale-[1.01]"
             )}
           >
             <Wrench className={cn(
-              "h-5 w-5 min-w-[20px] transition-colors",
-              (toolsExpanded && !collapsed) ? "text-primary" : "group-hover:text-primary"
+              "h-5 w-5 min-w-[20px] transition-transform duration-300",
+              (toolsExpanded && !collapsed) ? "text-[#0091D5] scale-110" : "group-hover:text-[#0091D5] group-hover:scale-110"
             )} />
             {!collapsed && (
               <>
-                <span className="flex-1 text-left text-xs font-bold uppercase tracking-[0.15em]">Herramientas</span>
+                <span className="flex-1 text-left text-[11px] font-black uppercase tracking-[0.15em]">Herramientas</span>
                 <ChevronDown className={cn(
-                  "h-4 w-4 transition-transform duration-200",
-                  toolsExpanded ? "rotate-180" : ""
+                  "h-4 w-4 transition-transform duration-300 text-slate-500",
+                  toolsExpanded ? "rotate-180 text-white" : "group-hover:text-white"
                 )} />
               </>
             )}
           </button>
 
           {toolsExpanded && !collapsed && (
-            <div className="ml-4 pl-4 border-l border-sidebar-border space-y-1 animate-in slide-in-from-top-2 duration-200">
+            <div className="ml-6 pl-4 border-l-2 border-[#0091D5]/20 space-y-2 animate-in slide-in-from-top-2 duration-300">
               {toolItems.map((item) => {
                 const isActive = pathname === item.href
                 return (
@@ -163,19 +171,19 @@ export function Sidebar() {
                     key={item.href} 
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 group relative",
+                      "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group relative",
                       isActive 
-                        ? "text-primary" 
-                        : "text-sidebar-foreground/40 hover:text-white"
+                        ? "bg-[#0091D5]/10 text-[#0091D5] font-black shadow-inner border border-[#0091D5]/20" 
+                        : "text-slate-500 hover:text-white hover:bg-white/5"
                     )}
                   >
                     <item.icon className={cn(
-                      "h-4 w-4 min-w-[16px] transition-colors",
-                      isActive ? "text-primary" : "group-hover:text-primary"
+                      "h-4 w-4 min-w-[16px] transition-all duration-300",
+                      isActive ? "text-[#0091D5] scale-110" : "group-hover:text-[#0091D5] group-hover:scale-110"
                     )} />
                     <span className={cn(
-                      "text-[10px] font-bold uppercase tracking-[0.1em] transition-colors",
-                      isActive ? "text-primary" : "group-hover:text-white"
+                      "text-[10px] uppercase tracking-[0.15em] transition-colors",
+                      isActive ? "text-[#0091D5] font-black" : "font-bold group-hover:text-white"
                     )}>{item.title}</span>
                   </Link>
                 )
@@ -185,15 +193,15 @@ export function Sidebar() {
         </div>
       </nav>
 
-      <div className="p-4 border-t border-sidebar-border">
+      <div className="p-4 border-t border-white/10">
         <div className={cn("flex items-center justify-between gap-2 p-2", collapsed && "flex-col")}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-white/10 text-sidebar-foreground/60 hover:text-white transition-all">
-                <Languages className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-all">
+                <Languages className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" className="rounded-md bg-sidebar border border-sidebar-border text-white">
+            <DropdownMenuContent align="center" className="rounded-xl bg-[#0F172A] border border-white/10 text-white shadow-2xl">
               <DropdownMenuItem onClick={() => setLanguage("en")} className={cn(language === "en" ? "bg-primary" : "", "cursor-pointer font-bold uppercase text-[9px] tracking-widest")}>
                 English
               </DropdownMenuItem>
@@ -206,11 +214,11 @@ export function Sidebar() {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-8 w-8 rounded-md hover:bg-white/10 text-sidebar-foreground/60 hover:text-white transition-all"
+            className="h-10 w-10 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-all"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
           </Button>
 
           <NotificationCenter />
@@ -219,18 +227,18 @@ export function Sidebar() {
             variant="ghost" 
             size="icon" 
             onClick={handleLogout}
-            className="h-8 w-8 rounded-md hover:bg-rose-500/20 text-rose-500 hover:text-rose-400 transition-all"
+            className="h-10 w-10 rounded-xl hover:bg-rose-500/20 text-rose-500 hover:text-rose-400 transition-all"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-5 w-5" />
           </Button>
 
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={() => setCollapsed(!collapsed)}
-            className="h-8 w-8 rounded-md hover:bg-white/10 text-sidebar-foreground/60 hover:text-white transition-all"
+            className="h-10 w-10 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-all"
           >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
           </Button>
         </div>
       </div>

@@ -29,14 +29,14 @@ export function Navbar() {
       <div className="flex items-center gap-4 xl:gap-6 flex-1 min-w-0">
         {/* Status Indicator */}
         <div className="flex flex-col shrink-0">
-          <h1 className="text-xs font-semibold text-primary uppercase tracking-[0.2em] flex items-center gap-2">
+          <h1 className="text-[10px] font-black text-primary uppercase tracking-[0.25em] flex items-center gap-2">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
             </span>
             {t("connected")}
           </h1>
-          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-[0.15em] leading-tight mt-1">PROSPER INTEL v4.0</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] leading-tight mt-1 ml-4 opacity-50">PRODUCTION CORE v4.2</p>
         </div>
 
         {/* Global Toolbar Integration - Hidden in Invoices */}

@@ -397,7 +397,14 @@ export async function fetchInvoices(filters: { status?: string; type?: string; s
 }
 
 export async function fetchInvoice(id: string): Promise<Invoice> {
-  return mosProxy(`invoices/${id}`) as Promise<Invoice>
+  const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
+  const url = `${base}/api/invoice-detail?id=${encodeURIComponent(id)}`
+  const res = await fetch(url, { cache: 'no-store' })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.error || `Invoice fetch failed: HTTP ${res.status}`)
+  }
+  return res.json()
 }
 
 export async function createInvoice(data: Partial<Invoice>): Promise<Invoice> {
@@ -423,6 +430,11 @@ export async function createInvoice(data: Partial<Invoice>): Promise<Invoice> {
 
 export async function updateInvoice(id: string, data: Partial<Invoice>): Promise<Invoice> {
   const base = typeof window !== 'undefined' ? window.location.origin : ''
+  
+  // CAJA NEGRA: Log to see exactly what the frontend is trying to send
+  console.log(`\x1b[35m[DASHBOARD API] updateInvoice called for ${id}\x1b[0m`)
+  console.log(`[DASHBOARD API] Payload items:`, JSON.stringify(data.items, null, 2))
+  
   const res = await fetch(`${base}/api/mos?endpoint=invoices/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -453,6 +465,15 @@ export async function approveInvoice(id: string): Promise<any> {
   return res.json()
 }
 
+export async function restoreInvoice(id: string): Promise<any> {
+  const base = typeof window !== 'undefined' ? window.location.origin : ''
+  const res = await fetch(`${base}/api/mos?endpoint=invoices/${id}/restore`, {
+    method: 'POST',
+  })
+  if (!res.ok) throw new Error('Failed to restore invoice')
+  return res.json()
+}
+
 export async function fetchWorkOrders(filters: { status?: string; operator_id?: string; search?: string } = {}): Promise<WorkOrder[]> {
   return mosProxy('work-orders', filters as any) as Promise<WorkOrder[]>
 }
@@ -465,6 +486,18 @@ export async function updateWorkOrder(id: string, data: Partial<WorkOrder>): Pro
     body: JSON.stringify(data)
   })
   if (!res.ok) throw new Error('Failed to update work order')
+  return res.json()
+}
+
+export async function deleteWorkOrder(id: string): Promise<any> {
+  const base = typeof window !== 'undefined' ? window.location.origin : ''
+  const res = await fetch(`${base}/api/mos?endpoint=work-orders/${id}`, {
+    method: 'DELETE',
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.error || data.detail || 'Failed to delete work order')
+  }
   return res.json()
 }
 

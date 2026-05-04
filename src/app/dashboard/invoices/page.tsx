@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useMemo } from "react"
 import useSWR from "swr"
 import { 
   Plus, 
@@ -18,14 +18,19 @@ import {
   Printer,
   DollarSign,
   Briefcase,
-  Eye
+  Eye,
+  Trash2,
+  RefreshCw
 } from "lucide-react"
-import { 
-  fetchInvoices, 
+import {
+  fetchInvoices,
+  fetchInvoice,
   createInvoice,
   updateInvoice,
   deleteInvoice,
-  Invoice 
+  deleteWorkOrder,
+  restoreInvoice,
+  Invoice
 } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/lib/i18n"
@@ -60,6 +65,7 @@ export default function InvoicesPage() {
   const [sorting, setSorting] = useState<SortingState>([])
   const [isCreating, setIsCreating] = useState<any>(false)
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null)
+  const [showDeleted, setShowDeleted] = useState(false)
 
   const handlePrint = () => {
     const printContent = document.getElementById('prosper-invoice');
@@ -89,8 +95,8 @@ export default function InvoicesPage() {
   };
 
   const { data: invoices, error, mutate } = useSWR(
-    ['invoices', search],
-    () => fetchInvoices({ search })
+    ['invoices', search, showDeleted],
+    () => fetchInvoices({ search, show_deleted: showDeleted } as any)
   )
 
   const handleCreate = async (data: Partial<Invoice>) => {
@@ -108,16 +114,50 @@ export default function InvoicesPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this order? This action cannot be undone.")) return;
+    const msg = showDeleted 
+      ? "This order is already in the trash. Delete permanently?" 
+      : "Move this order to the trash? It will stay there for 7 days."
+    if (!confirm(msg)) return;
+    
     try {
       await deleteInvoice(id)
       mutate()
     } catch (err: any) {
-      alert(`Error deleting the order: ${err.message}`)
+      alert(`Error: ${err.message}`)
     }
   }
 
-  const columns = [
+  const handleRestore = async (id: string) => {
+    try {
+      await restoreInvoice(id)
+      mutate()
+      alert("Order restored successfully!")
+    } catch (err: any) {
+      alert(`Error restoring: ${err.message}`)
+    }
+  }
+
+  const handleOpenInvoice = async (invoiceId: string, mode: 'preview' | 'edit', fallbackInvoice?: any) => {
+    try {
+      const fullInvoice = await fetchInvoice(invoiceId)
+      if (mode === 'preview') {
+        setPreviewInvoice(fullInvoice)
+      } else {
+        setIsCreating(fullInvoice)
+      }
+    } catch (err) {
+      // Fall back to list data so the UI still opens
+      console.warn('[handleOpenInvoice] Full fetch failed, using list data:', err)
+      if (fallbackInvoice) {
+        if (mode === 'preview') setPreviewInvoice(fallbackInvoice)
+        else setIsCreating(fallbackInvoice)
+      } else {
+        alert("Error loading invoice. Please try again.")
+      }
+    }
+  }
+
+  const columns = useMemo(() => [
     {
       accessorKey: "invoice_id",
       header: ({ column }: any) => (
@@ -126,7 +166,7 @@ export default function InvoicesPage() {
         </Button>
       ),
       cell: ({ row }: any) => (
-        <div className="font-black text-blue-600 tracking-tighter text-sm">{row.getValue("invoice_id")}</div>
+        <div className="font-black text-[#0091D5] tracking-tighter text-sm">{row.getValue("invoice_id")}</div>
       ),
     },
     {
@@ -228,19 +268,19 @@ export default function InvoicesPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-white border-slate-200 text-slate-700 shadow-xl min-w-[200px]">
                 <DropdownMenuItem 
-                  onClick={() => setPreviewInvoice(invoice)}
+                  onClick={() => handleOpenInvoice(invoice.invoice_id, 'preview', invoice)}
                   className="hover:bg-blue-50 text-blue-600 cursor-pointer flex items-center gap-2 font-black text-[10px] uppercase tracking-widest p-3 border-b border-slate-50"
                 >
                   <Eye className="h-4 w-4" /> View Invoice
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={() => setPreviewInvoice(invoice)}
+                  onClick={() => handleOpenInvoice(invoice.invoice_id, 'preview', invoice)}
                   className="hover:bg-slate-50 cursor-pointer flex items-center gap-2 font-bold text-xs uppercase tracking-tight p-3"
                 >
                   <Printer className="h-4 w-4 text-slate-400" /> Print Prosper Invoice
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={() => setIsCreating(invoice)}
+                  onClick={() => handleOpenInvoice(invoice.invoice_id, 'edit', invoice)}
                   className="hover:bg-slate-50 cursor-pointer flex items-center gap-2 font-bold text-xs uppercase tracking-tight p-3"
                 >
                   <ExternalLink className="h-4 w-4 text-blue-600" /> Edit Order
@@ -251,11 +291,19 @@ export default function InvoicesPage() {
                 >
                   <Download className="h-4 w-4 text-blue-600" /> Download PDF
                 </DropdownMenuItem>
+                {showDeleted && (
+                  <DropdownMenuItem 
+                    onClick={() => handleRestore(invoice.invoice_id)}
+                    className="hover:bg-emerald-50 text-emerald-600 cursor-pointer flex items-center gap-2 font-bold text-xs uppercase tracking-tight p-3 border-b border-slate-50"
+                  >
+                    <RefreshCw className="h-4 w-4" /> Restore Order
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem 
                   onClick={() => handleDelete(invoice.invoice_id)}
                   className="hover:bg-rose-50 text-rose-600 cursor-pointer flex items-center gap-2 font-bold text-xs uppercase tracking-tight p-3"
                 >
-                  <XCircle className="h-4 w-4" /> Delete Order
+                  <XCircle className="h-4 w-4" /> {showDeleted ? "Delete Permanently" : "Delete Order"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -263,10 +311,12 @@ export default function InvoicesPage() {
         )
       },
     },
-  ]
+  ], [showDeleted, t, mutate])
+
+  const tableData = useMemo(() => invoices || [], [invoices])
 
   const table = useReactTable({
-    data: invoices || [],
+    data: tableData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     onSortingChange: setSorting,
@@ -297,15 +347,15 @@ export default function InvoicesPage() {
     <div className="space-y-8 animate-in fade-in duration-500 p-1">
       {/* Header with quick stats */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-             <div className="w-2 h-10 bg-blue-600 rounded-full" />
-             <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">
+        <div className="space-y-3">
+          <div className="flex items-center gap-4">
+             <div className="w-2.5 h-12 bg-[#0091D5] rounded-full shadow-[0_0_20px_rgba(0,145,213,0.4)]" />
+             <h1 className="text-5xl font-black text-[#0F172A] tracking-tighter uppercase italic leading-none">
                 {t("invoices")}
              </h1>
           </div>
-          <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-5">
-            Prosper Manufacturing &bull; Document Lifecycle Control
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-6 opacity-70">
+            Prosper Manufacturing &bull; Enterprise Resource Invoicing
           </p>
         </div>
       </div>
@@ -315,14 +365,14 @@ export default function InvoicesPage() {
          <Card className="bg-white border-slate-200 shadow-sm overflow-hidden group hover:shadow-md transition-all">
             <CardContent className="p-0">
                <div className="flex items-center">
-                  <div className="w-1.5 h-24 bg-blue-600" />
-                  <div className="p-6 flex items-center gap-5 w-full">
-                     <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
-                        <Briefcase className="h-6 w-6" />
+                   <div className="w-2 h-24 bg-[#0091D5] shadow-[0_0_20px_rgba(0,145,213,0.2)]" />
+                  <div className="p-8 flex items-center gap-6 w-full">
+                     <div className="w-14 h-14 bg-blue-50 rounded-[1.25rem] flex items-center justify-center text-[#0091D5] group-hover:scale-110 transition-transform shadow-inner">
+                        <Briefcase className="h-7 w-7" />
                      </div>
                      <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Pipeline</p>
-                        <p className="text-2xl font-black text-slate-900">{totals?.count || 0} Documents</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Active Pipeline</p>
+                        <p className="text-3xl font-black text-[#0F172A] tracking-tighter">{totals?.count || 0} Documents</p>
                      </div>
                   </div>
                </div>
@@ -332,14 +382,14 @@ export default function InvoicesPage() {
          <Card className="bg-white border-slate-200 shadow-sm overflow-hidden group hover:shadow-md transition-all">
             <CardContent className="p-0">
                <div className="flex items-center">
-                  <div className="w-1.5 h-24 bg-emerald-500" />
-                  <div className="p-6 flex items-center gap-5 w-full">
-                     <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
-                        <DollarSign className="h-6 w-6" />
+                   <div className="w-2 h-24 bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)]" />
+                  <div className="p-8 flex items-center gap-6 w-full">
+                     <div className="w-14 h-14 bg-emerald-50 rounded-[1.25rem] flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform shadow-inner">
+                        <DollarSign className="h-7 w-7" />
                      </div>
                      <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Valuation</p>
-                        <p className="text-2xl font-black text-slate-900">${totals?.amount?.toLocaleString()}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Valuation</p>
+                        <p className="text-3xl font-black text-[#0F172A] tracking-tighter">${totals?.amount?.toLocaleString()}</p>
                      </div>
                   </div>
                </div>
@@ -376,9 +426,22 @@ export default function InvoicesPage() {
               className="pl-12 bg-white border-slate-200 text-slate-900 h-12 rounded-xl focus:ring-2 focus:ring-blue-500/20 transition-all border-2"
             />
           </div>
-          <Button variant="outline" className="border-slate-200 bg-white text-slate-600 hover:bg-slate-50 h-12 px-6 rounded-xl font-black text-xs uppercase tracking-widest">
-            <Filter className="mr-2 h-4 w-4" /> Advanced Filters
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant={showDeleted ? "destructive" : "outline"}
+              onClick={() => setShowDeleted(!showDeleted)}
+              className={cn(
+                "h-12 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all",
+                showDeleted ? "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+              )}
+            >
+              <Trash2 className="mr-2 h-4 w-4" /> 
+              {showDeleted ? "Viewing Trash" : "Trash"}
+            </Button>
+            <Button variant="outline" className="border-slate-200 bg-white text-slate-600 hover:bg-slate-50 h-12 px-6 rounded-xl font-black text-xs uppercase tracking-widest">
+              <Filter className="mr-2 h-4 w-4" /> Advanced Filters
+            </Button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -434,12 +497,12 @@ export default function InvoicesPage() {
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Internal Document Preview</p>
                </div>
             </div>
-            <div className="flex gap-2">
-              <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700 text-white font-black uppercase text-[10px] px-8 h-11 rounded-xl shadow-lg shadow-blue-200 transition-all">
-                Print Document
+            <div className="flex gap-3">
+              <Button onClick={handlePrint} className="bg-[#0091D5] hover:bg-[#0081C0] text-white font-black uppercase text-[10px] px-10 h-12 rounded-2xl shadow-xl shadow-blue-500/20 transition-all active:scale-95 flex items-center gap-2">
+                <Printer className="h-4 w-4" /> Final Print Document
               </Button>
-              <Button variant="ghost" onClick={() => setPreviewInvoice(null)} className="text-slate-400 hover:text-rose-500 h-11 w-11 p-0 rounded-full transition-colors">
-                <XCircle className="h-6 w-6" />
+              <Button variant="ghost" onClick={() => setPreviewInvoice(null)} className="text-slate-300 hover:text-rose-500 hover:bg-rose-50 h-12 w-12 p-0 rounded-2xl transition-all">
+                <XCircle className="h-7 w-7" />
               </Button>
             </div>
           </div>

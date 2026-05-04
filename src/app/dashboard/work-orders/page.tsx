@@ -105,7 +105,7 @@ function WorkOrderDialog({
       production_notes: form.production_notes,
       assigned_operator: form.assigned_operator,
       scheduled_date: form.scheduled_date,
-      art_links: form.art_links ? form.art_links.split("\n").map(s => s.trim()).filter(Boolean) : [],
+      art_links: form.art_links ? form.art_links.split("\n").map((s: string) => s.trim()).filter(Boolean) : [],
       packing_details: initialData?.packing_details || { bags: "individual", labels: "hanging", boxes: "master" },
     })
   }
@@ -153,11 +153,11 @@ function WorkOrderDialog({
                 className="w-full text-xs border border-slate-200 rounded-md px-3 py-2 bg-white text-slate-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
             </div>
           </div>
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="outline" className="flex-1 h-9 text-xs font-black uppercase border-slate-200" onClick={() => onOpenChange(false)} disabled={isSaving}>
+          <div className="flex gap-4 pt-4 border-t border-slate-100">
+            <Button type="button" variant="outline" className="flex-1 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest border-slate-200 text-slate-500 hover:bg-slate-50" onClick={() => onOpenChange(false)} disabled={isSaving}>
               Cancel
             </Button>
-            <Button type="submit" className="flex-1 h-9 text-xs font-black uppercase bg-blue-600 hover:bg-blue-700 text-white" disabled={isSaving}>
+            <Button type="submit" className="flex-1 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#0091D5] hover:bg-[#0081C0] text-white shadow-lg shadow-blue-500/20" disabled={isSaving}>
               {isSaving ? "Saving..." : isEditing ? "Save Changes" : "Create Order"}
             </Button>
           </div>
@@ -211,22 +211,89 @@ export default function WorkOrdersPage() {
     }
   }
 
+  const handleEditOrder = async (workOrder: any) => {
+    // If it's a manual order without an invoice, we just edit the work order
+    if (!workOrder.source_invoice_id || workOrder.source_invoice_id === "MANUAL") {
+      setEditingOrder(workOrder)
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      // Fetch full invoice data to populate the form correctly
+      const res = await fetch(`/api/mos?endpoint=invoices/${workOrder.source_invoice_id}`)
+      if (!res.ok) throw new Error("Could not load invoice details")
+      
+      const fullInvoice = await res.json()
+      // Merge work order production data into the invoice data for the form
+      setEditingOrder({
+        ...fullInvoice,
+        work_order_id: workOrder.work_order_id,
+        production_status: workOrder.production_status,
+        production_notes: workOrder.production_notes,
+        assigned_operator: workOrder.assigned_operator,
+        scheduled_date: workOrder.scheduled_date,
+        art_links: workOrder.art_links
+      })
+    } catch (err) {
+      console.error("Error loading full details:", err)
+      // Fallback to work order data if invoice can't be loaded
+      setEditingOrder(workOrder)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const handleUpdateOrder = async (data: any) => {
     if (!editingOrder) return
     setIsSaving(true)
     try {
-      // Clean up data before sending to PUT
-      const { _id, created_at, updated_at, ...updateData } = data
+      // 1. Update the Invoice (This is where the items/description live)
+      let invoiceUpdateSuccess = false;
+      const targetInvoiceId = editingOrder.source_invoice_id || editingOrder.invoice_id || editingOrder.work_order_id;
+      
+      if (targetInvoiceId && targetInvoiceId !== "MANUAL") {
+        const invoiceRes = await fetch(`/api/mos?endpoint=invoices/${targetInvoiceId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        })
+        
+        if (!invoiceRes.ok) {
+           console.error("Failed to update invoice data:", await invoiceRes.text());
+        } else {
+           invoiceUpdateSuccess = true;
+        }
+      }
+
+      // 2. Update the Work Order specifically
+      // We also send the items here just in case the backend needs them to stay in sync
+      const woData = {
+        production_status: data.production_status,
+        production_notes: data.production_notes,
+        assigned_operator: data.assigned_operator,
+        scheduled_date: data.scheduled_date,
+        art_links: data.art_links,
+        packing_details: data.packing_details,
+        items: data.items,
+        print_location: data.print_location,
+        garment_info: data.garment_info,
+        client: data.client
+      }
       
       const res = await fetch(`/api/mos?endpoint=work-orders/${editingOrder.work_order_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updateData)
+        body: JSON.stringify(woData)
       })
 
       if (!res.ok) {
         const err = await res.json()
-        throw new Error(err.error || err.detail || 'Error al actualizar la orden')
+        throw new Error(err.error || err.detail || 'Error al actualizar la orden de trabajo')
+      }
+      
+      if (!invoiceUpdateSuccess && targetInvoiceId !== "MANUAL") {
+         alert("¡Advertencia! La orden de trabajo se actualizó, pero los ítems/descripción no se pudieron guardar en la factura principal. Posible error de servidor.");
       }
 
       setEditingOrder(null)
@@ -248,7 +315,7 @@ export default function WorkOrdersPage() {
         </Button>
       ),
       cell: ({ row }: any) => (
-        <div className="font-black text-blue-600 tracking-tighter text-sm">{row.getValue("work_order_id")}</div>
+        <div className="font-black text-[#0091D5] tracking-tighter text-sm">{row.getValue("work_order_id")}</div>
       ),
     },
     {
@@ -341,23 +408,27 @@ export default function WorkOrdersPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-white border-slate-200 text-slate-700 shadow-xl min-w-[180px]">
               <DropdownMenuItem 
-                onClick={() => setEditingOrder(row.original)}
+                onClick={() => handleEditOrder(row.original)}
                 className="hover:bg-slate-50 cursor-pointer flex items-center gap-2 font-bold text-xs uppercase tracking-tight p-3"
               >
-                <ExternalLink className="h-4 w-4 text-blue-600" /> View Details
+                <ExternalLink className="h-4 w-4 text-[#0091D5]" /> View Details
               </DropdownMenuItem>
               <DropdownMenuItem className="hover:bg-slate-50 cursor-pointer flex items-center gap-2 font-bold text-xs uppercase tracking-tight p-3">
                 <Clock className="h-4 w-4 text-amber-500" /> Reschedule
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={async () => {
                   if (confirm("Are you sure you want to cancel/delete this order?")) {
                     try {
-                      await fetch(`/api/mos?endpoint=work-orders/${row.original.work_order_id}`, { method: 'DELETE' })
+                      const res = await fetch(`/api/mos?endpoint=work-orders/${row.original.work_order_id}`, { method: 'DELETE' })
+                      if (!res.ok) {
+                        const err = await res.json().catch(() => ({}))
+                        throw new Error(err.error || err.detail || `Error ${res.status}`)
+                      }
                       mutate()
-                    } catch (err) {
+                    } catch (err: any) {
                       console.error(err)
-                      alert("Error deleting order")
+                      alert(`Error deleting order: ${err.message}`)
                     }
                   }
                 }}
@@ -410,31 +481,31 @@ export default function WorkOrdersPage() {
 
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-             <div className="w-2 h-10 bg-blue-600 rounded-full" />
-             <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">
+        <div className="space-y-3">
+          <div className="flex items-center gap-4">
+             <div className="w-2.5 h-12 bg-[#0091D5] rounded-full shadow-[0_0_20px_rgba(0,145,213,0.4)]" />
+             <h1 className="text-5xl font-black text-[#0F172A] tracking-tighter uppercase italic leading-none">
                 {t("workOrders")}
              </h1>
           </div>
-          <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-5">
-            Production Pipeline &bull; Operational Control
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-6 opacity-70">
+            Prosper Manufacturing &bull; Production Control Pipeline
           </p>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-white p-1 rounded-xl shadow-sm border border-slate-100">
+          <div className="flex items-center gap-2 bg-white p-1 rounded-2xl shadow-sm border border-slate-100">
              <Button 
                variant="ghost" 
                onClick={() => setView('grid')}
-               className={cn("h-10 px-4 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all", view === 'grid' ? "bg-slate-100 text-blue-600 shadow-inner" : "text-slate-400")}
+               className={cn("h-12 px-6 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all", view === 'grid' ? "bg-slate-100 text-[#0091D5] shadow-inner" : "text-slate-400")}
              >
                <LayoutGrid className="mr-2 h-4 w-4" /> Grid
              </Button>
              <Button 
                variant="ghost" 
                onClick={() => setView('list')}
-               className={cn("h-10 px-4 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all", view === 'list' ? "bg-slate-100 text-blue-600 shadow-inner" : "text-slate-400")}
+               className={cn("h-12 px-6 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all", view === 'list' ? "bg-slate-100 text-[#0091D5] shadow-inner" : "text-slate-400")}
              >
                <List className="mr-2 h-4 w-4" /> List
              </Button>
@@ -442,27 +513,26 @@ export default function WorkOrdersPage() {
 
           <Button 
             onClick={() => setIsCreating(true)}
-            className="h-12 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-200 transition-all flex items-center gap-2"
+            className="h-14 px-8 bg-[#0091D5] hover:bg-[#0081C0] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all flex items-center gap-3"
           >
-            <Plus className="h-4 w-4" strokeWidth={3} />
+            <Plus className="h-5 w-5" strokeWidth={3} />
             Nueva Orden
           </Button>
         </div>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
          <Card className="bg-white border-slate-200 shadow-sm overflow-hidden group hover:shadow-md transition-all">
             <CardContent className="p-0">
                <div className="flex items-center">
-                  <div className="w-1.5 h-24 bg-blue-600" />
-                  <div className="p-6 flex items-center gap-5 w-full">
-                     <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-                        <Layers className="h-6 w-6" />
+                  <div className="w-2 h-24 bg-[#0091D5] shadow-[0_0_20px_rgba(0,145,213,0.2)]" />
+                  <div className="p-8 flex items-center gap-6 w-full">
+                     <div className="w-14 h-14 bg-blue-50 rounded-[1.25rem] flex items-center justify-center text-[#0091D5] shadow-inner group-hover:scale-110 transition-transform">
+                        <Layers className="h-7 w-7" />
                      </div>
                      <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Pipeline</p>
-                        <p className="text-2xl font-black text-slate-900">{stats?.total || 0} Orders</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Pipeline</p>
+                        <p className="text-3xl font-black text-[#0F172A] tracking-tighter">{stats?.total || 0} Orders</p>
                      </div>
                   </div>
                </div>
@@ -472,14 +542,14 @@ export default function WorkOrdersPage() {
          <Card className="bg-white border-slate-200 shadow-sm overflow-hidden group hover:shadow-md transition-all">
             <CardContent className="p-0">
                <div className="flex items-center">
-                  <div className="w-1.5 h-24 bg-amber-500" />
-                  <div className="p-6 flex items-center gap-5 w-full">
-                     <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
-                        <Zap className="h-6 w-6" />
+                  <div className="w-2 h-24 bg-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.2)]" />
+                  <div className="p-8 flex items-center gap-6 w-full">
+                     <div className="w-14 h-14 bg-amber-50 rounded-[1.25rem] flex items-center justify-center text-amber-500 shadow-inner group-hover:scale-110 transition-transform">
+                        <Zap className="h-7 w-7" />
                      </div>
                      <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">In Production</p>
-                        <p className="text-2xl font-black text-slate-900">{stats?.inProd || 0} Units</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">In Production</p>
+                        <p className="text-3xl font-black text-[#0F172A] tracking-tighter">{stats?.inProd || 0} Units</p>
                      </div>
                   </div>
                </div>
@@ -489,14 +559,14 @@ export default function WorkOrdersPage() {
          <Card className="bg-white border-slate-200 shadow-sm overflow-hidden group hover:shadow-md transition-all">
             <CardContent className="p-0">
                <div className="flex items-center">
-                  <div className="w-1.5 h-24 bg-emerald-500" />
-                  <div className="p-6 flex items-center gap-5 w-full">
-                     <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
-                        <CheckCircle2 className="h-6 w-6" />
+                  <div className="w-2 h-24 bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)]" />
+                  <div className="p-8 flex items-center gap-6 w-full">
+                     <div className="w-14 h-14 bg-emerald-50 rounded-[1.25rem] flex items-center justify-center text-emerald-500 shadow-inner group-hover:scale-110 transition-transform">
+                        <CheckCircle2 className="h-7 w-7" />
                      </div>
                      <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Completed Today</p>
-                        <p className="text-2xl font-black text-slate-900">{stats?.completed || 0} Finished</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Completed</p>
+                        <p className="text-3xl font-black text-[#0F172A] tracking-tighter">{stats?.completed || 0} Finished</p>
                      </div>
                   </div>
                </div>
@@ -505,19 +575,19 @@ export default function WorkOrdersPage() {
       </div>
 
       {/* Main Content Area */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden">
-        <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200 rounded-[2rem] shadow-xl shadow-slate-200/50 overflow-hidden">
+        <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
             <Input
               placeholder="Search work orders, POs..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-12 bg-white border-slate-200 text-slate-900 h-12 rounded-xl focus:ring-2 focus:ring-blue-500/20 transition-all border-2"
+              className="pl-14 bg-white border-slate-200 text-slate-900 h-14 rounded-2xl focus:ring-2 focus:ring-[#0091D5]/20 transition-all border-2 text-sm"
             />
           </div>
-          <Button variant="outline" className="border-slate-200 bg-white text-slate-600 hover:bg-slate-50 h-12 px-6 rounded-xl font-black text-xs uppercase tracking-widest">
-            <Filter className="mr-2 h-4 w-4" /> Filters
+          <Button variant="outline" className="border-slate-200 bg-white text-slate-600 hover:bg-slate-50 h-14 px-8 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em]">
+            <Filter className="mr-3 h-5 w-5" /> Filters
           </Button>
         </div>
 
@@ -537,7 +607,7 @@ export default function WorkOrdersPage() {
                 
                 <div className="space-y-4">
                   {workOrders?.filter((wo: any) => wo.production_status === column.id).map((wo: any) => (
-                    <WorkOrderCard key={wo.work_order_id} workOrder={wo} onUpdate={() => mutate()} onEdit={setEditingOrder} />
+                    <WorkOrderCard key={wo.work_order_id} workOrder={wo} onUpdate={() => mutate()} onEdit={handleEditOrder} />
                   ))}
                 </div>
               </div>
@@ -608,12 +678,12 @@ function WorkOrderCard({ workOrder, onUpdate, onEdit }: { workOrder: WorkOrder, 
   }
 
   return (
-    <Card className="bg-white border-slate-200 shadow-sm hover:shadow-xl hover:border-blue-300 transition-all cursor-pointer group overflow-hidden">
-      <div className="p-4 space-y-4">
+    <Card className="bg-white border-slate-200 shadow-sm hover:shadow-xl hover:border-[#0091D5]/40 transition-all cursor-pointer group overflow-hidden rounded-2xl">
+      <div className="p-5 space-y-5">
         <div className="flex justify-between items-start">
           <div className="space-y-1">
-            <p className="text-[11px] font-black text-blue-600 tracking-tighter">{workOrder.work_order_id}</p>
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">REF: {workOrder.source_invoice_id}</p>
+            <p className="text-xs font-black text-[#0091D5] tracking-tighter uppercase">{workOrder.work_order_id}</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">REF: {workOrder.source_invoice_id}</p>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -629,21 +699,25 @@ function WorkOrderCard({ workOrder, onUpdate, onEdit }: { workOrder: WorkOrder, 
                 <ExternalLink className="h-3 w-3 text-blue-600" /> 
                 <span className="text-[10px] font-bold uppercase">Details</span>
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={async () => {
                   if (confirm("Are you sure you want to delete this order?")) {
                     try {
-                      await fetch(`/api/mos?endpoint=work-orders/${workOrder.work_order_id}`, { method: 'DELETE' })
+                      const res = await fetch(`/api/mos?endpoint=work-orders/${workOrder.work_order_id}`, { method: 'DELETE' })
+                      if (!res.ok) {
+                        const err = await res.json().catch(() => ({}))
+                        throw new Error(err.error || err.detail || `Error ${res.status}`)
+                      }
                       onUpdate()
-                    } catch (err) {
+                    } catch (err: any) {
                       console.error(err)
-                      alert("Error deleting order")
+                      alert(`Error deleting order: ${err.message}`)
                     }
                   }
                 }}
                 className="flex items-center gap-2 p-2 cursor-pointer hover:bg-rose-50 text-rose-600 rounded-md"
               >
-                <XCircle className="h-3 w-3" /> 
+                <XCircle className="h-3 w-3" />
                 <span className="text-[10px] font-bold uppercase">Delete</span>
               </DropdownMenuItem>
             </DropdownMenuContent>

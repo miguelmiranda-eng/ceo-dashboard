@@ -3,11 +3,12 @@ import { updateOrderStatus } from "@/lib/printavo"
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { statusId } = await request.json()
-    const orderId = parseInt(params.id)
+    const resolvedParams = await params;
+    const orderId = parseInt(resolvedParams.id)
     
     if (isNaN(orderId) || !statusId) {
       return NextResponse.json({ error: "Invalid parameters" }, { status: 400 })

@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Invoice } from "@/lib/api"
 import { 
   Dialog, 
@@ -20,15 +21,87 @@ import {
   Eye,
   X,
   Workflow,
-  FileText
+  FileText,
+  ZoomIn,
+  ZoomOut
 } from "lucide-react"
 
 interface ProductionSheetProps {
   invoice: Invoice
 }
 
+function AttachmentPreview({ file, isImage }: { file: any, isImage: boolean }) {
+  const [zoom, setZoom] = useState(1);
+
+  return (
+    <DialogContent className="max-w-[95vw] w-fit h-fit p-0 bg-slate-900 border-slate-800 overflow-hidden">
+      <DialogHeader className="p-4 border-b border-slate-800 bg-slate-950 flex-row justify-between items-center space-y-0 gap-8">
+        <div className="flex items-center gap-4">
+          <DialogTitle className="text-white font-black uppercase tracking-widest text-xs truncate">
+            Preview: {file.name}
+          </DialogTitle>
+          {isImage && (
+            <div className="flex items-center bg-slate-900 rounded-lg border border-slate-800 p-1 gap-1">
+              <button 
+                onClick={() => setZoom(prev => Math.max(0.5, prev - 0.25))}
+                className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white transition-colors"
+              >
+                <ZoomOut className="h-4 w-4" />
+              </button>
+              <span className="text-[10px] font-black text-slate-500 w-12 text-center">
+                {Math.round(zoom * 100)}%
+              </span>
+              <button 
+                onClick={() => setZoom(prev => Math.min(5, prev + 0.25))}
+                className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white transition-colors"
+              >
+                <ZoomIn className="h-4 w-4" />
+              </button>
+              <button 
+                onClick={() => setZoom(1)}
+                className="text-[8px] font-black uppercase px-2 py-1 hover:bg-slate-800 rounded text-slate-500 hover:text-white transition-colors"
+              >
+                Reset
+              </button>
+            </div>
+          )}
+        </div>
+        <a href={file.data || file.url} download={file.name} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-full text-[9px] font-black uppercase transition-all shrink-0">
+          Download
+        </a>
+      </DialogHeader>
+      <div className="p-4 bg-slate-800 flex items-center justify-center min-h-[300px] overflow-auto max-h-[85vh] max-w-[95vw]">
+        <div className="flex items-center justify-center min-w-full min-h-full">
+          {isImage ? (
+            <div 
+              className="relative transition-transform duration-200 ease-out flex items-center justify-center" 
+              style={{ 
+                transform: `scale(${zoom})`, 
+                transformOrigin: 'center center',
+              }}
+            >
+              <img 
+                src={file.data || file.url} 
+                alt={file.name} 
+                className="max-w-[85vw] shadow-2xl" 
+              />
+            </div>
+          ) : file?.type === 'pdf' || file?.category === 'pdf' ? (
+            <iframe src={file.data || file.url} className="w-[90vw] h-[80vh] border-none bg-white" />
+          ) : (
+            <div className="flex flex-col items-center gap-4 p-12 text-white">
+              <FileSpreadsheet className="h-16 w-16 text-emerald-500" />
+              <p className="font-bold uppercase tracking-widest text-sm">Excel File Ready</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </DialogContent>
+  );
+}
+
 export function ProductionSheet({ invoice }: ProductionSheetProps) {
-  const SIZE_HEADERS = ["XS", "S", "M", "L", "XL", "2XL"]
+  const SIZE_HEADERS = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"]
 
   const formatDate = (dateStr: string | any) => {
     if (!dateStr) return "N/A"
@@ -71,20 +144,7 @@ export function ProductionSheet({ invoice }: ProductionSheetProps) {
           <p className="text-[11px] font-black uppercase">Production Notes</p>
           <p className="text-[11px] font-bold uppercase">{invoice.production_notes || 'ART LINKS ONLY. FOR ART DEPARTAMENT ONLY. NO ADDITIONAL NOTES.'}</p>
         </div>
-        <div className="space-y-1">
-          <p className="text-[11px] font-black uppercase">ART LINK:</p>
-          {(invoice as any)?.art_links?.map((link: string, i: number) => (
-            <a 
-              key={i} 
-              href={link} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-[11px] text-blue-600 underline font-mono break-all block hover:text-blue-800 transition-colors"
-            >
-              {link}
-            </a>
-          ))}
-        </div>
+
         <div className="space-y-1">
           <p className="text-[11px] font-black uppercase italic tracking-tighter">
             SEPS: <span className="font-bold text-blue-600 underline">
@@ -92,6 +152,19 @@ export function ProductionSheet({ invoice }: ProductionSheetProps) {
             </span>
           </p>
         </div>
+
+        {/* Art Links (Dropbox/Google Drive) */}
+        {(invoice as any).art_links && (
+          <div className="space-y-1 mt-2 pt-2 border-t border-slate-100">
+            <p className="text-[11px] font-black uppercase text-blue-600 flex items-center gap-1.5">
+              <Layers className="h-3 w-3" />
+              Art Links (CAD/High-Res)
+            </p>
+            <div className="text-[10px] font-bold text-slate-800 whitespace-pre-wrap leading-relaxed">
+              {renderTextWithLinks(typeof (invoice as any).art_links === 'string' ? (invoice as any).art_links : ((invoice as any).art_links || []).join('\n'))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main Branding Header */}
@@ -189,7 +262,7 @@ export function ProductionSheet({ invoice }: ProductionSheetProps) {
               <th className="p-2 border border-slate-300 w-24">Category</th>
               <th className="p-2 border border-slate-300 w-16">Item #</th>
               <th className="p-2 border border-slate-300 w-16">Color</th>
-              <th className="p-2 border border-slate-300">Description</th>
+              <th className="p-2 border border-slate-300 min-w-[200px]">Description</th>
               {SIZE_HEADERS.map(sz => (
                 <th key={sz} className="p-2 border border-slate-300 text-center w-8">{sz}</th>
               ))}
@@ -210,12 +283,6 @@ export function ProductionSheet({ invoice }: ProductionSheetProps) {
                 {(invoice as any)?.artwork_status && (
                   <p><span className="font-black text-slate-400 uppercase">Art Status: </span><span className="font-bold uppercase">{(invoice as any).artwork_status}</span></p>
                 )}
-                {(invoice as any)?.print_location && (
-                  <p><span className="font-black text-slate-400 uppercase">Descripción: </span><span className="font-bold uppercase">{(invoice as any).print_location}</span></p>
-                )}
-                {!(invoice as any)?.garment_info && !(invoice as any)?.artwork_status && !(invoice as any)?.print_location && (
-                  <span className="text-slate-300 italic">—</span>
-                )}
               </td>
               {SIZE_HEADERS.map(sz => (
                 <td key={sz} className="p-2 border border-slate-300"></td>
@@ -229,7 +296,39 @@ export function ProductionSheet({ invoice }: ProductionSheetProps) {
                 <td className="p-2 border border-slate-300">{(item as any).item_number}</td>
                 <td className="p-2 border border-slate-300 font-bold">{(item as any).color}</td>
                 <td className="p-2 border border-slate-300 font-bold uppercase whitespace-pre-wrap leading-tight">
-                  {renderTextWithLinks(item?.description || "")}
+                  <div className="mb-2">
+                    {renderTextWithLinks(item?.description || "")}
+                  </div>
+                  {/* Item Attachments embed */}
+                  {(item as any)?.attachments && (item as any).attachments.length > 0 && (
+                    <div className="mt-3 pt-2 border-t border-slate-200/50">
+                      <p className="text-[9px] font-black uppercase text-blue-600 mb-2">Adjuntos del Ítem:</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {(item as any).attachments.map((file: any, i: number) => {
+                          const isImage = file?.type === 'image' || file?.mime?.startsWith('image/');
+                          return (
+                            <Dialog key={i}>
+                              <DialogTrigger asChild>
+                                <div className="border border-slate-200 rounded-sm overflow-hidden bg-white shadow-sm flex flex-col cursor-pointer hover:border-blue-400 transition-all group">
+                                  {isImage ? (
+                                    <img src={file.data || file.url} alt={file.name} className="w-full h-12 object-cover group-hover:scale-110 transition-transform" />
+                                  ) : (
+                                    <div className="h-12 flex items-center justify-center bg-slate-50 group-hover:bg-white">
+                                      {file?.type === 'pdf' ? <FilePdf className="h-5 w-5 text-rose-500" /> : <FileSpreadsheet className="h-5 w-5 text-emerald-500" />}
+                                    </div>
+                                  )}
+                                  <div className="text-[6px] text-center font-bold text-slate-500 py-0.5 truncate px-1 border-t border-slate-100 bg-slate-50">
+                                    {file.name}
+                                  </div>
+                                </div>
+                              </DialogTrigger>
+                              <AttachmentPreview file={file} isImage={isImage} />
+                            </Dialog>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </td>
                 {SIZE_HEADERS.map(sz => (
                   <td key={sz} className="p-2 border border-slate-300 text-center font-bold bg-slate-50/50">
@@ -248,84 +347,47 @@ export function ProductionSheet({ invoice }: ProductionSheetProps) {
           </tbody>
         </table>
       </div>
+      
+      {/* Packing Department Section - ALWAYS VISIBLE */}
+      <div className="mb-8 border border-slate-300 rounded-sm overflow-hidden">
+        <div className="bg-slate-50 px-3 py-1.5 border-b border-slate-300 flex items-center gap-2">
+          <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+          <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-700">Packing Department Specifications</h3>
+        </div>
+        <div className="p-3 min-h-[80px] text-[10px] text-slate-700 whitespace-pre-wrap leading-relaxed font-bold bg-white uppercase">
+          {(invoice as any).finishing_notes || "NO ADDITIONAL PACKING INSTRUCTIONS."}
+        </div>
+      </div>
 
-      {/* ATTACHMENTS SECTION - Full-width grid */}
-      {(invoice as any)?.attachments?.length > 0 && (
-        <section className="mt-5 pt-4 border-t-2 border-slate-200">
-          <h3 className="text-sm font-black uppercase italic tracking-tighter mb-4">Attachments</h3>
-
-          {/* Images grid — 3 columns, full width */}
-          {(invoice as any).attachments.some((f: any) => f?.type?.startsWith('image/')) && (
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              {(invoice as any).attachments
-                .filter((f: any) => f?.type?.startsWith('image/'))
-                .map((file: any, i: number) => (
-                  <div key={i} className="border border-slate-200 rounded-sm overflow-hidden bg-slate-50 shadow-sm">
-                    <img src={file.data} alt={file.name} className="w-full h-auto object-contain" />
-                    <p className="text-[8px] font-bold text-slate-400 uppercase text-center py-1 bg-slate-100 truncate px-2">{file.name}</p>
-                  </div>
-                ))}
-            </div>
-          )}
-
-          {/* Documents row — PDFs and Excel side by side */}
-          {(invoice as any).attachments.some((f: any) => !f?.type?.startsWith('image/')) && (
+        {/* Production Attachments */}
+        {(invoice as any)?.production_attachments && (invoice as any).production_attachments.length > 0 && (
+          <div className="border-t border-slate-300 bg-slate-50 p-3">
+            <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-3">Adjuntos de Empaque / Terminado</h4>
             <div className="grid grid-cols-4 gap-3">
-              {(invoice as any).attachments
-                .filter((f: any) => !f?.type?.startsWith('image/'))
-                .map((file: any, i: number) => (
-                  <div key={i} className="space-y-2">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <button className="w-full flex flex-col items-center justify-center h-36 border-2 border-slate-200 rounded-xl bg-slate-50 hover:bg-white hover:border-blue-400 transition-all group shadow-sm relative overflow-hidden">
-                          <div className={`w-12 h-12 ${file?.category === 'pdf' ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'} rounded-xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform`}>
-                            {file?.category === 'pdf' ? (
-                              <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="3"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M8 12h8M8 16h8"/></svg>
-                            ) : (
-                              <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="3"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg>
-                            )}
+              {(invoice as any).production_attachments.map((file: any, i: number) => {
+                const isImage = file?.type === 'image' || file?.mime?.startsWith('image/');
+                return (
+                  <Dialog key={i}>
+                    <DialogTrigger asChild>
+                      <div className="border border-slate-300 rounded-sm overflow-hidden bg-white shadow-sm flex flex-col justify-between cursor-pointer hover:border-blue-500 transition-all group">
+                        {isImage ? (
+                          <img src={file.data || file.url} alt={file.name} className="w-full h-20 object-cover group-hover:scale-105 transition-transform" />
+                        ) : (
+                          <div className="h-20 flex flex-col items-center justify-center bg-slate-50 group-hover:bg-white">
+                            {file?.type === 'pdf' || file?.category === 'pdf' ? <FilePdf className="h-8 w-8 text-rose-500" /> : <FileSpreadsheet className="h-8 w-8 text-emerald-500" />}
                           </div>
-                          <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Preview</span>
-                          <span className="text-[8px] font-bold text-slate-500 truncate max-w-[150px] px-2 text-center">{file.name}</span>
-                        </button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] p-0 bg-slate-900 border-slate-800 flex flex-col overflow-hidden">
-                        <DialogHeader className="p-4 border-b border-slate-800 bg-slate-950 flex-row justify-between items-center space-y-0">
-                          <DialogTitle className="text-white font-black uppercase tracking-widest text-sm flex items-center gap-3">
-                            <div className="w-2 h-5 bg-blue-500 rounded-full" />
-                            Technical Preview: {file.name}
-                          </DialogTitle>
-                          <a href={file.data} download={file.name} className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-full text-[10px] font-black uppercase transition-all">
-                            Download Original
-                          </a>
-                        </DialogHeader>
-                        <div className="flex-1 bg-slate-800">
-                          {file?.category === 'pdf' ? (
-                            <iframe src={file.data} className="w-full h-full border-none" />
-                          ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 space-y-6">
-                              <div className="w-32 h-32 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center animate-pulse">
-                                <svg viewBox="0 0 24 24" className="w-16 h-16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-xl font-black text-white uppercase tracking-widest mb-2">Excel Ready for Download</p>
-                                <p className="text-sm text-slate-500">Open in Excel for full editing.</p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                    <a href={file.data} download={file.name} className="w-full py-1.5 border border-slate-200 rounded-lg text-[8px] font-black uppercase text-slate-400 hover:text-blue-600 transition-all text-center block">
-                      Quick Download
-                    </a>
-                  </div>
-                ))}
+                        )}
+                        <p className="text-[7px] text-center font-bold text-slate-500 py-1 border-t border-slate-100 truncate px-2 bg-slate-50">{file.name}</p>
+                      </div>
+                    </DialogTrigger>
+                    <AttachmentPreview file={file} isImage={isImage} />
+                  </Dialog>
+                );
+              })}
             </div>
-          )}
-        </section>
-      )}
-
+          </div>
+        )}
+      
       {/* Footer Meta */}
       <div className="mt-20 pt-4 border-t border-slate-100 flex justify-between items-center text-[10px] font-bold text-slate-300">
         <div>https://prosper-mfg.printavo.com/work_orders/{invoice?.invoice_id}</div>
