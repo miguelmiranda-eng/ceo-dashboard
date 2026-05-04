@@ -208,18 +208,32 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: 'MOS authentication failed' }, { status: 401 })
   }
 
-  const body = await request.json()
-  console.log(`[MOS Proxy] Body keys:`, Object.keys(body))
+  const contentType = request.headers.get("content-type") || ""
+  let body: any;
+  let isFormData = contentType.includes("multipart/form-data")
+
+  if (isFormData) {
+    body = await request.formData()
+    console.log(`[MOS Proxy] Detected FormData for ${endpoint}`)
+  } else {
+    body = await request.json()
+    console.log(`[MOS Proxy] Body keys:`, Object.keys(body))
+  }
 
   try {
+    const headers: any = {
+      Authorization: `Bearer ${token}`,
+      Cookie: `session_token=${token}`,
+    }
+
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json'
+    }
+
     const res = await fetch(upstream, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        Cookie: `session_token=${token}`,
-      },
-      body: JSON.stringify(body),
+      headers,
+      body: isFormData ? body : JSON.stringify(body),
       cache: 'no-store',
     })
 

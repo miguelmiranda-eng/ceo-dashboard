@@ -87,6 +87,7 @@ function ImagePreviewModal({ file, onClose }: { file: any; onClose: () => void }
 
 export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false }: InvoiceFormProps) {
   const initData = initialData as any
+  const [isUploading, setIsUploading] = useState(false)
   const [selectedImage, setSelectedImage] = useState<any | null>(null)
   const [formData, setFormData] = useState<any>({
     invoice_id: initData?.invoice_id,
@@ -270,29 +271,41 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
     const files = e.target.files
     if (!files) return
 
-    for (const file of Array.from(files)) {
-      const url = URL.createObjectURL(file)
-      let fileData = "";
+    setIsUploading(true)
+    try {
+      for (const file of Array.from(files)) {
+        // 1. Preparar el archivo (opcional: podemos comprimirlo antes de subirlo para ahorrar espacio en disco)
+        let fileToUpload: File | Blob = file;
+        
+        if (type === 'image' && file.size > 800 * 1024) {
+          const compressedBase64 = await compressImage(file);
+          // Convertir Base64 de vuelta a Blob para enviarlo como archivo real
+          const res = await fetch(compressedBase64);
+          fileToUpload = await res.blob();
+        }
 
-      if (type === 'image' && file.size > 500 * 1024) { // Si pesa más de 500KB, comprimir
-        fileData = await compressImage(file);
-      } else {
-        fileData = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(file);
+        // 2. Subir al servidor inmediatamente
+        const formDataUpload = new FormData();
+        formDataUpload.append('file', fileToUpload, file.name);
+
+        const uploadRes = await fetch(`/api/mos?endpoint=invoices/upload`, {
+          method: 'POST',
+          body: formDataUpload
         });
-      }
 
-      const attachment = {
-        url,
-        name: file.name,
-        type: type,
-        mime: file.type,
-        data: fileData,
-      }
+        if (!uploadRes.ok) throw new Error("Error al subir archivo");
+        const { url } = await uploadRes.json();
 
-      if (section === 'production') {
+        // 3. Guardar solo la URL en el estado (el JSON final será pequeñísimo)
+        const attachment = {
+          url: url, // URL real del servidor
+          name: file.name,
+          type: type,
+          mime: file.type,
+          data: "", // YA NO ENVIAMOS EL BASE64 GIGANTE
+        }
+
+        if (section === 'production') {
           setFormData((prev: any) => ({
             ...prev,
             production_attachments: [...(prev.production_attachments || []), attachment]
@@ -306,6 +319,12 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
             return { ...prev, items: newItems }
           })
         }
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert("Error al subir uno de los archivos. Por favor intenta de nuevo.");
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -345,7 +364,8 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
           <Input
             type="file" multiple accept="image/*"
             onChange={(e) => handleFileChange(e, 'image', section)}
-            className="bg-slate-950 border-slate-800 text-[10px] text-slate-400 h-10 rounded-xl cursor-pointer file:bg-[#0091D5] file:text-white file:border-0 file:text-[9px] file:font-black file:uppercase file:px-3 file:mr-3 hover:file:bg-[#0081C0] transition-all"
+            disabled={isUploading}
+            className="bg-slate-950 border-slate-800 text-[10px] text-slate-400 h-10 rounded-xl cursor-pointer file:bg-[#0091D5] file:text-white file:border-0 file:text-[9px] file:font-black file:uppercase file:px-3 file:mr-3 hover:file:bg-[#0081C0] transition-all disabled:opacity-50"
           />
         </div>
         <div className="space-y-1.5">
@@ -355,7 +375,8 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
           <Input
             type="file" accept=".xlsx,.xls,.csv"
             onChange={(e) => handleFileChange(e, 'excel', section)}
-            className="bg-slate-950 border-slate-800 text-[10px] text-slate-400 h-10 rounded-xl cursor-pointer file:bg-emerald-600 file:text-white file:border-0 file:text-[9px] file:font-black file:uppercase file:px-3 file:mr-3 hover:file:bg-emerald-500 transition-all"
+            disabled={isUploading}
+            className="bg-slate-950 border-slate-800 text-[10px] text-slate-400 h-10 rounded-xl cursor-pointer file:bg-emerald-600 file:text-white file:border-0 file:text-[9px] file:font-black file:uppercase file:px-3 file:mr-3 hover:file:bg-emerald-500 transition-all disabled:opacity-50"
           />
         </div>
         <div className="space-y-1.5">
@@ -365,7 +386,8 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
           <Input
             type="file" accept=".pdf"
             onChange={(e) => handleFileChange(e, 'pdf', section)}
-            className="bg-slate-950 border-slate-800 text-[10px] text-slate-400 h-10 rounded-xl cursor-pointer file:bg-rose-600 file:text-white file:border-0 file:text-[9px] file:font-black file:uppercase file:px-3 file:mr-3 hover:file:bg-rose-500 transition-all"
+            disabled={isUploading}
+            className="bg-slate-950 border-slate-800 text-[10px] text-slate-400 h-10 rounded-xl cursor-pointer file:bg-rose-600 file:text-white file:border-0 file:text-[9px] file:font-black file:uppercase file:px-3 file:mr-3 hover:file:bg-rose-500 transition-all disabled:opacity-50"
           />
         </div>
         <div className="space-y-1.5">
@@ -375,7 +397,8 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
           <Input
             type="file" multiple
             onChange={(e) => handleFileChange(e, 'other', section)}
-            className="bg-slate-950 border-slate-800 text-[10px] text-slate-400 h-10 rounded-xl cursor-pointer file:bg-slate-700 file:text-white file:border-0 file:text-[9px] file:font-black file:uppercase file:px-3 file:mr-3 hover:file:bg-slate-600 transition-all"
+            disabled={isUploading}
+            className="bg-slate-950 border-slate-800 text-[10px] text-slate-400 h-10 rounded-xl cursor-pointer file:bg-slate-700 file:text-white file:border-0 file:text-[9px] file:font-black file:uppercase file:px-3 file:mr-3 hover:file:bg-slate-600 transition-all disabled:opacity-50"
           />
         </div>
       </div>
@@ -823,15 +846,17 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
         </Button>
         <Button
           onClick={() => onSubmit(formData)}
-          disabled={isLoading}
+          disabled={isLoading || isUploading}
           className="bg-[#0091D5] hover:bg-[#0081C0] text-white font-black uppercase tracking-[0.2em] text-[10px] h-16 px-16 rounded-2xl shadow-[0_0_50px_rgba(0,145,213,0.3)] disabled:opacity-50 transition-all flex items-center gap-3"
         >
-          {isLoading ? (
+          {isUploading ? (
+            <Loader2 className="h-6 w-6 animate-spin" />
+          ) : isLoading ? (
             <Loader2 className="h-6 w-6 animate-spin" />
           ) : (
             <Save className="h-6 w-6" strokeWidth={3} />
           )}
-          {isLoading ? "Synchronizing..." : "Commit Document"}
+          {isUploading ? "Uploading Media..." : isLoading ? "Synchronizing..." : "Commit Document"}
         </Button>
       </div>
 
