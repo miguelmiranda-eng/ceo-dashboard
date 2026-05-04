@@ -547,7 +547,7 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
                   className="bg-slate-950/50 border-slate-800 text-white h-14 rounded-2xl font-black uppercase text-xs shadow-sm focus:ring-[#0091D5]/40 transition-all"
                 />
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <div className="space-y-2">
                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Order ID</Label>
                    <div className="bg-slate-900/80 border border-slate-800 text-[#0091D5] h-14 rounded-2xl px-4 flex items-center font-mono font-black text-xl shadow-inner">
@@ -574,6 +574,15 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
                   <Input
                     value={formData.customer_po || ""}
                     onChange={e => setFormData({ ...formData, customer_po: e.target.value })}
+                    className="bg-slate-950/50 border-slate-800 text-white h-14 rounded-2xl font-mono text-center font-bold"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Store PO #</Label>
+                  <Input
+                    value={formData.store_po || ""}
+                    onChange={e => setFormData({ ...formData, store_po: e.target.value })}
+                    placeholder="E.G. 12345"
                     className="bg-slate-950/50 border-slate-800 text-white h-14 rounded-2xl font-mono text-center font-bold"
                   />
                 </div>
