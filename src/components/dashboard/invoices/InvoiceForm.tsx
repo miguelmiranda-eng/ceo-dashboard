@@ -231,23 +231,68 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
     })
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: string, section: 'production' | number) => {
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.7)); // Compresión al 70%
+        };
+      };
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: string, section: 'production' | number) => {
     const files = e.target.files
     if (!files) return
 
-    Array.from(files).forEach(file => {
+    for (const file of Array.from(files)) {
       const url = URL.createObjectURL(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const attachment = {
-          url,
-          name: file.name,
-          type: type, // 'image', 'excel', 'pdf', 'other'
-          mime: file.type,
-          data: reader.result as string,
-        }
+      let fileData = "";
 
-        if (section === 'production') {
+      if (type === 'image' && file.size > 500 * 1024) { // Si pesa más de 500KB, comprimir
+        fileData = await compressImage(file);
+      } else {
+        fileData = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      const attachment = {
+        url,
+        name: file.name,
+        type: type,
+        mime: file.type,
+        data: fileData,
+      }
+
+      if (section === 'production') {
           setFormData((prev: any) => ({
             ...prev,
             production_attachments: [...(prev.production_attachments || []), attachment]
@@ -261,9 +306,7 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
             return { ...prev, items: newItems }
           })
         }
-      }
-      reader.readAsDataURL(file)
-    })
+    }
   }
 
   const removeAttachment = (index: number, section: 'production' | number) => {

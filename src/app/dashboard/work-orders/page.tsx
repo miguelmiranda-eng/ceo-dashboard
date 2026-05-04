@@ -213,7 +213,12 @@ export default function WorkOrdersPage() {
       mutate()
     } catch (err: any) {
       console.error("Full order creation flow failed:", err)
-      alert(`Error al procesar el flujo completo: ${err.message}`)
+      const errorMsg = err.message || "Error desconocido";
+      if (errorMsg.includes("Request Entity Too Large") || errorMsg.includes("payload too large")) {
+        alert("¡Error de tamaño! Las imágenes son demasiado pesadas. Por favor, intenta usar imágenes más pequeñas o menos archivos.");
+      } else {
+        alert(`Error al procesar el flujo completo: ${errorMsg}`)
+      }
     } finally {
       setIsSaving(false)
     }
