@@ -296,13 +296,18 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
         if (!uploadRes.ok) throw new Error("Error al subir archivo");
         const { url } = await uploadRes.json();
 
-        // 3. Guardar solo la URL en el estado (el JSON final será pequeñísimo)
+        // 3. Transformar la URL para usar el proxy del Dashboard
+        // El backend devuelve /api/invoices/static/... -> necesitamos invoices/static/...
+        const cleanPath = url.startsWith('/api/') ? url.replace('/api/', '') : url;
+        const proxyUrl = `/api/mos?endpoint=${cleanPath}`;
+
+        // 4. Guardar solo la URL del proxy en el estado
         const attachment = {
-          url: url, // URL real del servidor
+          url: proxyUrl, 
           name: file.name,
           type: type,
           mime: file.type,
-          data: "", // YA NO ENVIAMOS EL BASE64 GIGANTE
+          data: "", 
         }
 
         if (section === 'production') {

@@ -140,11 +140,21 @@ export async function GET(request: NextRequest) {
     const res = await fetch(upstream.toString(), {
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
         Cookie: `session_token=${token}`,
       },
       cache: 'no-store',
     })
+
+    const contentType = res.headers.get("content-type") || "";
+    
+    // Si es una imagen o archivo, devolver el stream directamente sin intentar parsear JSON
+    if (contentType.includes("image/") || contentType.includes("application/pdf")) {
+      const blob = await res.blob();
+      return new Response(blob, {
+        status: res.status,
+        headers: { "Content-Type": contentType }
+      });
+    }
 
     const data = await res.json()
 
