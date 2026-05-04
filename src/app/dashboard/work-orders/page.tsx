@@ -195,7 +195,16 @@ export default function WorkOrdersPage() {
         body: JSON.stringify(data)
       })
       
-      const result = await res.json()
+      const contentType = res.headers.get("content-type")
+      let result
+      if (contentType && contentType.includes("application/json")) {
+        result = await res.json()
+      } else {
+        const text = await res.text()
+        console.error("[WorkOrders] Server returned non-JSON:", text.slice(0, 500))
+        throw new Error(text.includes("Request En") ? "Request Entity Too Large (413)" : "Server returned HTML error")
+      }
+
       if (!res.ok) {
         let errMsg = 'Error al procesar la orden completa';
         if (result.detail) {
@@ -214,8 +223,9 @@ export default function WorkOrdersPage() {
     } catch (err: any) {
       console.error("Full order creation flow failed:", err)
       const errorMsg = err.message || "Error desconocido";
-      if (errorMsg.includes("Request Entity Too Large") || errorMsg.includes("payload too large")) {
-        alert("¡Error de tamaño! Las imágenes son demasiado pesadas. Por favor, intenta usar imágenes más pequeñas o menos archivos.");
+      
+      if (errorMsg.includes("Unexpected token 'R'") || errorMsg.includes("Request En") || errorMsg.includes("413")) {
+        alert("¡Sigue siendo demasiado pesado! El servidor (Vercel o el Backend) está rechazando la orden por el tamaño de las imágenes. \n\nPor favor: \n1. Reduce el número de imágenes. \n2. O asegúrate de que las imágenes no sean archivos gigantes.");
       } else {
         alert(`Error al procesar el flujo completo: ${errorMsg}`)
       }
