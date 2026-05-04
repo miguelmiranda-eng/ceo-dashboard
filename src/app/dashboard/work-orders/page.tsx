@@ -197,7 +197,15 @@ export default function WorkOrdersPage() {
       
       const result = await res.json()
       if (!res.ok) {
-        throw new Error(result.detail || result.error || JSON.stringify(result) || 'Error al procesar la orden completa')
+        let errMsg = 'Error al procesar la orden completa';
+        if (result.detail) {
+          errMsg = typeof result.detail === 'string' ? result.detail : JSON.stringify(result.detail);
+        } else if (result.error) {
+          errMsg = typeof result.error === 'string' ? result.error : JSON.stringify(result.error);
+        } else {
+          errMsg = JSON.stringify(result);
+        }
+        throw new Error(errMsg)
       }
 
       console.log("[WorkOrders] Success! Created ID:", result.invoice_id)
@@ -289,7 +297,15 @@ export default function WorkOrdersPage() {
 
       if (!res.ok) {
         const err = await res.json()
-        throw new Error(err.error || err.detail || 'Error al actualizar la orden de trabajo')
+        let errMsg = 'Error al actualizar la orden de trabajo';
+        if (err.detail) {
+          errMsg = typeof err.detail === 'string' ? err.detail : JSON.stringify(err.detail);
+        } else if (err.error) {
+          errMsg = typeof err.error === 'string' ? err.error : JSON.stringify(err.error);
+        } else {
+          errMsg = JSON.stringify(err);
+        }
+        throw new Error(errMsg)
       }
       
       if (!invoiceUpdateSuccess && targetInvoiceId !== "MANUAL") {
