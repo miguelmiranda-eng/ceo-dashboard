@@ -38,7 +38,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Invoice, InvoiceItem, fetchOptions } from "@/lib/api"
+import { Invoice, InvoiceItem, fetchOptions, normalizeImageUrl } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 interface InvoiceFormProps {
@@ -77,7 +77,7 @@ function ImagePreviewModal({ file, onClose }: { file: any; onClose: () => void }
         </DialogHeader>
         <div className="p-8 bg-slate-800 flex items-center justify-center min-h-[300px] overflow-auto max-h-[85vh]">
           <div style={{ transform: `scale(${zoom})`, transformOrigin: 'center center', transition: 'transform 0.2s' }}>
-            <img src={file.data || file.url} alt={file.name} className="max-w-[85vw] shadow-2xl rounded-lg" />
+            <img src={normalizeImageUrl(file.data || file.url)} alt={file.name} className="max-w-[85vw] shadow-2xl rounded-lg" />
           </div>
         </div>
       </DialogContent>
@@ -414,7 +414,7 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
             <div key={i} className="group relative bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-xl animate-in zoom-in-95 duration-200">
               {file.type === 'image' ? (
                 <img 
-                  src={file.url || file.data} 
+                  src={normalizeImageUrl(file.url || file.data)} 
                   alt={file.name} 
                   className="w-full h-24 object-cover opacity-80 group-hover:opacity-100 transition-all group-hover:scale-110 cursor-pointer" 
                   onClick={() => setSelectedImage(file)}

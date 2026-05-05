@@ -160,6 +160,26 @@ function pctDelta(current: number, previous: number): number {
   return Math.round(((current - previous) / previous) * 100 * 10) / 10
 }
 
+/**
+ * Normalizes an image URL to ensure it goes through the MOS proxy if it's a backend static file.
+ */
+export function normalizeImageUrl(url: string | undefined): string {
+  if (!url) return "";
+  
+  // Si ya tiene el túnel, es Base64 o es un link externo, dejarlo igual
+  if (url.includes('/api/mos?endpoint=') || url.startsWith('data:') || url.startsWith('http')) {
+    return url;
+  }
+  
+  // Si es una ruta estática del backend, envolverla en el proxy
+  if (url.includes('/api/invoices/static/')) {
+    const cleanPath = url.startsWith('/api/') ? url.replace('/api/', '') : url;
+    return `/api/mos?endpoint=${cleanPath}`;
+  }
+  
+  return url;
+}
+
 // ─── Main fetch function ───────────────────────────────────────────────────────
 
 export async function fetchDashboardData(filters: DashboardFilters = {}): Promise<DashboardData> {

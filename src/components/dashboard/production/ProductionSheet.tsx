@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Invoice } from "@/lib/api"
+import { Invoice, normalizeImageUrl } from "@/lib/api"
 import { 
   Dialog, 
   DialogContent, 
@@ -81,13 +81,13 @@ function AttachmentPreview({ file, isImage }: { file: any, isImage: boolean }) {
               }}
             >
               <img 
-                src={file.data || file.url} 
+                src={normalizeImageUrl(file.data || file.url)} 
                 alt={file.name} 
                 className="max-w-[85vw] shadow-2xl" 
               />
             </div>
           ) : file?.type === 'pdf' || file?.category === 'pdf' ? (
-            <iframe src={file.data || file.url} className="w-[90vw] h-[80vh] border-none bg-white" />
+            <iframe src={normalizeImageUrl(file.data || file.url)} className="w-[90vw] h-[80vh] border-none bg-white" />
           ) : (
             <div className="flex flex-col items-center gap-4 p-12 text-white">
               <FileSpreadsheet className="h-16 w-16 text-emerald-500" />
@@ -311,7 +311,7 @@ export function ProductionSheet({ invoice }: ProductionSheetProps) {
                               <DialogTrigger asChild>
                                 <div className="border border-slate-200 rounded-sm overflow-hidden bg-white shadow-sm flex flex-col cursor-pointer hover:border-blue-400 transition-all group">
                                   {isImage ? (
-                                    <img src={file.data || file.url} alt={file.name} className="w-full h-12 object-cover group-hover:scale-110 transition-transform" />
+                                    <img src={normalizeImageUrl(file.data || file.url)} alt={file.name} className="w-full h-12 object-cover group-hover:scale-110 transition-transform" />
                                   ) : (
                                     <div className="h-12 flex items-center justify-center bg-slate-50 group-hover:bg-white">
                                       {file?.type === 'pdf' ? <FilePdf className="h-5 w-5 text-rose-500" /> : <FileSpreadsheet className="h-5 w-5 text-emerald-500" />}
@@ -371,7 +371,7 @@ export function ProductionSheet({ invoice }: ProductionSheetProps) {
                     <DialogTrigger asChild>
                       <div className="border border-slate-300 rounded-sm overflow-hidden bg-white shadow-sm flex flex-col justify-between cursor-pointer hover:border-blue-500 transition-all group">
                         {isImage ? (
-                          <img src={file.data || file.url} alt={file.name} className="w-full h-20 object-cover group-hover:scale-105 transition-transform" />
+                          <img src={normalizeImageUrl(file.data || file.url)} alt={file.name} className="w-full h-20 object-cover group-hover:scale-105 transition-transform" />
                         ) : (
                           <div className="h-20 flex flex-col items-center justify-center bg-slate-50 group-hover:bg-white">
                             {file?.type === 'pdf' || file?.category === 'pdf' ? <FilePdf className="h-8 w-8 text-rose-500" /> : <FileSpreadsheet className="h-8 w-8 text-emerald-500" />}
