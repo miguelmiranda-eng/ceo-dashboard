@@ -97,7 +97,7 @@ export default function MatchingPage() {
         params.set('date_to', customTo)
       }
       // If preset is "all" or empty — send no dates so backend returns full history
-    try {
+      
       setError(null)
       const res = await fetch(`/api/matching?${params.toString()}`)
       const json = await res.json()
@@ -201,6 +201,7 @@ export default function MatchingPage() {
             Actualizar
           </Button>
         </div>
+      </div>
             {/* Error Message */}
       {error && (
         <div className="bg-red-50 border-l-4 border-red-500 p-6 rounded-2xl animate-in slide-in-from-top-4 duration-500">
