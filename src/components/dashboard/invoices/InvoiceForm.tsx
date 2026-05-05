@@ -162,13 +162,21 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
   }, [])
 
   const handleSave = () => {
-    // Asegurarse de que art_links sea una lista antes de enviar
+    // Asegurarse de que art_links sea SIEMPRE una lista de strings limpia
+    let processedLinks: string[] = [];
+    
+    if (typeof formData.art_links === 'string') {
+      processedLinks = formData.art_links.split('\n').map(l => l.trim()).filter(l => l !== "");
+    } else if (Array.isArray(formData.art_links)) {
+      processedLinks = formData.art_links.map(l => String(l).trim()).filter(l => l !== "");
+    }
+
     const finalData = {
       ...formData,
-      art_links: typeof formData.art_links === 'string' 
-        ? (formData.art_links as string).split('\n').map(l => l.trim()).filter(l => l !== "")
-        : formData.art_links
+      art_links: processedLinks
     };
+    
+    console.log("Submitting with processed art_links:", finalData.art_links);
     onSubmit(finalData);
   };
 
