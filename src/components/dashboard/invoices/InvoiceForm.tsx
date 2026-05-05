@@ -161,6 +161,17 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
     fetchOptions().then(setOptions).catch(console.error)
   }, [])
 
+  const handleSave = () => {
+    // Asegurarse de que art_links sea una lista antes de enviar
+    const finalData = {
+      ...formData,
+      art_links: typeof formData.art_links === 'string' 
+        ? (formData.art_links as string).split('\n').map(l => l.trim()).filter(l => l !== "")
+        : formData.art_links
+    };
+    onSubmit(finalData);
+  };
+
   const calculateTotals = (items: InvoiceItem[]) => {
     const subtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0)
     const tax = subtotal * 0.08
@@ -850,7 +861,7 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
           Discard Evolution
         </Button>
         <Button
-          onClick={() => onSubmit(formData)}
+          onClick={handleSave}
           disabled={isLoading || isUploading}
           className="bg-[#0091D5] hover:bg-[#0081C0] text-white font-black uppercase tracking-[0.2em] text-[10px] h-16 px-16 rounded-2xl shadow-[0_0_50px_rgba(0,145,213,0.3)] disabled:opacity-50 transition-all flex items-center gap-3"
         >
