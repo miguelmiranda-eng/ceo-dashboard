@@ -14,7 +14,8 @@ export default function PublicProductionPage() {
 
   useEffect(() => {
     // Usamos el nuevo endpoint público para evitar problemas de autenticación en la vista de planta
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/invoices/public/${id}`)
+    // Usamos el proxy interno para evitar problemas de CORS y URLs locales
+    fetch(`/api/mos?endpoint=/api/invoices/public/${id}`)
       .then(res => res.json())
       .then(data => {
         setInvoice(data)
