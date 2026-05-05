@@ -184,14 +184,11 @@ export function normalizeImageUrl(url: string | undefined): string {
   
   // Caso 3: Rutas estáticas del backend de MOS
   if (url.includes('invoices/static/')) {
-    // Limpiar la ruta para que siempre empiece con /api/invoices/static/
-    let cleanPath = url;
-    if (url.startsWith('/api/')) cleanPath = url;
-    else if (url.startsWith('api/')) cleanPath = '/' + url;
-    else if (url.startsWith('invoices/')) cleanPath = '/api/' + url;
-    else if (!url.startsWith('/')) cleanPath = '/api/invoices/static/' + url;
-    
-    return `/api/mos?endpoint=${cleanPath}`;
+    // Extraer solo la parte de invoices/static/...
+    const match = url.match(/invoices\/static\/.+$/);
+    if (match) {
+      return `/api/mos?endpoint=/api/${match[0]}`;
+    }
   }
   
   return url;

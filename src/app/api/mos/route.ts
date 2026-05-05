@@ -116,8 +116,9 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  // Build the upstream URL, forwarding all query params except 'endpoint'
-  const upstream = new URL(`${MOS_BACKEND_URL}/api/${endpoint}`)
+  // Limpiamos el endpoint para evitar doble /api/ o barras repetidas
+  const cleanEndpoint = endpoint.startsWith('/api/') ? endpoint.replace('/api/', '') : endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+  const upstream = new URL(`${MOS_BACKEND_URL}/api/${cleanEndpoint}`)
   searchParams.forEach((value, key) => {
     if (key !== 'endpoint') {
       upstream.searchParams.set(key, value)
