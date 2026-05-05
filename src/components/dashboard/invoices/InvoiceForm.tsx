@@ -166,9 +166,9 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
     let processedLinks: string[] = [];
     
     if (typeof formData.art_links === 'string') {
-      processedLinks = formData.art_links.split('\n').map(l => l.trim()).filter(l => l !== "");
+      processedLinks = (formData.art_links as string).split('\n').map((l: string) => l.trim()).filter((l: string) => l !== "");
     } else if (Array.isArray(formData.art_links)) {
-      processedLinks = formData.art_links.map(l => String(l).trim()).filter(l => l !== "");
+      processedLinks = (formData.art_links as any[]).map((l: any) => String(l).trim()).filter((l: string) => l !== "");
     }
 
     const finalData = {
