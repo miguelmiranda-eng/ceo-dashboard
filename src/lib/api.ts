@@ -166,14 +166,31 @@ function pctDelta(current: number, previous: number): number {
 export function normalizeImageUrl(url: string | undefined): string {
   if (!url) return "";
   
-  // Si ya tiene el túnel, es Base64 o es un link externo, dejarlo igual
-  if (url.includes('/api/mos?endpoint=') || url.startsWith('data:') || url.startsWith('http')) {
+  // Caso 1: Data URLs o links externos completos (dejarlos igual)
+  if (url.startsWith('data:') || (url.startsWith('http') && !url.includes('localhost:8000'))) {
     return url;
   }
   
-  // Si es una ruta estática del backend, envolverla en el proxy
-  if (url.includes('/api/invoices/static/')) {
-    const cleanPath = url.startsWith('/api/') ? url.replace('/api/', '') : url;
+  // Caso 2: URLs que ya están pasando por el proxy de Vercel
+  if (url.includes('/api/mos?endpoint=')) {
+    const parts = url.split('endpoint=');
+    const endpoint = parts[1];
+    // Si al endpoint le falta la / inicial, se la ponemos
+    if (endpoint && !endpoint.startsWith('/')) {
+      return `${parts[0]}endpoint=/${endpoint}`;
+    }
+    return url;
+  }
+  
+  // Caso 3: Rutas estáticas del backend de MOS
+  if (url.includes('invoices/static/')) {
+    // Limpiar la ruta para que siempre empiece con /api/invoices/static/
+    let cleanPath = url;
+    if (url.startsWith('/api/')) cleanPath = url;
+    else if (url.startsWith('api/')) cleanPath = '/' + url;
+    else if (url.startsWith('invoices/')) cleanPath = '/api/' + url;
+    else if (!url.startsWith('/')) cleanPath = '/api/invoices/static/' + url;
+    
     return `/api/mos?endpoint=${cleanPath}`;
   }
   
