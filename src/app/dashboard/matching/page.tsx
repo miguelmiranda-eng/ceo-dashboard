@@ -58,6 +58,7 @@ export default function MatchingPage() {
   const { filters: globalFilters, setFilters } = useDashboardFilters()
   const [data, setData] = useState<{ stats: MatchingStats; orders: MatchingOrder[] } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState<'all' | 'final_bill' | 'completed'>('all')
   const [customFrom, setCustomFrom] = useState("")
@@ -96,12 +97,19 @@ export default function MatchingPage() {
         params.set('date_to', customTo)
       }
       // If preset is "all" or empty — send no dates so backend returns full history
-
+    try {
+      setError(null)
       const res = await fetch(`/api/matching?${params.toString()}`)
       const json = await res.json()
+      
+      if (!res.ok) {
+        throw new Error(json.error || "Error al sincronizar datos")
+      }
+      
       setData(json)
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
+      setError(err.message)
     } finally {
       setLoading(false)
     }
@@ -193,10 +201,24 @@ export default function MatchingPage() {
             Actualizar
           </Button>
         </div>
-      </div>
+            {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-6 rounded-2xl animate-in slide-in-from-top-4 duration-500">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-6 h-6 text-red-500" />
+            <div>
+              <p className="text-sm font-black text-red-800 uppercase tracking-wider">Error de Sincronización</p>
+              <p className="text-xs font-bold text-red-600 mt-1 uppercase">{error}</p>
+            </div>
+          </div>
+          <p className="text-[10px] text-red-400 mt-4 font-bold uppercase italic">
+            Verifica que MOS_BACKEND_URL esté configurado correctamente en Vercel.
+          </p>
+        </div>
+      )}
 
       {/* Hero Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className={cn("grid grid-cols-1 md:grid-cols-3 gap-8", error && "opacity-50 pointer-events-none")}>
         <Card className="bg-white border-none shadow-2xl shadow-slate-200/50 rounded-[2.5rem] overflow-hidden group">
           <CardContent className="p-8 relative">
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -205,7 +227,7 @@ export default function MatchingPage() {
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Piezas Pintadas (MOS)</p>
             <div className="flex items-baseline gap-3">
               <h2 className="text-6xl font-black text-[#0F172A] tracking-tighter">
-                {data?.stats.total_pieces_produced.toLocaleString() || "0"}
+                {data?.stats?.total_pieces_produced?.toLocaleString() || "0"}
               </h2>
               <span className="text-blue-600 font-bold text-xs uppercase tracking-widest">Unidades</span>
             </div>
@@ -225,13 +247,13 @@ export default function MatchingPage() {
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-black tracking-tighter opacity-70">$</span>
               <h2 className="text-5xl font-black tracking-tighter">
-                {data?.stats.total_pieces_ready
+                {data?.stats?.total_pieces_ready
                   ? data.stats.total_pieces_ready.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
                   : "0"}
               </h2>
               <span className="text-blue-100 font-bold text-xs uppercase tracking-widest">USD</span>
             </div>
-            <div className="mt-2 text-[10px] text-blue-200 font-semibold">{data?.stats.unbilled_count || 0} órdenes pendientes</div>
+            <div className="mt-2 text-[10px] text-blue-200 font-semibold">{data?.stats?.unbilled_count || 0} órdenes pendientes</div>
             <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-white uppercase tracking-wider bg-white/20 w-fit px-3 py-1 rounded-full border border-white/30 backdrop-blur-md">
               <AlertCircle className="w-3 h-3" />
               Pendiente de Facturar
@@ -248,14 +270,14 @@ export default function MatchingPage() {
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-black tracking-tighter opacity-70">$</span>
               <h2 className="text-5xl font-black tracking-tighter">
-                {data?.stats.total_pieces_billed
+                {data?.stats?.total_pieces_billed
                   ? data.stats.total_pieces_billed.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
                   : "0"}
               </h2>
               <span className="text-emerald-50 font-bold text-xs uppercase tracking-widest">USD</span>
             </div>
-            <div className="mt-2 text-[10px] text-emerald-100 font-semibold">{data?.stats.billed_count || 0} órdenes cobradas</div>
-            <div className="mt-6 flex items-center gap-2 text-[10px] font-bold text-white uppercase tracking-wider bg-white/20 w-fit px-3 py-1 rounded-full border border-white/30 backdrop-blur-md">
+            <div className="mt-2 text-[10px] text-emerald-100 font-semibold">{data?.stats?.billed_count || 0} órdenes cobradas</div>
+            <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-white uppercase tracking-wider bg-white/20 w-fit px-3 py-1 rounded-full border border-white/30 backdrop-blur-md">
               <CheckCircle2 className="w-3 h-3" />
               Ingreso Confirmado
             </div>
