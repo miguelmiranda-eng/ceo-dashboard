@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
 
       return {
         order_number: orderNum,
-        client: mosOrder.client_name || mosOrder.client || pOrder?.client?.name || "Unknown",
+        client: mosOrder.client_name || mosOrder.client || pOrder?.customer?.company || "Unknown",
         mos_status: mosOrder.board,
         mos_pieces: mosOrder.quantity || 0,
         printavo_id: pOrder?.id || null,
