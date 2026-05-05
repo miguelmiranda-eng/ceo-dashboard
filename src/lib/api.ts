@@ -137,7 +137,10 @@ async function mosProxy(endpoint: string, params: Record<string, string> = {}, o
   url.searchParams.set('endpoint', endpoint)
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
 
-  const res = await fetch(url.toString(), { cache: 'no-store' })
+  const res = await fetch(url.toString(), { 
+    cache: 'no-store',
+    signal: AbortSignal.timeout(30000) // 30 second safety timeout
+  })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error(err?.error || `MOS API ${res.status}`)
@@ -211,18 +214,27 @@ export async function fetchDashboardData(filters: DashboardFilters = {}): Promis
   const origin = filters.origin
   // Fetch all datasets in parallel for performance
     // Fetch all datasets in parallel for performance
-  const [analyticsToday, analyticsWeek, analyticsMonth, capacityPlan, printavoData] =
+  const [analyticsToday, analyticsWeek, analyticsMonth, capacityPlan] =
     await Promise.all([
       mosProxy('production-analytics', { preset: 'today' }, origin),
       mosProxy('production-analytics', { preset: filters.preset || 'week', ...filters as any }, origin),
       mosProxy('production-analytics', { preset: 'month' }, origin),
       mosProxy('capacity-plan', {}, origin),
-      fetch(`${filters.origin || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')}/api/printavo`, { cache: 'no-store' })
     ])
 
-  // ── Printavo Enrichment ────────────────────────────────────────────────────
-  const printavoRes = printavoData as Response
-  const printavo = printavoRes.ok ? await printavoRes.json() : { matched_revenue: 0, generated_revenue_today: 0 }
+  // Printavo enrichment with safety timeout
+  let printavo = { matched_revenue: 0, generated_revenue_today: 0 };
+  try {
+    const printavoData = await fetch(`${filters.origin || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')}/api/printavo`, { 
+      cache: 'no-store',
+      signal: AbortSignal.timeout(30000) 
+    });
+    if (printavoData.ok) {
+      printavo = await printavoData.json();
+    }
+  } catch (err) {
+    console.error("Printavo fetch failed or timed out", err);
+  }
 
   // ── Type-cast raw responses ────────────────────────────────────────────────
   const today = analyticsToday as Record<string, unknown>
