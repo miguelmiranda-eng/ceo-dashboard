@@ -34,7 +34,7 @@ function AttachmentPreview({ file, isImage }: { file: any, isImage: boolean }) {
   const [zoom, setZoom] = useState(1);
 
   return (
-    <DialogContent className="max-w-[95vw] w-fit h-fit p-0 bg-slate-900 border-slate-800 overflow-hidden">
+    <DialogContent className="max-w-[98vw] w-[98vw] h-[95vh] p-0 bg-slate-900 border-slate-800 overflow-hidden flex flex-col">
       <DialogHeader className="p-4 border-b border-slate-800 bg-slate-950 flex-row justify-between items-center space-y-0 gap-8">
         <div className="flex items-center gap-4">
           <DialogTitle className="text-white font-black uppercase tracking-widest text-xs truncate">
@@ -70,7 +70,7 @@ function AttachmentPreview({ file, isImage }: { file: any, isImage: boolean }) {
           Download
         </a>
       </DialogHeader>
-      <div className="p-4 bg-slate-800 flex items-center justify-center min-h-[300px] overflow-auto max-h-[85vh] max-w-[95vw]">
+      <div className="flex-1 bg-slate-800 flex items-center justify-center overflow-auto p-2">
         <div className="flex items-center justify-center min-w-full min-h-full">
           {isImage ? (
             <div 
@@ -83,7 +83,7 @@ function AttachmentPreview({ file, isImage }: { file: any, isImage: boolean }) {
               <img 
                 src={normalizeImageUrl(file.data || file.url)} 
                 alt={file.name} 
-                className="max-w-[85vw] shadow-2xl" 
+                className="max-w-none shadow-2xl transition-all duration-200" 
               />
             </div>
           ) : file?.type === 'pdf' || file?.category === 'pdf' ? (
