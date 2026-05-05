@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Invoice, normalizeImageUrl } from "@/lib/api"
+import { Invoice, normalizeImageUrl, normalizePublicUrl } from "@/lib/api"
 import { 
   Dialog, 
   DialogContent, 
@@ -242,12 +242,12 @@ export function ProductionSheet({ invoice }: ProductionSheetProps) {
             <p className="font-black text-blue-600 italic">DIGITAL PACKING LIST</p>
             {typeof invoice?.job_title_a === 'object' && (invoice?.job_title_a as any)?.url && (
               <a 
-                href={(invoice?.job_title_a as any).url}
+                href={normalizePublicUrl((invoice?.job_title_a as any).url)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 underline font-mono text-[9px] break-all block hover:text-blue-800 transition-colors"
               >
-                {(invoice?.job_title_a as any).url}
+                {normalizePublicUrl((invoice?.job_title_a as any).url)}
               </a>
             )}
           </div>

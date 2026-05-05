@@ -38,7 +38,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Invoice, InvoiceItem, fetchOptions, normalizeImageUrl } from "@/lib/api"
+import { Invoice, InvoiceItem, fetchOptions, normalizeImageUrl, normalizePublicUrl } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 interface InvoiceFormProps {
@@ -524,7 +524,7 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 block">Job Title A (URL)</Label>
                   <Input
-                    value={(formData.job_title_a as any)?.url || ""}
+                    value={normalizePublicUrl((formData.job_title_a as any)?.url) || ""}
                     onChange={e => setFormData({ ...formData, job_title_a: { ...(formData.job_title_a as any), url: e.target.value } })}
                     className="bg-slate-950/50 border-slate-800 text-blue-400 h-11 text-xs rounded-xl font-mono"
                   />

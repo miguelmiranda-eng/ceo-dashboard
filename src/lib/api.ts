@@ -180,6 +180,17 @@ export function normalizeImageUrl(url: string | undefined): string {
   return url;
 }
 
+/**
+ * Strips localhost:3000 from legacy links to make them relative/dynamic.
+ */
+export function normalizePublicUrl(url: string | undefined): string {
+  if (!url) return "";
+  if (url.includes('localhost:3000')) {
+    return url.replace(/https?:\/\/localhost:3000/, '');
+  }
+  return url;
+}
+
 // ─── Main fetch function ───────────────────────────────────────────────────────
 
 export async function fetchDashboardData(filters: DashboardFilters = {}): Promise<DashboardData> {
