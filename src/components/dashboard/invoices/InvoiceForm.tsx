@@ -206,7 +206,7 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="bg-white text-[#0F172A] max-w-[1050px] mx-auto font-sans" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
+    <div className="bg-white text-[#0F172A] max-w-[1400px] mx-auto font-sans" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
 
       {/* Top bar */}
       <div className="flex justify-between items-center px-4 py-2 bg-gray-100 border-b border-gray-300">

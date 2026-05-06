@@ -102,7 +102,7 @@ export function ProsperInvoice({ invoice }: ProsperInvoiceProps) {
   const sizeColumns: string[] = inv.size_columns || ["XS","S","M","L","XL","2XL","3XL","4XL"]
 
   return (
-    <div id="prosper-production-sheet" className="bg-white text-[#0F172A] max-w-[1050px] mx-auto font-sans select-none" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
+    <div id="prosper-production-sheet" className="bg-white text-[#0F172A] max-w-[1400px] mx-auto font-sans select-none" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
 
       {/* Print button — screen only */}
       <div className="print:hidden flex justify-between items-center px-4 py-2 bg-gray-100 border-b border-gray-300">
