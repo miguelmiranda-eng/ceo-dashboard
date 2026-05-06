@@ -422,6 +422,24 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
           </div>
         </div>
 
+        {/* ── FINANCIAL SUMMARY ── */}
+        <div className="flex justify-end">
+          <div className="w-[280px] bg-slate-50 border border-gray-300 rounded p-4 space-y-2">
+            <div className="flex justify-between items-center text-[10px] font-bold text-gray-500 uppercase">
+              <span>Subtotal:</span>
+              <span className="text-gray-700">${(form.amounts?.subtotal || 0).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center text-[10px] font-bold text-gray-500 uppercase">
+              <span>Sales Tax (0%):</span>
+              <span className="text-gray-700">$0.00</span>
+            </div>
+            <div className="pt-2 border-t border-gray-300 flex justify-between items-end">
+              <span className="text-[10px] font-black text-[#0091D5] uppercase tracking-widest">Total Amount:</span>
+              <span className="text-xl font-black text-gray-800">${(form.amounts?.total || 0).toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
         {/* ── FOOTER ACTIONS ── */}
         <div className="flex justify-end gap-3 pt-3 border-t border-gray-200">
           <Button variant="outline" onClick={onCancel} disabled={isLoading || isUploading}
