@@ -141,6 +141,9 @@ export function ProsperInvoice({ invoice }: ProsperInvoiceProps) {
                 <div className="font-black text-3xl leading-tight tracking-tight">WORK ORDER: #{inv.invoice_id || "NEW"}</div>
                 {inv.customer_po && <div className="font-black text-2xl tracking-tight">PO: #{inv.customer_po}</div>}
                 {inv.client && <div className="text-sm font-bold text-gray-600 mt-1 uppercase">{inv.client}</div>}
+                {inv.store_po && (
+                  <div className="mt-2 text-[#0091D5] font-black text-sm uppercase">Store PO: {inv.store_po}</div>
+                )}
               </td>
 
               {/* Dates + QR */}
@@ -150,10 +153,6 @@ export function ProsperInvoice({ invoice }: ProsperInvoiceProps) {
                     <div>
                       <span className="font-bold">Created: </span>
                       <span>{fmtDate(inv.dates?.created)}</span>
-                    </div>
-                    <div>
-                      <span className="font-bold">| DUE DATE: </span>
-                      <span className="font-black text-red-600 text-[11px]">{fmtDate(inv.dates?.due)}</span>
                     </div>
                     {inv.cancel_date && (
                       <div><span className="font-bold text-orange-600">CANCEL: </span><span className="font-black text-orange-600">{fmtDate(inv.cancel_date)}</span></div>
@@ -197,9 +196,6 @@ export function ProsperInvoice({ invoice }: ProsperInvoiceProps) {
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <div className="text-lg font-black text-gray-400 mb-2">Panel de Activos Técnicos (Art &amp; Seps)</div>
-              {inv.job_title_a?.url && (
-                <a href={inv.job_title_a.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs font-bold underline break-all">{inv.job_title_a.url}</a>
-              )}
             </div>
           </div>
         </div>
@@ -253,14 +249,18 @@ export function ProsperInvoice({ invoice }: ProsperInvoiceProps) {
               )}
             </table>
 
-            {/* Status + Production Note */}
-            {inv.blank_status && (
-              <div className="text-[10px] font-bold mt-1">Status: <span className="text-red-600">{inv.blank_status}</span></div>
-            )}
-            {inv.production_notes && (
-              <div className="text-[10px] mt-0.5">
-                <span className="font-black">Nota de Producción: </span>
-                <span>{inv.production_notes}</span>
+            {/* Status + Production Note removed per request */}
+            
+            {inv.open_text_field && (
+              <div className="mt-4 border border-gray-300 rounded p-4 bg-white">
+                <div className="text-[10px] font-black text-gray-700 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                  <div className="h-[1px] flex-1 bg-gray-200"></div>
+                  <span>CAMPO DE TEXTO ABIERTO</span>
+                  <div className="h-[1px] flex-1 bg-gray-200"></div>
+                </div>
+                <div className="text-[12px] font-medium leading-relaxed whitespace-pre-wrap">
+                  {inv.open_text_field}
+                </div>
               </div>
             )}
           </div>

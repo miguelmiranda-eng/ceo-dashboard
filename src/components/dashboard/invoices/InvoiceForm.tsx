@@ -75,6 +75,7 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
     production_notes: inv?.production_notes || "",
     finishing_notes: inv?.finishing_notes || "",
     production_attachments: inv?.production_attachments || [],
+    open_text_field: inv?.open_text_field || "",
   })
 
   useEffect(() => { fetchOptions().then(setOptions).catch(console.error) }, [])
@@ -252,11 +253,6 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
                     {(options?.priorities || ["PRIORITY 1","PRIORITY 2","PRIORITY 3"]).map((p: string) =>
                       <option key={p} value={p}>{p}</option>)}
                   </select>
-                  <select value={form.blank_status} onChange={e => set("blank_status", e.target.value)}
-                    className="text-[9px] font-black border border-gray-300 rounded px-1 bg-gray-50 text-gray-700 focus:outline-none">
-                    {(options?.blank_statuses || ["PENDIENTE","EN TRANSITO","RECIBIDO"]).map((s: string) =>
-                      <option key={s} value={s}>{s}</option>)}
-                  </select>
                   <select value={form.artwork_status} onChange={e => set("artwork_status", e.target.value)}
                     className="text-[9px] font-black border border-blue-300 rounded px-1 bg-blue-50 text-blue-700 focus:outline-none">
                     {(options?.artwork_statuses || ["NEW","REORDER","APPROVED","PENDING"]).map((s: string) =>
@@ -284,9 +280,12 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
                     {(options?.clients || []).map((c: string) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
-                <input value={form.store_po} onChange={e => set("store_po", e.target.value)}
-                  placeholder="Store PO #"
-                  className="text-[10px] text-center border-b border-gray-200 focus:border-blue-400 focus:outline-none w-32 mt-1 bg-transparent text-gray-500" />
+                <div className="mt-2 flex items-center justify-center gap-2">
+                  <span className="text-[10px] font-black text-[#0091D5] uppercase tracking-widest">Store PO #:</span>
+                  <input value={form.store_po} onChange={e => set("store_po", e.target.value)}
+                    placeholder="Store PO #"
+                    className="text-sm font-black border-b border-[#0091D5] focus:border-blue-600 focus:outline-none w-40 bg-transparent text-[#0091D5]" />
+                </div>
               </td>
 
               {/* Right: Dates */}
@@ -297,12 +296,6 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
                     <input type="date" value={form.dates?.created || ""}
                       onChange={e => set("dates", { ...form.dates, created: e.target.value })}
                       className="border-b border-gray-300 focus:border-blue-400 focus:outline-none text-[10px] font-bold w-full bg-transparent" />
-                  </div>
-                  <div>
-                    <div className="text-[9px] font-black text-red-500 uppercase tracking-widest">Due Date *</div>
-                    <input type="date" value={form.dates?.due || ""}
-                      onChange={e => set("dates", { ...form.dates, due: e.target.value })}
-                      className="border-b-2 border-red-400 focus:border-red-600 focus:outline-none text-[10px] font-black text-red-600 w-full bg-transparent" />
                   </div>
                   <div>
                     <div className="text-[9px] font-black text-orange-500 uppercase tracking-widest">Cancel Date</div>
@@ -335,10 +328,6 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
             <input value={form.job_title_a?.desc || ""} onChange={e => set("job_title_a", { ...form.job_title_a, desc: e.target.value })}
               placeholder="HELL GRIP TEE - SATAN UNIVERSITY"
               className="w-full text-lg font-black uppercase border-b-2 border-gray-200 focus:border-blue-400 focus:outline-none bg-transparent mb-2" />
-            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">URL del Arte / CAD Link</div>
-            <input value={form.job_title_a?.url || ""} onChange={e => set("job_title_a", { ...form.job_title_a, url: e.target.value })}
-              placeholder="https://dropbox.com/..."
-              className="w-full text-[10px] font-mono border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-blue-400 bg-white text-blue-600" />
           </div>
         </div>
 
@@ -354,32 +343,33 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
           <div className="flex gap-4">
             {/* Matrix */}
             <div className="flex-1">
-              <SizeMatrixTable
-                items={form.items}
-                sizeColumns={form.size_columns}
-                onUpdateSize={updateSize}
-                onUpdateItem={updateItem}
-                onAddSize={addSizeColumn}
-                onRemoveSize={removeSizeColumn}
-                onAddItem={addItem}
-                onRemoveItem={removeItem}
-              />
-              {/* Status + Prod Notes below table */}
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-[9px] font-black text-gray-500">Status:</span>
-                <select value={form.blank_status} onChange={e => set("blank_status", e.target.value)}
-                  className="text-[10px] font-black border border-gray-300 rounded px-1 bg-white focus:outline-none text-red-600">
-                  {(options?.blank_statuses || ["PENDIENTE","EN TRANSITO","RECIBIDO","REORDER"]).map((s: string) =>
-                    <option key={s} value={s}>{s}</option>)}
-                </select>
+                <SizeMatrixTable
+                  items={form.items}
+                  sizeColumns={form.size_columns}
+                  onUpdateSize={updateSize}
+                  onUpdateItem={updateItem}
+                  onAddSize={addSizeColumn}
+                  onRemoveSize={removeSizeColumn}
+                  onAddItem={addItem}
+                  onRemoveItem={removeItem}
+                />
+                {/* Status + Prod Notes removed per request */}
               </div>
-              <div className="flex items-start gap-2 mt-1">
-                <span className="text-[9px] font-black text-gray-500 whitespace-nowrap mt-1">Nota de Producción:</span>
-                <input value={form.production_notes} onChange={e => set("production_notes", e.target.value)}
-                  placeholder="Overages de 2 piezas por talla permitidas. Shortage permitido: 0%."
-                  className="flex-1 text-[10px] border-b border-gray-300 focus:border-blue-400 focus:outline-none bg-transparent" />
+              
+              <div className="mt-4">
+                <div className="text-[11px] font-black text-gray-700 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                  <div className="h-[1px] flex-1 bg-gray-200"></div>
+                  <span>CAMPO DE TEXTO ABIERTO</span>
+                  <div className="h-[1px] flex-1 bg-gray-200"></div>
+                </div>
+                <textarea 
+                  value={form.open_text_field || ""} 
+                  onChange={e => set("open_text_field", e.target.value)}
+                  placeholder="Ingrese información adicional aquí..."
+                  rows={4}
+                  className="w-full text-[12px] p-3 border border-gray-300 rounded focus:border-blue-500 focus:outline-none bg-white font-medium"
+                />
               </div>
-            </div>
 
             {/* Checklist (right) */}
             <div className="w-[220px] flex-shrink-0 border border-gray-400 rounded p-3">

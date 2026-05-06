@@ -62,7 +62,6 @@ export function SizeMatrixTable({
                 </button>
               </th>
             ))}
-            <th className="border border-gray-400 py-1 px-1 text-center font-black w-10">Items</th>
             <th className="border border-gray-400 py-1 px-2 text-center font-black w-12">Total</th>
             <th className="border border-gray-300 py-1 px-1 w-6 bg-blue-50">
               <button onClick={onAddSize} title="Add size" className="text-blue-600 hover:text-blue-800 font-black text-[10px]">+S</button>
@@ -94,10 +93,6 @@ export function SizeMatrixTable({
                   />
                 </td>
               ))}
-              <td className="border border-gray-300 py-1 px-1 text-center">
-                <input type="number" value={item.items_count || ""} onChange={e => onUpdateItem(idx, "items_count", parseInt(e.target.value) || 0)}
-                  className="w-full text-center text-[10px] font-bold bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none" />
-              </td>
               <td className="border border-gray-300 py-1 px-2 text-center font-black text-sm">{item.quantity || 0}</td>
               <td className="border border-gray-300 py-1 px-1 text-center">
                 {idx > 0 && (
@@ -118,9 +113,6 @@ export function SizeMatrixTable({
               const t = items.reduce((a, it) => a + (Number(it.sizes?.[s]) || 0), 0)
               return <td key={s} className="border border-gray-400 py-1 px-1 text-center font-black">{t > 0 ? t : "—"}</td>
             })}
-            <td className="border border-gray-400 py-1 px-1 text-center font-bold text-gray-500">
-              {items.reduce((a, it) => a + (Number(it.items_count) || 0), 0) || "—"}
-            </td>
             <td className="border border-gray-400 py-1 px-2 text-center font-black text-sm">
               {items.reduce((a, it) => a + (Number(it.quantity) || 0), 0)}
             </td>
