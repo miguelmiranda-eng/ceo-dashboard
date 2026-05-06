@@ -340,40 +340,39 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
           {form.job_title_a?.desc && (
             <div className="text-base font-black mb-2 uppercase">Art Name: {form.job_title_a.desc}</div>
           )}
-          <div className="flex gap-4">
+          <div className="space-y-4">
             {/* Matrix */}
-            <div className="flex-1">
-                <SizeMatrixTable
-                  items={form.items}
-                  sizeColumns={form.size_columns}
-                  onUpdateSize={updateSize}
-                  onUpdateItem={updateItem}
-                  onAddSize={addSizeColumn}
-                  onRemoveSize={removeSizeColumn}
-                  onAddItem={addItem}
-                  onRemoveItem={removeItem}
-                />
-                
-                <div className="mt-4">
-                  <div className="text-[11px] font-black text-gray-700 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                    <div className="h-[1px] flex-1 bg-gray-200"></div>
-                    <span>CAMPO DE TEXTO ABIERTO</span>
-                    <div className="h-[1px] flex-1 bg-gray-200"></div>
-                  </div>
-                  <textarea 
-                    value={form.open_text_field || ""} 
-                    onChange={e => set("open_text_field", e.target.value)}
-                    placeholder="Ingrese información adicional aquí..."
-                    rows={4}
-                    className="w-full text-[12px] p-3 border border-gray-300 rounded focus:border-blue-500 focus:outline-none bg-white font-medium"
-                  />
-                </div>
+            <SizeMatrixTable
+              items={form.items}
+              sizeColumns={form.size_columns}
+              onUpdateSize={updateSize}
+              onUpdateItem={updateItem}
+              onAddSize={addSizeColumn}
+              onRemoveSize={removeSizeColumn}
+              onAddItem={addItem}
+              onRemoveItem={removeItem}
+            />
+            
+            {/* Open Text Field */}
+            <div className="mt-4">
+              <div className="text-[11px] font-black text-gray-700 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                <div className="h-[1px] flex-1 bg-gray-200"></div>
+                <span>CAMPO DE TEXTO ABIERTO</span>
+                <div className="h-[1px] flex-1 bg-gray-200"></div>
               </div>
+              <textarea 
+                value={form.open_text_field || ""} 
+                onChange={e => set("open_text_field", e.target.value)}
+                placeholder="Ingrese información adicional aquí..."
+                rows={4}
+                className="w-full text-[12px] p-3 border border-gray-300 rounded focus:border-blue-500 focus:outline-none bg-white font-medium"
+              />
+            </div>
 
-            {/* Checklist (right) */}
-            <div className="w-[220px] flex-shrink-0 border border-gray-400 rounded p-3">
+            {/* Checklist (Now below) */}
+            <div className="border border-gray-400 rounded p-3 bg-gray-50/30">
               <div className="font-black text-[11px] border-b border-gray-300 pb-1 mb-2">Checklist de Procesos y Acabados</div>
-              <div className="space-y-1.5">
+              <div className="grid grid-cols-2 gap-x-8 gap-y-1.5">
                 {[
                   { label: "Front Print", note: "(Según CAD)" },
                   { label: "Neck Label", note: "(Etiqueta de cuello)" },

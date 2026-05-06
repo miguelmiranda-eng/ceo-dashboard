@@ -201,9 +201,9 @@ export function ProsperInvoice({ invoice }: ProsperInvoiceProps) {
         </div>
 
         {/* ── 3. PRODUCTION MATRIX + CHECKLIST ── */}
-        <div className="flex gap-3 mb-3">
-          {/* Matrix (left, wider) */}
-          <div className="flex-1">
+        <div className="space-y-4 mb-3">
+          {/* Matrix (Full Width) */}
+          <div>
             <div className="text-[10px] font-bold text-gray-600 mb-0.5">Matriz de Producción Principal</div>
             <div className="text-xl font-black mb-0.5">Cliente: {inv.client || "—"}</div>
             {inv.job_title_a?.desc && <div className="text-lg font-black mb-2">Art Name: {inv.job_title_a.desc}</div>}
@@ -249,8 +249,7 @@ export function ProsperInvoice({ invoice }: ProsperInvoiceProps) {
               )}
             </table>
 
-            {/* Status + Production Note removed per request */}
-            
+            {/* Open Text Field */}
             {inv.open_text_field && (
               <div className="mt-4 border border-gray-300 rounded p-4 bg-white">
                 <div className="text-[10px] font-black text-gray-700 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
@@ -265,10 +264,10 @@ export function ProsperInvoice({ invoice }: ProsperInvoiceProps) {
             )}
           </div>
 
-          {/* Checklist (right, narrow) */}
-          <div className="w-[220px] flex-shrink-0 border border-gray-400 rounded p-3">
+          {/* Checklist (Now below) */}
+          <div className="border border-gray-400 rounded p-3 bg-gray-50/30">
             <div className="font-black text-[11px] border-b border-gray-300 pb-1 mb-2">Checklist de Procesos y Acabados</div>
-            <div className="space-y-1.5">
+            <div className="grid grid-cols-2 gap-x-8 gap-y-1.5">
               {[
                 { label: "Front Print", note: "(Según CAD)" },
                 { label: "Neck Label", note: "(Etiqueta de cuello)" },
