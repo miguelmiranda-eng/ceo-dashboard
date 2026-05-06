@@ -8,10 +8,17 @@ const MOS_BACKEND_URL =
   "http://127.0.0.1:8001";
 const MASTER_API_KEY = process.env.MASTER_API_KEY || "cw_0x689RpI-jtRR7oE8h_eQsKImvJapA8QfGEyS2wA=";
 
-/** Internal MOS fetcher using Master API Key */
+/** Internal MOS fetcher using Master API Key (Header + URL Fallback) */
 async function mosFetch(endpoint: string) {
-  const url = `${MOS_BACKEND_URL}/api/${endpoint}${(endpoint.includes('?') ? '&' : '?')}api_key=${MASTER_API_KEY}`;
-  const res = await fetch(url, { cache: "no-store" });
+  const separator = endpoint.includes('?') ? '&' : '?';
+  const url = `${MOS_BACKEND_URL}/api/${endpoint}${separator}api_key=${MASTER_API_KEY}`;
+  
+  const res = await fetch(url, { 
+    cache: "no-store",
+    headers: {
+      "X-API-Key": MASTER_API_KEY
+    }
+  });
 
   if (!res.ok) throw new Error(`MOS API error: ${res.status}`);
   return res.json();
