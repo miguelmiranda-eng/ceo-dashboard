@@ -353,22 +353,21 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
                   onAddItem={addItem}
                   onRemoveItem={removeItem}
                 />
-                {/* Status + Prod Notes removed per request */}
-              </div>
-              
-              <div className="mt-4">
-                <div className="text-[11px] font-black text-gray-700 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                  <div className="h-[1px] flex-1 bg-gray-200"></div>
-                  <span>CAMPO DE TEXTO ABIERTO</span>
-                  <div className="h-[1px] flex-1 bg-gray-200"></div>
+                
+                <div className="mt-4">
+                  <div className="text-[11px] font-black text-gray-700 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                    <div className="h-[1px] flex-1 bg-gray-200"></div>
+                    <span>CAMPO DE TEXTO ABIERTO</span>
+                    <div className="h-[1px] flex-1 bg-gray-200"></div>
+                  </div>
+                  <textarea 
+                    value={form.open_text_field || ""} 
+                    onChange={e => set("open_text_field", e.target.value)}
+                    placeholder="Ingrese información adicional aquí..."
+                    rows={4}
+                    className="w-full text-[12px] p-3 border border-gray-300 rounded focus:border-blue-500 focus:outline-none bg-white font-medium"
+                  />
                 </div>
-                <textarea 
-                  value={form.open_text_field || ""} 
-                  onChange={e => set("open_text_field", e.target.value)}
-                  placeholder="Ingrese información adicional aquí..."
-                  rows={4}
-                  className="w-full text-[12px] p-3 border border-gray-300 rounded focus:border-blue-500 focus:outline-none bg-white font-medium"
-                />
               </div>
 
             {/* Checklist (right) */}
