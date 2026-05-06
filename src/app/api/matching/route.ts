@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Perform Matching using order_number
-    const excludedBoards = ['MASTER', 'EJEMPLOS', 'EDI', 'RESPALDO MONDAY', 'CANCELLED', 'PAPELERA DE RECICLAJE'];
+    const excludedBoards = ['MASTER', 'EJEMPLOS', 'EDI', 'CANCELLED', 'PAPELERA DE RECICLAJE'];
 
     const results = (mosOrders as any[])
       .filter((mosOrder) => {
@@ -68,32 +68,48 @@ export async function GET(request: NextRequest) {
       })
       .map((mosOrder) => {
         const orderNum = String(mosOrder.order_number).trim();
-      const pOrder = printavoMap.get(orderNum);
-      
-      const produced = (productionSummary as any)[orderNum] || { total_produced: 0, last_date: null };
-      
-      // isInRange: true when no filter, or when order has production in the date range
-      const isInRange = (!dateFrom && !dateTo) || !!(productionSummary as any)[orderNum];
+        const board = String(mosOrder.board).toUpperCase();
+        const pOrder = printavoMap.get(orderNum);
+        
+        const produced = (productionSummary as any)[orderNum] || { total_produced: 0, last_date: null };
+        
+        // Special logic for RESPALDO MONDAY: use final_bill date as the production date
+        const fbDate = mosOrder.final_bill; // YYYY-MM-DD
+        const isRespaldo = board === 'RESPALDO MONDAY';
+        const isFbInRange = dateFrom && dateTo && fbDate && fbDate >= dateFrom && fbDate <= dateTo;
+        
+        // isInRange: true when no filter, or when order has production logs, or is Respaldo in range
+        const isInRange = (!dateFrom && !dateTo) || !!(productionSummary as any)[orderNum] || (isRespaldo && isFbInRange);
 
-      return {
-        order_number: orderNum,
-        client: mosOrder.client_name || mosOrder.client || pOrder?.customer?.company || "Unknown",
-        mos_status: mosOrder.board,
-        mos_pieces: mosOrder.quantity || 0,
-        printavo_id: pOrder?.id || null,
-        printavo_total: pOrder?.order_total || 0,
-        printavo_status: pOrder?.orderstatus?.name || "Not Found",
-        is_matched: !!pOrder,
-        mos_produced: produced.total_produced,
-        last_prod_date: produced.last_date ? produced.last_date.substring(0, 10) : null,
-        is_in_date_range: isInRange,
-        printavo_url: pOrder ? `https://prosper-mfg.printavo.com/work_orders/${pOrder.id}` : null,
-      };
-    });
+        return {
+          order_number: orderNum,
+          client: mosOrder.client_name || mosOrder.client || pOrder?.customer?.company || "Unknown",
+          mos_status: mosOrder.board,
+          mos_pieces: mosOrder.quantity || 0,
+          printavo_id: pOrder?.id || null,
+          printavo_total: pOrder?.order_total || 0,
+          printavo_status: pOrder?.orderstatus?.name || "Not Found",
+          is_matched: !!pOrder,
+          // For Respaldo Monday, if it's in range, show all pieces as produced
+          mos_produced: isRespaldo ? (isFbInRange || (!dateFrom && !dateTo) ? (mosOrder.quantity || 0) : 0) : produced.total_produced,
+          last_prod_date: isRespaldo && fbDate ? fbDate : (produced.last_date ? produced.last_date.substring(0, 10) : null),
+          is_in_date_range: isInRange,
+          printavo_url: pOrder ? `https://prosper-mfg.printavo.com/work_orders/${pOrder.id}` : null,
+        };
+      });
 
-    // Ground truth: all pieces produced in this period (from MOS production-summary)
-    const trueTotalProduced = Object.values(productionSummary as Record<string, any>)
+    // Ground truth: all pieces produced in this period
+    // 1. From MOS production logs
+    const logsProduced = Object.values(productionSummary as Record<string, any>)
       .reduce((sum, v) => sum + (v?.total_produced || 0), 0);
+    
+    // 2. From RESPALDO MONDAY (using final_bill date filter)
+    const respaldoProduced = results
+      .filter(r => r.mos_status.toUpperCase() === 'RESPALDO MONDAY' && r.is_in_date_range)
+      .reduce((sum, r) => sum + r.mos_pieces, 0);
+
+    // Ground truth pieces produced (MOS production logs, date-filtered by backend)
+    const trueTotalProduced = logsProduced + respaldoProduced;
 
     // For billing KPIs: matched orders that had production activity in the selected period
     const allMatched = results.filter(r => r.is_matched);
@@ -101,7 +117,7 @@ export async function GET(request: NextRequest) {
     const billingInRange = allMatched.filter(r => {
       // If no date filter, show all matched orders
       if (!dateFrom || !dateTo) return true;
-      // If date filter active, only include orders that had production logs in that range
+      // If date filter active, include orders with logs OR Respaldo orders in range
       return r.is_in_date_range && r.mos_produced > 0;
     });
 
@@ -111,18 +127,24 @@ export async function GET(request: NextRequest) {
     // Completed: DATE-FILTERED (represents money collected/finished in the selected period)
     const completed = billingInRange.filter(r => r.printavo_status === 'Completed');
 
+    // Financial calculations
+    const totalBilled = completed.reduce((sum, r) => sum + (r.printavo_total || 0), 0);
+    const totalReady = finalBill.reduce((sum, r) => sum + (r.printavo_total || 0), 0);
+    const totalValue = totalBilled + totalReady;
+    
+    const avgUnitPrice = trueTotalProduced > 0 ? (totalValue / trueTotalProduced) : 0;
+
     const stats = {
       total_orders: allMatched.length,
       billed_count: completed.length,
       unbilled_count: finalBill.length,
 
-      // Ground truth pieces produced (MOS production logs, date-filtered by backend)
       total_pieces_produced: trueTotalProduced,
-      // Billing amounts:
-      // - Billed: Only those finished in the period
-      total_pieces_billed: completed.reduce((sum, r) => sum + (r.printavo_total || 0), 0),
-      // - Ready: Global backlog (what is currently in Final Bill status)
-      total_pieces_ready:  finalBill.reduce((sum, r) => sum + (r.printavo_total || 0), 0),
+      avg_unit_price: avgUnitPrice,
+      total_value_produced: totalValue,
+
+      total_pieces_billed: totalBilled,
+      total_pieces_ready:  totalReady,
     };
 
 

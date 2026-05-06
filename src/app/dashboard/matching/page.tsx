@@ -51,6 +51,8 @@ interface MatchingStats {
   total_pieces_produced: number
   total_pieces_billed: number
   total_pieces_ready: number
+  avg_unit_price: number
+  total_value_produced: number
 }
 
 export default function MatchingPage() {
@@ -230,11 +232,22 @@ export default function MatchingPage() {
               <h2 className="text-6xl font-black text-[#0F172A] tracking-tighter">
                 {data?.stats?.total_pieces_produced?.toLocaleString() || "0"}
               </h2>
-              <span className="text-blue-600 font-bold text-xs uppercase tracking-widest">Unidades</span>
+              <div className="flex flex-col">
+                <span className="text-blue-600 font-bold text-xs uppercase tracking-widest leading-none">Unidades</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                  ${data?.stats?.total_value_produced?.toLocaleString(undefined, { maximumFractionDigits: 0 })} USD
+                </span>
+              </div>
             </div>
-            <div className="mt-6 flex items-center gap-2 text-[10px] font-bold text-blue-500 uppercase tracking-wider bg-blue-50 w-fit px-3 py-1 rounded-full">
-              <TrendingUp className="w-3 h-3" />
-              Producción Verificada
+            <div className="mt-6 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-blue-500 uppercase tracking-wider bg-blue-50 w-fit px-3 py-1 rounded-full">
+                <TrendingUp className="w-3 h-3" />
+                Producción Verificada
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Valor Unitario</span>
+                <span className="text-sm font-black text-slate-900">${data?.stats?.avg_unit_price?.toFixed(3)}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
