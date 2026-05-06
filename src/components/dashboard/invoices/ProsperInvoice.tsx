@@ -2,46 +2,31 @@
 
 import { useState } from "react"
 import { Invoice } from "@/lib/api"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { ZoomIn, ZoomOut, Download, Mail, Phone, Globe, MapPin, Scissors } from "lucide-react"
+import { ZoomIn, ZoomOut, Download, ExternalLink, Printer } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { normalizeImageUrl } from "@/lib/api"
 
 interface ProsperInvoiceProps {
   invoice: Invoice
 }
 
-function ImagePreviewModal({ file, onClose }: { file: any; onClose: () => void }) {
+function ImageModal({ file, onClose }: { file: any; onClose: () => void }) {
   const [zoom, setZoom] = useState(1)
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] w-fit h-fit p-0 bg-slate-900 border-slate-800 overflow-hidden rounded-[2rem]">
+      <DialogContent className="max-w-[95vw] w-fit h-fit p-0 bg-slate-900 border-slate-800 overflow-hidden rounded-2xl">
         <DialogHeader className="p-4 border-b border-slate-800 bg-slate-950 flex-row justify-between items-center space-y-0 gap-8">
-          <div className="flex items-center gap-4">
-            <DialogTitle className="text-white font-black uppercase tracking-widest text-xs truncate">
-              {file.name}
-            </DialogTitle>
-            <div className="flex items-center bg-slate-900 rounded-xl border border-slate-800 p-1 gap-1">
-              <button onClick={() => setZoom(p => Math.max(0.5, p - 0.25))} className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors">
-                <ZoomOut className="h-4 w-4" />
-              </button>
-              <span className="text-[10px] font-black text-slate-500 w-12 text-center">{Math.round(zoom * 100)}%</span>
-              <button onClick={() => setZoom(p => Math.min(5, p + 0.25))} className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors">
-                <ZoomIn className="h-4 w-4" />
-              </button>
-              <button onClick={() => setZoom(1)} className="text-[8px] font-black uppercase px-2 py-1 hover:bg-slate-800 rounded-lg text-slate-500 hover:text-white transition-colors">Reset</button>
-            </div>
+          <DialogTitle className="text-white font-black uppercase tracking-widest text-xs truncate">{file.name}</DialogTitle>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setZoom(p => Math.max(0.5, p - 0.25))} className="p-1 hover:bg-slate-800 rounded text-slate-400"><ZoomOut className="h-4 w-4" /></button>
+            <span className="text-[10px] text-slate-500 w-10 text-center">{Math.round(zoom * 100)}%</span>
+            <button onClick={() => setZoom(p => Math.min(5, p + 0.25))} className="p-1 hover:bg-slate-800 rounded text-slate-400"><ZoomIn className="h-4 w-4" /></button>
           </div>
-          <a href={file.data || file.url} download={file.name} className="bg-[#0091D5] hover:bg-[#0081C0] text-white px-6 py-2 rounded-full text-[10px] font-black uppercase transition-all shrink-0 flex items-center gap-2 shadow-lg shadow-blue-500/20">
-            <Download className="h-3 w-3" /> Download Artifact
-          </a>
+          <a href={file.data || file.url} download={file.name} className="bg-blue-600 text-white px-3 py-1 rounded text-[9px] font-black uppercase flex items-center gap-1"><Download className="h-3 w-3" />DL</a>
         </DialogHeader>
-        <div className="p-8 bg-slate-800 flex items-center justify-center min-h-[400px] overflow-auto max-h-[85vh]">
-          <div style={{ transform: `scale(${zoom})`, transformOrigin: 'center center', transition: 'transform 0.2s' }}>
-            <img src={file.data || file.url} alt={file.name} className="max-w-[85vw] shadow-2xl rounded-xl" />
+        <div className="p-6 bg-slate-800 flex items-center justify-center min-h-[300px] overflow-auto max-h-[85vh]">
+          <div style={{ transform: `scale(${zoom})`, transition: 'transform 0.2s' }}>
+            <img src={normalizeImageUrl(file.data || file.url)} alt={file.name} className="max-w-[80vw] shadow-2xl rounded-lg" />
           </div>
         </div>
       </DialogContent>
@@ -49,310 +34,400 @@ function ImagePreviewModal({ file, onClose }: { file: any; onClose: () => void }
   )
 }
 
+// Simple QR placeholder SVG
+function QRPlaceholder({ value }: { value: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div className="w-16 h-16 border-2 border-slate-700 rounded p-1 bg-white">
+        <svg viewBox="0 0 21 21" className="w-full h-full">
+          <rect width="9" height="9" x="1" y="1" fill="none" stroke="#000" strokeWidth="1"/>
+          <rect width="3" height="3" x="3" y="3" fill="#000"/>
+          <rect width="9" height="9" x="11" y="1" fill="none" stroke="#000" strokeWidth="1"/>
+          <rect width="3" height="3" x="13" y="3" fill="#000"/>
+          <rect width="9" height="9" x="1" y="11" fill="none" stroke="#000" strokeWidth="1"/>
+          <rect width="3" height="3" x="3" y="13" fill="#000"/>
+          <rect x="12" y="12" width="2" height="2" fill="#000"/>
+          <rect x="15" y="12" width="2" height="2" fill="#000"/>
+          <rect x="12" y="15" width="5" height="2" fill="#000"/>
+          <rect x="18" y="12" width="2" height="5" fill="#000"/>
+        </svg>
+      </div>
+      <span className="text-[7px] text-slate-500 font-bold uppercase text-center leading-tight">Digital<br/>Packing List</span>
+    </div>
+  )
+}
+
 export function ProsperInvoice({ invoice }: ProsperInvoiceProps) {
   const [selectedImage, setSelectedImage] = useState<any | null>(null)
+  const inv = invoice as any
 
-  const companyInfo = {
-    name: "Prosper Manufacturing, LLC",
-    address: "600 Cleveland Street",
-    suite: "Suite 363",
-    city: "Clearwater, Florida 33755",
-    phone: "+1 (813) 388-8603",
-    web: "prosper-mfg.com",
-    email: "billing@prosper-mfg.com"
+  const fmtDate = (d: any) => {
+    if (!d) return "N/A"
+    try { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }
+    catch { return d }
   }
 
-  const formatDate = (dateStr: string | any) => {
-    if (!dateStr) return "N/A"
-    try {
-      return new Date(dateStr).toLocaleDateString('en-US', { 
-        month: 'long', 
-        day: 'numeric', 
-        year: 'numeric' 
-      })
-    } catch {
-      return dateStr
-    }
-  }
+  // Collect all art links from art_links field
+  const artLinks: string[] = Array.isArray(inv.art_links)
+    ? inv.art_links.filter(Boolean)
+    : typeof inv.art_links === 'string'
+    ? inv.art_links.split('\n').filter(Boolean)
+    : []
+
+  // Collect all item attachments + production attachments
+  const allAttachments: any[] = [
+    ...(inv.production_attachments || []),
+    ...(inv.items || []).flatMap((it: any) => it.attachments || [])
+  ]
+  const imageAttachments = allAttachments.filter(a => a?.type === 'image' || a?.mime?.startsWith('image/'))
+  const docAttachments = allAttachments.filter(a => a?.type !== 'image' && !a?.mime?.startsWith('image/'))
+
+  // Dynamic size columns
+  const sizeColumns: string[] = inv.size_columns || ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"]
+
+  // Parse packing quantities from finishing_notes if present
+  const packingNotes: string = inv.finishing_notes || ""
 
   return (
-    <div className="bg-white text-[#0F172A] p-12 md:p-16 max-w-[1100px] mx-auto shadow-2xl font-sans relative overflow-hidden" id="prosper-invoice">
-      {/* Decorative accent */}
-      <div className="absolute top-0 right-0 w-64 h-1 bg-[#0091D5]" />
-      
-      {/* Header Section */}
-      <div className="flex justify-between items-start mb-16">
-        <div className="space-y-4">
-           <div className="flex items-center gap-4">
-             <div className="w-12 h-12 bg-[#0F172A] flex items-center justify-center rounded-xl shadow-lg">
-                <svg viewBox="0 0 100 100" className="w-8 h-8 text-white">
-                  <path d="M20 50 Q50 10 80 50 T80 90" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />
-                  <circle cx="50" cy="50" r="10" fill="currentColor" />
+    <div
+      id="prosper-production-sheet"
+      className="bg-white text-[#0F172A] max-w-[1100px] mx-auto font-sans text-sm print:shadow-none"
+      style={{ fontFamily: "'Inter', 'Arial', sans-serif" }}
+    >
+      {/* ── PRINT BUTTON (screen only) ── */}
+      <div className="print:hidden flex justify-end p-4 bg-slate-50 border-b border-slate-200">
+        <button
+          onClick={() => window.print()}
+          className="flex items-center gap-2 bg-[#0091D5] text-white px-5 py-2 rounded-lg text-xs font-black uppercase hover:bg-[#0081C0] transition-colors"
+        >
+          <Printer className="h-4 w-4" /> Print Production Sheet
+        </button>
+      </div>
+
+      <div className="p-8 space-y-5">
+
+        {/* ══ 1. SMART HEADER ══ */}
+        <div className="grid grid-cols-3 border-2 border-slate-800 rounded-lg overflow-hidden">
+          {/* Left: Logo + Contact */}
+          <div className="p-4 border-r border-slate-200 flex flex-col justify-center gap-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-[#0F172A] rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg viewBox="0 0 100 100" className="w-6 h-6 text-white fill-none stroke-current" strokeWidth="8" strokeLinecap="round">
+                  <path d="M20 50 Q50 10 80 50 T80 90" />
+                  <circle cx="50" cy="50" r="8" fill="white" stroke="none" />
                 </svg>
-             </div>
-             <div>
-               <h1 className="text-4xl font-black tracking-tighter leading-none italic">PROSPER</h1>
-               <p className="text-[10px] font-black text-[#0091D5] uppercase tracking-[0.4em]">MANUFACTURING</p>
-             </div>
-           </div>
-           <div className="pt-4 border-l-4 border-[#0091D5] pl-6 space-y-1">
-             <h2 className="text-xl font-black uppercase tracking-tight">Invoice #{invoice.invoice_id}</h2>
-             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{invoice.type} &bull; {invoice.status || 'NEW'}</p>
-           </div>
-        </div>
-        
-        <div className="text-right space-y-1 text-[11px] font-medium text-slate-500">
-          <p className="flex items-center justify-end gap-2"><Phone className="h-3 w-3 text-[#0091D5]" /> {companyInfo.phone}</p>
-          <p className="flex items-center justify-end gap-2"><Mail className="h-3 w-3 text-[#0091D5]" /> {companyInfo.email}</p>
-          <p className="flex items-center justify-end gap-2"><Globe className="h-3 w-3 text-[#0091D5]" /> {companyInfo.web}</p>
-          <p className="flex items-center justify-end gap-2 font-bold text-slate-800"><MapPin className="h-3 w-3 text-[#0091D5]" /> {companyInfo.city}</p>
-        </div>
-      </div>
+              </div>
+              <div>
+                <p className="font-black text-sm leading-tight">Prosper Manufacturing</p>
+                <p className="text-[10px] text-[#0091D5] font-bold uppercase tracking-widest">LLC</p>
+              </div>
+            </div>
+            <div className="text-[10px] text-slate-500 space-y-0.5 pl-1">
+              <p>+1 (813) 388-8603 | prospermfg.com</p>
+              <p>600 Cleveland St, Suite 363 — Clearwater, FL</p>
+            </div>
+          </div>
 
-      {/* Info Grid */}
-      <div className="grid grid-cols-12 gap-12 mb-16">
-        <div className="col-span-7 grid grid-cols-2 gap-10">
-           <div>
-             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Client Details</h3>
-             <div className="space-y-1 text-xs">
-                <p className="font-black text-sm uppercase text-[#0F172A]">{invoice.client || 'STRATEGIC PORTFOLIO'}</p>
-                <div className="text-slate-500 leading-relaxed">
-                  {invoice.billing_address?.street ? (
-                    <>
-                      <p>{invoice.billing_address.street}</p>
-                      <p>{invoice.billing_address.city}, {invoice.billing_address.state} {invoice.billing_address.zip}</p>
-                    </>
-                  ) : (
-                    <p className="italic text-slate-300">Billing address not provided</p>
-                  )}
-                  {(invoice as any).client_email && <p className="text-[#0091D5] font-bold mt-2">{(invoice as any).client_email}</p>}
+          {/* Center: WO + PO */}
+          <div className="p-4 flex flex-col items-center justify-center bg-slate-50 border-r border-slate-200">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Work Order</p>
+            <p className="text-4xl font-black tracking-tight text-[#0F172A] leading-none">#{inv.invoice_id || "NEW"}</p>
+            {inv.customer_po && (
+              <p className="text-lg font-black text-[#0091D5] mt-1">PO: #{inv.customer_po}</p>
+            )}
+            {inv.store_po && (
+              <p className="text-xs font-bold text-slate-400 mt-0.5">Store PO: {inv.store_po}</p>
+            )}
+          </div>
+
+          {/* Right: Dates + QR */}
+          <div className="p-4 flex items-center justify-between gap-3">
+            <div className="space-y-2 text-xs">
+              <div>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Created</p>
+                <p className="font-bold text-slate-700">{fmtDate(inv.dates?.created)}</p>
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Due Date</p>
+                <p className="font-black text-red-600 text-base">{fmtDate(inv.dates?.due)}</p>
+              </div>
+              {inv.cancel_date && (
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Cancel</p>
+                  <p className="font-bold text-orange-500">{fmtDate(inv.cancel_date)}</p>
                 </div>
-             </div>
-           </div>
-           <div>
-             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Shipping Terminal</h3>
-             <div className="space-y-1 text-xs">
-                <p className="font-black text-sm uppercase text-[#0F172A]">{invoice.client || 'STRATEGIC PORTFOLIO'}</p>
-                <div className="text-slate-500 leading-relaxed">
-                  {invoice.shipping_address?.street ? (
-                    <>
-                      <p>{invoice.shipping_address.street}</p>
-                      <p>{invoice.shipping_address.city}, {invoice.shipping_address.state} {invoice.shipping_address.zip}</p>
-                    </>
-                  ) : (
-                    <p className="italic text-slate-300">Shipping address not provided</p>
-                  )}
+              )}
+            </div>
+            <QRPlaceholder value={`https://prosper-mfg.com/wo/${inv.invoice_id}`} />
+          </div>
+        </div>
+
+        {/* ══ 2. ART PANEL + CLIENT INFO ══ */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Art Panel */}
+          <div className="border-2 border-blue-500 rounded-lg p-4 bg-blue-50/40">
+            <p className="text-xs font-black text-blue-700 uppercase tracking-widest mb-3">🎨 Departamento de Arte</p>
+            <div className="space-y-2">
+              {artLinks.length > 0 ? artLinks.map((link, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="text-[9px] font-black text-slate-500 uppercase w-20 flex-shrink-0">
+                    {i === 0 ? "SEPS" : i === 1 ? "TAGS" : i === 2 ? "TAGS DOBLES" : `LINK ${i+1}`}:
+                  </span>
+                  <a href={link} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-800 bg-white border border-blue-200 px-2 py-0.5 rounded-full truncate max-w-[200px] transition-colors">
+                    <ExternalLink className="h-2.5 w-2.5 flex-shrink-0" />
+                    <span className="truncate">{link.split('/').pop() || link}</span>
+                  </a>
                 </div>
-             </div>
-           </div>
+              )) : (
+                <p className="text-[10px] text-slate-400 italic">No art links attached</p>
+              )}
+              {inv.seps && (
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-[9px] font-black text-slate-500 uppercase w-20 flex-shrink-0">SEPS #:</span>
+                  <span className="text-[10px] font-bold text-slate-700">{inv.seps}</span>
+                </div>
+              )}
+            </div>
+            <div className="mt-3 pt-2 border-t border-blue-200">
+              <p className="text-[9px] font-black text-slate-500 uppercase italic">
+                Solo links de arte. Sin notas adicionales.
+              </p>
+            </div>
+          </div>
+
+          {/* Client + Operational Info */}
+          <div className="border border-slate-200 rounded-lg p-4 space-y-3">
+            <div>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Cliente</p>
+              <p className="text-xl font-black text-[#0F172A] uppercase leading-tight">{inv.client || "—"}</p>
+            </div>
+            {inv.job_title_a?.desc && (
+              <div>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Art Name</p>
+                <p className="text-base font-black text-[#0091D5] uppercase">{inv.job_title_a.desc}</p>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              {inv.priority && (
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Priority</p>
+                  <span className="bg-amber-100 text-amber-700 font-black text-[10px] px-2 py-0.5 rounded-full uppercase">{inv.priority}</span>
+                </div>
+              )}
+              {inv.blank_status && (
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Blanks</p>
+                  <span className="bg-slate-100 text-slate-700 font-black text-[10px] px-2 py-0.5 rounded-full uppercase">{inv.blank_status}</span>
+                </div>
+              )}
+              {inv.artwork_status && (
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Art Status</p>
+                  <span className="bg-blue-100 text-blue-700 font-black text-[10px] px-2 py-0.5 rounded-full uppercase">{inv.artwork_status}</span>
+                </div>
+              )}
+              {inv.color && (
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Color</p>
+                  <p className="font-bold text-slate-700 uppercase">{inv.color}</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        <div className="col-span-5 bg-[#F8FAFC] p-8 rounded-3xl border border-slate-100 shadow-sm relative">
-           <div className="absolute top-0 right-0 p-4 opacity-5">
-              <svg viewBox="0 0 100 100" className="w-16 h-16 text-[#0F172A]">
-                <path d="M10 10 H90 V90 H10 Z" fill="currentColor" />
-              </svg>
-           </div>
-           <table className="w-full text-xs font-bold border-separate border-spacing-y-2">
-            <tbody>
-              <tr>
-                <td className="text-slate-400 uppercase tracking-widest text-[9px]">Customer PO</td>
-                <td className="text-right font-mono text-[#0F172A]">{invoice.customer_po || 'N/A'}</td>
-              </tr>
-              <tr>
-                <td className="text-slate-400 uppercase tracking-widest text-[9px]">Store ID</td>
-                <td className="text-right font-mono text-[#0091D5]">{invoice.store_po || 'N/A'}</td>
-              </tr>
-              <tr>
-                <td className="text-slate-400 uppercase tracking-widest text-[9px]">Doc Date</td>
-                <td className="text-right text-[#0F172A]">{formatDate(invoice.dates.created)}</td>
-              </tr>
-              <tr>
-                <td className="text-slate-400 uppercase tracking-widest text-[9px]">Due Date</td>
-                <td className="text-right text-[#0F172A] underline decoration-[#0091D5] decoration-2 underline-offset-4">{formatDate(invoice.dates.due)}</td>
-              </tr>
-              <tr>
-                <td className="text-slate-400 uppercase tracking-widest text-[9px]">Fulfillment Terms</td>
-                <td className="text-right font-black italic text-[#0F172A]">{invoice.terms || 'Net 7'}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+        {/* ══ 3. PRODUCTION MATRIX ══ */}
+        <div className="border border-slate-200 rounded-lg overflow-hidden">
+          <div className="bg-[#0F172A] text-white px-4 py-2 flex items-center justify-between">
+            <p className="text-[10px] font-black uppercase tracking-widest">Matriz de Producción Principal</p>
+            <p className="text-[9px] text-slate-400 font-bold">
+              {inv.client && <span className="text-white font-black mr-2">{inv.client}</span>}
+              {inv.job_title_a?.desc && <span>{inv.job_title_a.desc}</span>}
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-100 border-b border-slate-200">
+                  <th className="py-2 px-3 text-left font-black text-[9px] uppercase tracking-widest text-slate-600 whitespace-nowrap">Item / Estilo</th>
+                  <th className="py-2 px-3 text-left font-black text-[9px] uppercase tracking-widest text-slate-600">Color / Descripción</th>
+                  {sizeColumns.map(s => (
+                    <th key={s} className="py-2 px-2 text-center font-black text-[9px] uppercase tracking-widest text-slate-600 w-10">{s}</th>
+                  ))}
+                  <th className="py-2 px-3 text-center font-black text-[9px] uppercase tracking-widest text-slate-600">Items</th>
+                  <th className="py-2 px-3 text-center font-black text-[9px] uppercase tracking-widest text-[#0091D5]">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(inv.items || []).map((item: any, idx: number) => (
+                  <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/60"}>
+                    <td className="py-3 px-3 align-top whitespace-nowrap">
+                      <p className="font-black text-[#0F172A]">{item.item_number || "—"}</p>
+                      {item.category && <p className="text-[9px] text-slate-400 font-bold uppercase">{item.category}</p>}
+                    </td>
+                    <td className="py-3 px-3 align-top">
+                      <p className="font-bold text-[#0F172A] uppercase text-xs">{item.description || "—"}</p>
+                      {item.color && <p className="text-[9px] text-slate-500 font-bold uppercase mt-0.5">{item.color}</p>}
+                    </td>
+                    {sizeColumns.map(s => (
+                      <td key={s} className="py-3 px-2 text-center font-black text-sm">
+                        {item.sizes?.[s] || <span className="text-slate-300">—</span>}
+                      </td>
+                    ))}
+                    <td className="py-3 px-3 text-center font-bold text-slate-500">
+                      {item.items_count || "—"}
+                    </td>
+                    <td className="py-3 px-3 text-center">
+                      <span className="font-black text-lg text-[#0F172A]">{item.quantity || 0}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-[#0F172A] text-white">
+                  <td colSpan={2} className="py-2 px-3 font-black text-[10px] uppercase tracking-widest">Total General</td>
+                  {sizeColumns.map(s => {
+                    const total = (inv.items || []).reduce((sum: number, it: any) => sum + (Number(it.sizes?.[s]) || 0), 0)
+                    return <td key={s} className="py-2 px-2 text-center font-black text-sm">{total > 0 ? total : "—"}</td>
+                  })}
+                  <td className="py-2 px-3 text-center font-bold text-slate-400">
+                    {(inv.items || []).reduce((sum: number, it: any) => sum + (Number(it.items_count) || 0), 0) || "—"}
+                  </td>
+                  <td className="py-2 px-3 text-center font-black text-xl">
+                    {(inv.items || []).reduce((sum: number, it: any) => sum + (Number(it.quantity) || 0), 0)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
 
-      {/* Production Notes / Job Title A */}
-      {(invoice.job_title_a?.url || invoice.production_notes) && (
-        <div className="mb-12 p-6 bg-blue-50/30 rounded-2xl border border-blue-100/50 flex flex-col md:flex-row gap-8">
-           {invoice.job_title_a?.url && (
-             <div className="flex-1 space-y-2">
-                <p className="text-[9px] font-black text-[#0091D5] uppercase tracking-widest">Digital Asset Access</p>
-                <a href={invoice.job_title_a.url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-[#0F172A] underline break-all hover:text-[#0091D5] transition-colors leading-relaxed block">
-                  {invoice.job_title_a.url}
-                </a>
-             </div>
-           )}
-           {invoice.production_notes && (
-             <div className="flex-1 space-y-2">
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Client Manifest Notes</p>
-                <p className="text-xs font-medium text-slate-600 leading-relaxed italic">"{invoice.production_notes}"</p>
-             </div>
-           )}
+          {/* Production Notes */}
+          {inv.production_notes && (
+            <div className="border-t border-slate-200 bg-amber-50/40 px-4 py-2">
+              <p className="text-[9px] font-black text-amber-700 uppercase tracking-widest mb-1">Nota de Producción</p>
+              <p className="text-xs text-slate-700 font-medium italic">{inv.production_notes}</p>
+            </div>
+          )}
         </div>
-      )}
 
-      {/* Items Table */}
-      <div className="mb-12 overflow-hidden rounded-3xl border border-slate-100 shadow-xl shadow-slate-100/50">
-        <table className="w-full text-xs text-left border-collapse">
-          <thead className="bg-[#0F172A] text-white">
-            <tr>
-              <th className="py-5 px-6 font-black uppercase tracking-widest text-[10px]">Category / Item #</th>
-              <th className="py-5 px-6 font-black uppercase tracking-widest text-[10px]">Description & Visuals</th>
-              <th className="py-5 px-4 font-black uppercase tracking-widest text-[10px] text-center w-32">Breakdown</th>
-              <th className="py-5 px-6 font-black uppercase tracking-widest text-[10px] text-right">Qty</th>
-              <th className="py-5 px-6 font-black uppercase tracking-widest text-[10px] text-right">Price</th>
-              <th className="py-5 px-6 font-black uppercase tracking-widest text-[10px] text-right">Total</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {invoice.items.map((item, idx) => (
-              <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                <td className="py-6 px-6 align-top">
-                  <div className="space-y-1">
-                    <p className="font-black text-[#0F172A] uppercase">{(item as any).category}</p>
-                    <p className="font-mono text-[10px] text-[#0091D5] font-bold">#{(item as any).item_number || 'N/A'}</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">{(item as any).color || 'N/A'}</p>
+        {/* ══ 4. CHECKLIST + PACKING ══ */}
+        <div className="grid grid-cols-5 gap-4">
+          {/* Checklist de Procesos */}
+          <div className="col-span-2 border border-slate-200 rounded-lg p-4">
+            <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">
+              ✓ Checklist de Procesos y Acabados
+            </p>
+            <div className="space-y-2">
+              {[
+                { label: "Front Print", note: "Según CAD" },
+                { label: "Neck Label", note: "Etiqueta de cuello" },
+                { label: "Finishing", note: "Acabado" },
+                { label: "Pick & Pack", note: "Selección y empaque" },
+              ].map((item, i) => (
+                <label key={i} className="flex items-start gap-2 cursor-pointer group">
+                  <div className="w-4 h-4 border-2 border-slate-400 rounded mt-0.5 flex-shrink-0 group-hover:border-[#0091D5] transition-colors print:border-slate-600" />
+                  <div>
+                    <span className="font-black text-xs text-[#0F172A]">{item.label}: </span>
+                    <span className="text-[10px] text-slate-500">({item.note})</span>
                   </div>
-                </td>
-                <td className="py-6 px-6 align-top">
-                  <div className="font-bold text-[#0F172A] uppercase leading-relaxed whitespace-pre-wrap mb-4 text-xs">{item.description}</div>
-                  {/* Item images */}
-                  {(item as any).attachments && (item as any).attachments.length > 0 && (
-                    <div className="flex flex-wrap gap-3 mt-4">
-                      {(item as any).attachments.map((file: any, i: number) => {
-                        const isImage = file?.type === 'image' || file?.mime?.startsWith('image/');
-                        if (!isImage) return null;
-                        return (
-                          <div 
-                            key={i} 
-                            className="group relative border-2 border-slate-100 rounded-xl overflow-hidden bg-white shadow-sm cursor-pointer hover:border-[#0091D5] transition-all transform hover:scale-110 hover:z-10"
-                            onClick={() => setSelectedImage(file)}
-                          >
-                            <img src={file.data || file.url} alt={file.name} className="h-20 w-20 object-cover" />
-                            <div className="absolute inset-0 bg-[#0091D5]/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                               <ZoomIn className="text-white h-6 w-6" />
-                            </div>
-                          </div>
-                        );
-                      })}
+                </label>
+              ))}
+            </div>
+            <div className="mt-3 pt-2 border-t border-slate-100">
+              <p className="text-[9px] font-bold text-slate-500 italic">
+                <span className="font-black text-slate-700">Método de Aprobación:</span> Seguir CAD y enviar foto para aprobación final.
+              </p>
+            </div>
+          </div>
+
+          {/* Packing Specs */}
+          <div className="col-span-3 border border-slate-200 rounded-lg p-4">
+            <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">
+              📦 Especificaciones de Empaque (Packing Dept)
+            </p>
+            {packingNotes ? (
+              <div className="space-y-2">
+                <div>
+                  <p className="text-[9px] font-black text-slate-500 uppercase mb-1">Instrucciones de Doblado/Caja:</p>
+                  <p className="text-xs text-slate-700 font-medium whitespace-pre-wrap leading-relaxed">{packingNotes}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2 text-xs text-slate-500">
+                <p><span className="font-black text-slate-700">Instrucciones de Doblado/Caja:</span> Referenciadas en los adjuntos.</p>
+                <div>
+                  <p className="font-black text-slate-700 mb-1">Cantidades por Caja (Bulk):</p>
+                  <div className="flex flex-wrap gap-2">
+                    {sizeColumns.slice(0, 6).map(s => {
+                      const total = (inv.items || []).reduce((sum: number, it: any) => sum + (Number(it.sizes?.[s]) || 0), 0)
+                      return total > 0 ? (
+                        <span key={s} className="bg-slate-100 font-black text-slate-700 px-2 py-0.5 rounded text-[10px]">
+                          {s}: {total}
+                        </span>
+                      ) : null
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Doc Attachments */}
+            {docAttachments.length > 0 && (
+              <div className="mt-3 pt-2 border-t border-slate-100">
+                <p className="text-[9px] font-black text-slate-500 uppercase mb-1">Documentos Adjuntos:</p>
+                <div className="flex flex-wrap gap-2">
+                  {docAttachments.map((f, i) => (
+                    <a key={i} href={f.url || f.data} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1 bg-slate-100 text-slate-600 font-bold text-[9px] px-2 py-0.5 rounded hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                      <Download className="h-2.5 w-2.5" />{f.name}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ══ 5. VISUAL ATTACHMENTS ══ */}
+        {imageAttachments.length > 0 && (
+          <div className="border border-slate-200 rounded-lg p-4">
+            <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest mb-3">
+              🖼 Adjuntos Visuales / Visual Attachments
+            </p>
+            <div className="flex flex-wrap gap-4">
+              {imageAttachments.map((file: any, i: number) => (
+                <div key={i} className="flex flex-col items-center gap-1 cursor-pointer group"
+                  onClick={() => setSelectedImage(file)}>
+                  <div className="w-20 h-20 border-2 border-slate-200 rounded-lg overflow-hidden bg-slate-50 group-hover:border-[#0091D5] transition-colors relative shadow-sm">
+                    <img src={normalizeImageUrl(file.url || file.data)} alt={file.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                    <div className="absolute inset-0 bg-[#0091D5]/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <ZoomIn className="h-5 w-5 text-white" />
                     </div>
-                  )}
-                </td>
-                <td className="py-6 px-4 align-top">
-                  <div className="grid grid-cols-2 gap-2 text-[10px]">
-                    {Object.entries(item.sizes || {}).map(([sz, qty]) => qty ? (
-                      <div key={sz} className="flex justify-between border-b border-slate-100 pb-1">
-                        <span className="font-black text-slate-400">{sz}</span>
-                        <span className="font-black text-[#0F172A]">{qty}</span>
-                      </div>
-                    ) : null)}
                   </div>
-                </td>
-                <td className="py-6 px-6 align-top text-right">
-                  <span className="font-black text-[#0F172A] text-lg tracking-tighter">{item.quantity}</span>
-                </td>
-                <td className="py-6 px-6 align-top text-right">
-                  <span className="font-bold text-slate-500">${item.price.toFixed(2)}</span>
-                </td>
-                <td className="py-6 px-6 align-top text-right">
-                  <span className="font-black text-[#0F172A] text-base tracking-tight">${item.amount.toFixed(2)}</span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Packing Specifications */}
-      <div className="mb-16 grid grid-cols-1 md:grid-cols-12 gap-12">
-        <div className="md:col-span-7">
-           <div className="bg-[#0F172A] rounded-3xl p-8 text-white relative overflow-hidden shadow-xl">
-             <div className="absolute top-0 right-0 w-32 h-32 bg-[#0091D5] opacity-10 blur-3xl rounded-full -mr-16 -mt-16" />
-             <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-[#0091D5] rounded-lg flex items-center justify-center">
-                   <Scissors className="h-4 w-4 text-white" />
+                  <p className="text-[8px] font-black text-slate-500 uppercase text-center max-w-[80px] truncate">{file.name}</p>
                 </div>
-                <h3 className="text-xs font-black uppercase tracking-[0.2em]">Finishing & Logistics Directives</h3>
-             </div>
-             <p className="text-sm font-medium leading-relaxed text-slate-300 italic whitespace-pre-wrap">
-               {(invoice as any).finishing_notes || "Standard Prosper Manufacturing packing procedures apply for this shipment. Please refer to master terminal guide for default folding/bagging specs."}
-             </p>
-           </div>
-        </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-        <div className="md:col-span-5 space-y-6">
-           <div className="bg-[#F8FAFC] p-8 rounded-[2.5rem] border border-slate-100 space-y-4 shadow-inner">
-              <div className="flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-widest">
-                 <span>Subtotal Consolidation</span>
-                 <span className="text-[#0F172A] font-black">${invoice.amounts.subtotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-widest">
-                 <span>Operational Fees</span>
-                 <span className="text-[#0F172A] font-black">$0.00</span>
-              </div>
-              <div className="flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-200 pb-4">
-                 <span>Consolidated Tax</span>
-                 <span className="text-[#0F172A] font-black">$0.00</span>
-              </div>
-              
-              <div className="flex justify-between items-end pt-2">
-                 <div className="space-y-1">
-                   <p className="text-[10px] font-black text-[#0091D5] uppercase tracking-[0.3em]">Total Outstanding</p>
-                   <p className="text-4xl font-black text-[#0F172A] tracking-tighter leading-none">${invoice.amounts.total.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
-                 </div>
-              </div>
-
-              <div className="pt-4 space-y-2">
-                 <div className="flex justify-between items-center text-[10px] font-black text-emerald-600 uppercase italic">
-                    <span>Payments Received</span>
-                    <span>-$0.00</span>
-                 </div>
-                 <div className="bg-[#0F172A] text-white p-4 rounded-2xl flex justify-between items-center shadow-lg transform hover:scale-105 transition-transform cursor-default">
-                    <span className="text-[10px] font-black uppercase tracking-widest">Net Final Balance</span>
-                    <span className="text-xl font-black tracking-tight">${invoice.amounts.total.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
-                 </div>
-              </div>
-           </div>
+        {/* ══ FOOTER ══ */}
+        <div className="border-t border-slate-200 pt-3 flex items-center justify-between text-[9px] text-slate-400 font-bold uppercase tracking-widest">
+          <span>Prosper Manufacturing LLC — Production Control Document</span>
+          <span>WO #{inv.invoice_id} · {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
         </div>
       </div>
 
-      {/* Footer Branding */}
-      <div className="border-t-2 border-slate-100 pt-10 flex flex-col md:flex-row justify-between items-center gap-8">
-         <div className="space-y-1">
-            <p className="text-[10px] font-black text-[#0F172A] uppercase tracking-widest">Prosper Manufacturing &bull; Intelligence in Motion</p>
-            <p className="text-[9px] font-bold text-slate-400">Electronic Document #PROS-{invoice.invoice_id}-{new Date().getFullYear()}</p>
-         </div>
-         <div className="flex gap-4">
-            <div className="w-10 h-10 border border-slate-200 rounded-full flex items-center justify-center opacity-30 hover:opacity-100 transition-opacity">
-               <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>
-            </div>
-            <div className="w-10 h-10 border border-slate-200 rounded-full flex items-center justify-center opacity-30 hover:opacity-100 transition-opacity">
-               <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.761 0 5-2.239 5-5v-14c0-2.761-2.239-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
-            </div>
-         </div>
-      </div>
-      
-      {/* Print Terms Footer */}
-      <div className="mt-12 text-[8px] text-slate-300 font-bold uppercase tracking-widest text-center italic">
-        * This document is a legally binding manifest of manufacturing intent. Prosper Manufacturing LLC 2026.
-      </div>
+      {selectedImage && <ImageModal file={selectedImage} onClose={() => setSelectedImage(null)} />}
 
-      {/* Render the zoom modal if an image is selected */}
-      {selectedImage && (
-        <ImagePreviewModal 
-          file={selectedImage} 
-          onClose={() => setSelectedImage(null)} 
-        />
-      )}
+      {/* Print styles */}
+      <style>{`
+        @media print {
+          #prosper-production-sheet { max-width: 100%; padding: 0; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+      `}</style>
     </div>
   )
 }
