@@ -46,9 +46,9 @@ export function Sidebar() {
   }
 
   const navItems = [
+    { title: t("matching"), icon: Globe2, href: "/dashboard" },
     { title: t("invoices"), icon: BarChart3, href: "/dashboard/invoices" },
     { title: t("workOrders"), icon: Package, href: "/dashboard/work-orders" },
-    { title: t("matching"), icon: Globe2, href: "/dashboard/matching" },
   ]
 
   const toolItems = [

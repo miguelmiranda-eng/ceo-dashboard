@@ -127,16 +127,21 @@ export async function GET(request: NextRequest) {
     // Completed: DATE-FILTERED (represents money collected/finished in the selected period)
     const completed = billingInRange.filter(r => r.printavo_status === 'Completed');
 
-    // Financial calculations: Proportional value based on what was produced in the period
-    let totalValueProduced = 0;
+    // 1. Calculate Global Historical Average (based on all 5000 loaded orders)
+    let globalValue = 0;
+    let globalPieces = 0;
+    
     results.forEach(r => {
-      if (r.is_matched && r.mos_pieces > 0 && r.mos_produced > 0) {
-        const unitPrice = r.printavo_total / r.mos_pieces;
-        totalValueProduced += r.mos_produced * unitPrice;
+      if (r.is_matched && r.mos_pieces > 0) {
+        globalValue += r.printavo_total;
+        globalPieces += r.mos_pieces;
       }
     });
-    
-    const avgUnitPrice = trueTotalProduced > 0 ? (totalValueProduced / trueTotalProduced) : 0;
+
+    const historicalAvgPrice = globalPieces > 0 ? (globalValue / globalPieces) : 0;
+
+    // 2. Calculate Value Produced in selected period using the stable historical average
+    const totalValueProduced = trueTotalProduced * historicalAvgPrice;
 
     const stats = {
       total_orders: allMatched.length,
@@ -144,7 +149,7 @@ export async function GET(request: NextRequest) {
       unbilled_count: finalBill.length,
 
       total_pieces_produced: trueTotalProduced,
-      avg_unit_price: avgUnitPrice,
+      avg_unit_price: historicalAvgPrice,
       total_value_produced: totalValueProduced,
 
       total_pieces_billed: completed.reduce((sum, r) => sum + (r.printavo_total || 0), 0),

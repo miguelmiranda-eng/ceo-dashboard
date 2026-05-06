@@ -1,171 +1,560 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import { useI18n } from "@/lib/i18n"
-import { fetchDashboardData, DashboardData } from "@/lib/api"
-import { TrendChart } from "@/components/widgets/trend-chart"
-import { TopMachinesChart } from "@/components/widgets/top-machines-chart"
-import { TopClientsCard } from "@/components/widgets/top-clients-card"
-import { LoadDistributionChart } from "@/components/widgets/load-distribution-chart"
-import { EfficiencyRadialChart } from "@/components/widgets/efficiency-radial-chart"
-import { ShiftsDonut } from "@/components/widgets/shifts-donut"
 import { useDashboardFilters } from "@/lib/filter-context"
-import {
-  Loader2,
-  RefreshCw,
-  Signal,
+import { 
+  Search, 
+  CheckCircle2, 
+  AlertCircle, 
+  ExternalLink,
+  ArrowUpDown,
+  FileText,
+  DollarSign,
+  Package,
+  TrendingUp,
+  Calendar,
+  Info
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
+import { LoadingOverlay } from "@/components/ui/loading-overlay"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
-export default function AnalyticsDashboardPage() {
+interface MatchingOrder {
+  order_number: string
+  client: string
+  mos_status: string
+  mos_pieces: number
+  mos_produced: number
+  printavo_id: number | null
+  printavo_total: number
+  printavo_status: string
+  is_matched: boolean
+  printavo_url: string | null
+  invoice_url: string | null
+  updated_at: string
+}
+
+interface MatchingStats {
+  total_orders: number
+  billed_count: number
+  unbilled_count: number
+  total_value_matched: number
+  total_pieces_produced: number
+  total_pieces_billed: number
+  total_pieces_ready: number
+  avg_unit_price: number
+  total_value_produced: number
+}
+
+export default function MatchingPage() {
   const { t } = useI18n()
-  const { filters, setExportData } = useDashboardFilters()
-  const [data, setData] = useState<DashboardData | null>(null)
+  const { filters: globalFilters, setFilters } = useDashboardFilters()
+  const [data, setData] = useState<{ stats: MatchingStats; orders: MatchingOrder[] } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [search, setSearch] = useState("")
+  const [filter, setFilter] = useState<'all' | 'final_bill' | 'completed'>('all')
+  const [customFrom, setCustomFrom] = useState("")
+  const [customTo, setCustomTo] = useState("")
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth().toString())
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString())
 
-  async function loadData() {
+  const fetchData = async () => {
     setLoading(true)
-    setError(null)
     try {
-      const result = await fetchDashboardData(filters)
-      setData(result)
-      setExportData(result) // Push data to global context for navbar export
-      setLastUpdated(new Date())
-    } catch (err) {
-      console.error("Failed to fetch dashboard data", err)
-      setError(err instanceof Error ? err.message : "Failed to load data")
+      const params = new URLSearchParams()
+      const now = new Date()
+      const fmt = (d: Date) => d.toISOString().substring(0, 10) // YYYY-MM-DD
+
+      const preset = globalFilters.preset
+
+      // Convert preset to concrete date_from / date_to
+      if (preset === 'today') {
+        params.set('date_from', fmt(now))
+        params.set('date_to', fmt(now))
+      } else if (preset === 'yesterday') {
+        const y = new Date(now); y.setDate(now.getDate() - 1)
+        params.set('date_from', fmt(y))
+        params.set('date_to', fmt(y))
+      } else if (preset === 'week') {
+        const day = now.getDay() || 7 // Mon=1 ... Sun=7
+        const mon = new Date(now); mon.setDate(now.getDate() - day + 1)
+        const sun = new Date(mon); sun.setDate(mon.getDate() + 6)
+        params.set('date_from', fmt(mon))
+        params.set('date_to', fmt(sun))
+      } else if (preset === 'month') {
+        const from = new Date(now.getFullYear(), now.getMonth(), 1)
+        const to   = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+        params.set('date_from', fmt(from))
+        params.set('date_to', fmt(to))
+      } else if (preset === 'custom' && customFrom && customTo) {
+        params.set('date_from', customFrom)
+        params.set('date_to', customTo)
+      } else if (preset === 'month_year') {
+        const year = parseInt(selectedYear)
+        const month = parseInt(selectedMonth)
+        const from = new Date(year, month, 1)
+        const to = new Date(year, month + 1, 0)
+        params.set('date_from', fmt(from))
+        params.set('date_to', fmt(to))
+      }
+      // If preset is "all" or empty — send no dates so backend returns full history
+      
+      setError(null)
+      const res = await fetch(`/api/matching?${params.toString()}`)
+      const json = await res.json()
+      
+      if (!res.ok) {
+        throw new Error(json.error || "Error al sincronizar datos")
+      }
+      
+      setData(json)
+    } catch (err: any) {
+      console.error(err)
+      setError(err.message)
     } finally {
       setLoading(false)
     }
   }
 
-  // Load data whenever global filters change
   useEffect(() => {
-    loadData()
-  }, [filters])
+    fetchData()
+  }, []) // Solo se ejecuta al cargar la página por primera vez
 
-  // Simple auto-refresh
-  useEffect(() => {
-    const interval = setInterval(loadData, 5 * 60 * 1000)
-    return () => clearInterval(interval)
-  }, [filters])
+  const filteredOrders = data?.orders?.filter(o => {
+    if (!o) return false;
+    const matchesSearch = (o.order_number || "").toLowerCase().includes(search.toLowerCase()) || 
+                          (o.client || "").toLowerCase().includes(search.toLowerCase())
+    
+    let matchesFilter = true;
+    if (filter === 'completed') matchesFilter = o.printavo_status === 'Completed';
+    if (filter === 'final_bill') matchesFilter = o.printavo_status === 'Final Bill';
 
-  if (loading && !data) {
-    return (
-      <div className="flex h-[80vh] items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-6">
-          <div className="relative">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <div className="absolute inset-0 bg-primary/20 blur-xl animate-pulse" />
-          </div>
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-foreground animate-pulse">
-            Booting Local & Transborder Intelligence...
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error && !data) {
-    return (
-      <div className="flex h-[80vh] items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-6 text-center max-w-sm p-8 border border-destructive/20 bg-destructive/5">
-          <div className="h-14 w-14 rounded-none bg-destructive/10 flex items-center justify-center border border-destructive/20 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
-            <Signal className="h-7 w-7 text-destructive" />
-          </div>
-          <div>
-            <p className="font-black text-foreground uppercase tracking-[0.2em] text-lg">Signal Lost</p>
-            <p className="text-[10px] font-bold uppercase text-muted-foreground mt-2 tracking-widest leading-relaxed">{error}</p>
-          </div>
-          <Button variant="outline" onClick={loadData} className="rounded-none border-primary text-primary hover:bg-primary hover:text-white uppercase font-black text-[10px] tracking-[0.2em] h-11 px-8">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Re-Initialize Protocol
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
-  if (!data) return null
+    return matchesSearch && matchesFilter
+  }) || []
 
   return (
-    <div className="min-h-full bg-background text-foreground space-y-10 animate-in fade-in duration-1000 selection:bg-primary/30 max-w-[1700px] mx-auto pb-20">
+    <div className="max-w-[1400px] mx-auto space-y-10 pb-20 animate-in fade-in duration-700">
+      <LoadingOverlay isLoading={loading} message="Sincronizando Sistemas..." />
 
-      {/* Control Header */}
+      {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-2">
-        <div>
-          <div className="flex items-center gap-4 mb-1">
-             <div className="w-2 h-8 bg-primary rounded-none shadow-[0_0_15px_rgba(30,91,255,0.5)]" />
-             <h3 className="text-3xl font-extrabold tracking-tight uppercase text-foreground">{t("dashboard")}</h3>
-          </div>
-          <div className="flex items-center gap-2 ml-6">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
-            <span className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground opacity-90">
-              {t("intelligenceHub")} · {lastUpdated && <>{t("syncEstablished")} {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</>}
-            </span>
-          </div>
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black text-[#0F172A] tracking-tight uppercase italic flex items-center gap-3">
+            <span className="w-2 h-10 bg-blue-600 rounded-full inline-block" />
+            Conciliación Directa
+          </h1>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] ml-5">
+            MOS Production vs Printavo Billing
+          </p>
         </div>
         
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadData}
-            disabled={loading}
-            className="rounded-none border-primary bg-background hover:bg-primary hover:text-white text-primary gap-3 h-11 px-6 text-[11px] font-black uppercase tracking-[0.2em] shadow-[0_4px_15px_rgba(30,91,255,0.2)] transition-all active:scale-95"
+      </div>
+
+      {/* Filter Bar — Premium Design */}
+      <div className="bg-white/80 backdrop-blur-md border border-slate-200/60 p-4 rounded-[2rem] shadow-xl shadow-slate-200/40 mb-10">
+        <div className="flex flex-wrap items-center justify-between gap-6">
+          
+          <div className="flex flex-wrap items-center gap-4">
+            {/* 1. Month/Year Selectors — ALWAYS VISIBLE */}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Seleccionar Mes</span>
+              <div className="flex items-center gap-2 bg-slate-50 px-2 rounded-2xl h-12 border border-transparent focus-within:border-blue-100 transition-all">
+                <Select value={selectedMonth} onValueChange={(v) => {
+                  setSelectedMonth(v);
+                  setFilters({ ...globalFilters, preset: 'month_year' });
+                }}>
+                  <SelectTrigger className="w-[120px] border-none bg-transparent font-bold uppercase text-[11px] tracking-wider focus:ring-0">
+                    <SelectValue placeholder="Mes" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl border-slate-100 shadow-2xl">
+                    {['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'].map((m, i) => (
+                      <SelectItem key={i} value={i.toString()} className="font-bold text-[10px] uppercase">{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="w-px h-4 bg-slate-200" />
+                <Select value={selectedYear} onValueChange={(v) => {
+                  setSelectedYear(v);
+                  setFilters({ ...globalFilters, preset: 'month_year' });
+                }}>
+                  <SelectTrigger className="w-[85px] border-none bg-transparent font-bold uppercase text-[11px] tracking-wider focus:ring-0">
+                    <SelectValue placeholder="Año" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl border-slate-100 shadow-2xl">
+                    {Array.from({ length: new Date().getFullYear() - 2025 + 1 }, (_, i) => 2025 + i).map(y => (
+                      <SelectItem key={y} value={y.toString()} className="font-bold text-[10px] uppercase">{y}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* 2. Quick Presets Selector */}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Atajos Rápidos</span>
+              <Select 
+                value={globalFilters.preset} 
+                onValueChange={(v) => setFilters({ ...globalFilters, preset: v as any })}
+              >
+                <SelectTrigger className="w-[180px] bg-slate-50 border-none rounded-2xl font-bold text-[11px] uppercase tracking-wider h-12 focus:ring-2 focus:ring-blue-100 transition-all">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                    <SelectValue placeholder="Periodo" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl border-slate-100 shadow-2xl">
+                  <SelectItem value="month_year" className="font-bold text-[10px] uppercase">📅 Usar Mes/Año</SelectItem>
+                  <SelectItem value="today" className="font-bold text-[10px] uppercase">Hoy</SelectItem>
+                  <SelectItem value="yesterday" className="font-bold text-[10px] uppercase">Ayer</SelectItem>
+                  <SelectItem value="week" className="font-bold text-[10px] uppercase">Esta Semana</SelectItem>
+                  <SelectItem value="month" className="font-bold text-[10px] uppercase">Este Mes</SelectItem>
+                  <SelectItem value="all" className="font-bold text-[10px] uppercase">Todo el Historial</SelectItem>
+                  <SelectItem value="custom" className="font-bold text-[10px] uppercase">📅 Rango Personalizado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Conditional Selectors: Custom Range */}
+            {globalFilters.preset === 'custom' && (
+              <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-left-4 duration-300">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Rango de Fechas</span>
+                <div className="flex items-center gap-2 bg-slate-50 px-4 py-1.5 rounded-2xl h-12">
+                  <input
+                    type="date"
+                    value={customFrom}
+                    onChange={(e) => setCustomFrom(e.target.value)}
+                    className="text-[11px] font-bold text-slate-700 bg-transparent border-none outline-none cursor-pointer w-32"
+                  />
+                  <div className="w-px h-4 bg-slate-200" />
+                  <input
+                    type="date"
+                    value={customTo}
+                    onChange={(e) => setCustomTo(e.target.value)}
+                    className="text-[11px] font-bold text-slate-700 bg-transparent border-none outline-none cursor-pointer w-32"
+                  />
+                </div>
+              </div>
+            )}
+
+          </div>
+
+          {/* Update Button */}
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[9px] font-black text-transparent uppercase tracking-widest select-none">Action</span>
+            <Button 
+              onClick={fetchData} 
+              disabled={loading || (globalFilters.preset === 'custom' && (!customFrom || !customTo))}
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-black uppercase tracking-[0.2em] text-[10px] px-10 h-12 rounded-2xl shadow-xl shadow-blue-500/30 transition-all active:scale-95 flex items-center gap-3 group"
+            >
+              <ArrowUpDown className={cn("w-3.5 h-3.5 transition-transform group-hover:rotate-180", loading && "animate-spin")} />
+              Actualizar Datos
+            </Button>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-6 rounded-2xl animate-in slide-in-from-top-4 duration-500">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-6 h-6 text-red-500" />
+            <div>
+              <p className="text-sm font-black text-red-800 uppercase tracking-wider">Error de Sincronización</p>
+              <p className="text-xs font-bold text-red-600 mt-1 uppercase">{error}</p>
+            </div>
+          </div>
+          <p className="text-[10px] text-red-400 mt-4 font-bold uppercase italic">
+            Verifica que MOS_BACKEND_URL esté configurado correctamente en Vercel.
+          </p>
+        </div>
+      )}
+
+      {/* Hero Stats */}
+      <div className={cn("grid grid-cols-1 md:grid-cols-3 gap-8", error && "opacity-50 pointer-events-none")}>
+        <Card className="bg-white border-none shadow-2xl shadow-slate-200/50 rounded-[2.5rem] overflow-hidden group">
+          <CardContent className="p-8 relative">
+            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+              <Package className="w-24 h-24" />
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2 mb-4 cursor-help w-fit">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Piezas Pintadas (MOS)</p>
+                    <Info className="w-3 h-3 text-slate-300" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-slate-900 text-white border-none p-3 rounded-xl shadow-2xl">
+                  <p className="font-bold text-[10px] uppercase tracking-wider">Suma de piezas registradas en el sistema MOS en el periodo seleccionado.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <div className="flex items-baseline gap-3">
+              <h2 className="text-6xl font-black text-[#0F172A] tracking-tighter">
+                {data?.stats?.total_pieces_produced?.toLocaleString() || "0"}
+              </h2>
+              <div className="flex flex-col">
+                <span className="text-blue-600 font-bold text-xs uppercase tracking-widest leading-none">Unidades</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                  ${data?.stats?.total_value_produced?.toLocaleString(undefined, { maximumFractionDigits: 0 })} USD
+                </span>
+              </div>
+            </div>
+            <div className="mt-6 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-blue-500 uppercase tracking-wider bg-blue-50 w-fit px-3 py-1 rounded-full">
+                <TrendingUp className="w-3 h-3" />
+                Producción Verificada
+              </div>
+              <div className="flex flex-col items-end">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1 cursor-help">
+                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Valor Unitario</span>
+                        <Info className="w-2 h-2 text-slate-300" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-slate-900 text-white border-none p-2 rounded-lg">
+                      <p className="font-bold text-[9px] uppercase">Promedio histórico de las últimas 5,000 órdenes de Printavo.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <span className="text-sm font-black text-slate-900">${data?.stats?.avg_unit_price?.toFixed(3)}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#0091D5] border-none shadow-2xl shadow-blue-500/30 rounded-[2.5rem] overflow-hidden group text-white">
+          <CardContent className="p-8 relative">
+            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+              <DollarSign className="w-24 h-24 text-white" />
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2 mb-4 cursor-help w-fit">
+                    <p className="text-[10px] font-black text-blue-100 uppercase tracking-[0.2em]">Listo para Cobro (Final Bill)</p>
+                    <Info className="w-3 h-3 text-blue-200/50" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-slate-900 text-white border-none p-3 rounded-xl shadow-2xl">
+                  <p className="font-bold text-[10px] uppercase tracking-wider">Valor total acumulado de todas las órdenes en el tablero de cobro (Backlog).</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black tracking-tighter opacity-70">$</span>
+              <h2 className="text-5xl font-black tracking-tighter">
+                {data?.stats?.total_pieces_ready
+                  ? data.stats.total_pieces_ready.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+                  : "0"}
+              </h2>
+              <span className="text-blue-100 font-bold text-xs uppercase tracking-widest">USD</span>
+            </div>
+            <div className="mt-2 text-[10px] text-blue-200 font-semibold">{data?.stats?.unbilled_count || 0} órdenes pendientes</div>
+            <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-white uppercase tracking-wider bg-white/20 w-fit px-3 py-1 rounded-full border border-white/30 backdrop-blur-md">
+              <AlertCircle className="w-3 h-3" />
+              Pendiente de Facturar
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-emerald-500 border-none shadow-2xl shadow-emerald-500/30 rounded-[2.5rem] overflow-hidden group text-white">
+          <CardContent className="p-8 relative">
+            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+              <CheckCircle2 className="w-24 h-24 text-white" />
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2 mb-4 cursor-help w-fit">
+                    <p className="text-[10px] font-black text-emerald-50 uppercase tracking-[0.2em]">Cobrado (Completed)</p>
+                    <Info className="w-3 h-3 text-emerald-100/50" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-slate-900 text-white border-none p-3 rounded-xl shadow-2xl">
+                  <p className="font-bold text-[10px] uppercase tracking-wider">Dinero de órdenes producidas en este periodo que ya fueron pagadas en Printavo.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black tracking-tighter opacity-70">$</span>
+              <h2 className="text-5xl font-black tracking-tighter">
+                {data?.stats?.total_pieces_billed
+                  ? data.stats.total_pieces_billed.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+                  : "0"}
+              </h2>
+              <span className="text-emerald-50 font-bold text-xs uppercase tracking-widest">USD</span>
+            </div>
+            <div className="mt-2 text-[10px] text-emerald-100 font-semibold">{data?.stats?.billed_count || 0} órdenes cobradas</div>
+            <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-white uppercase tracking-wider bg-white/20 w-fit px-3 py-1 rounded-full border border-white/30 backdrop-blur-md">
+              <CheckCircle2 className="w-3 h-3" />
+              Ingreso Confirmado
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Control Bar */}
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-6 bg-white p-6 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100">
+        <div className="relative w-full lg:max-w-md">
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
+          <Input 
+            placeholder="Buscar por orden o cliente..." 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-16 bg-slate-50 border-transparent text-slate-900 h-16 rounded-2xl focus:ring-2 focus:ring-blue-500/20 transition-all font-bold text-sm placeholder:text-slate-400"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-2xl">
+          <Button 
+            variant="ghost" 
+            onClick={() => setFilter('all')}
+            className={cn(
+              "h-12 px-8 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all", 
+              filter === 'all' ? "bg-white text-blue-600 shadow-lg shadow-slate-200" : "text-slate-400 hover:text-slate-600"
+            )}
           >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            {t("forceRefresh")}
+            Todos
+          </Button>
+          <Button 
+            variant="ghost" 
+            onClick={() => setFilter('final_bill')}
+            className={cn(
+              "h-12 px-8 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all", 
+              filter === 'final_bill' ? "bg-[#0091D5] text-white shadow-lg shadow-blue-500/30" : "text-slate-400 hover:text-slate-600"
+            )}
+          >
+            Por Cobrar
+          </Button>
+          <Button 
+            variant="ghost" 
+            onClick={() => setFilter('completed')}
+            className={cn(
+              "h-12 px-8 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all", 
+              filter === 'completed' ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30" : "text-slate-400 hover:text-slate-600"
+            )}
+          >
+            Cobrados
           </Button>
         </div>
       </div>
 
-      {/* Main Analytics Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        
-        {/* Top Feature: Trend Chart */}
-        <div className="lg:col-span-4 min-h-[400px]">
-          <TrendChart
-            data={data.efficiencyTrends}
-            title={t("productionTrendTitle")}
-            description={t("industrialAnalyticsEngine")}
-          />
+      {/* Main List */}
+      <div className="bg-white rounded-[3rem] shadow-2xl shadow-slate-200/60 overflow-hidden border border-slate-50">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50">
+                <th className="px-10 py-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-100">Orden / Cliente</th>
+                <th className="px-10 py-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-100 text-center">Progreso de Pintura</th>
+                <th className="px-10 py-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-100 text-center">Status Cobro</th>
+                <th className="px-10 py-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-100 text-right">Monto</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-10 py-20 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">
+                    No hay registros en este periodo
+                  </td>
+                </tr>
+              ) : (
+                filteredOrders.map((order, index) => (
+                  <tr key={`${order.order_number}-${index}`} className="hover:bg-blue-50/20 transition-all group cursor-pointer">
+                    <td className="px-10 py-8">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-blue-600 font-black text-xs shadow-inner">
+                          #{order.order_number}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-black text-slate-800 uppercase tracking-tight">{order.client}</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{order.mos_status}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-10 py-8">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-lg font-black text-slate-900">{order.mos_produced}</span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">/ {order.mos_pieces}</span>
+                        </div>
+                        <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                          <div 
+                            className={cn(
+                              "h-full transition-all duration-1000",
+                              order.mos_produced >= order.mos_pieces ? "bg-emerald-500" : "bg-blue-500"
+                            )} 
+                            style={{ width: `${Math.min(100, (order.mos_produced / order.mos_pieces) * 100)}%` }} 
+                          />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-10 py-8">
+                      <div className="flex items-center justify-center">
+                         {order.printavo_status === 'Completed' ? (
+                            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
+                              <CheckCircle2 className="h-3 w-3" />
+                              <span className="text-[9px] font-black uppercase tracking-widest">COBRADO</span>
+                            </div>
+                          ) : order.printavo_status === 'Final Bill' ? (
+                            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#0091D5] text-white shadow-lg shadow-blue-500/20">
+                              <DollarSign className="h-3 w-3" />
+                              <span className="text-[9px] font-black uppercase tracking-widest">LISTO PARA COBRO</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-100 text-slate-400 border border-slate-200">
+                              <AlertCircle className="h-3 w-3" />
+                              <span className="text-[9px] font-black uppercase tracking-widest">{order.printavo_status}</span>
+                            </div>
+                          )}
+                      </div>
+                    </td>
+                    <td className="px-10 py-8 text-right">
+                      <div className="flex flex-col items-end gap-2">
+                        <span className="text-lg font-black text-slate-900 tracking-tighter">
+                          ${order.printavo_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {order.printavo_url && (
+                            <a href={order.printavo_url} target="_blank" rel="noreferrer" className="p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all shadow-sm">
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          )}
+                          {order.invoice_url && (
+                            <a href={order.invoice_url} target="_blank" rel="noreferrer" className="p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all shadow-sm">
+                              <FileText className="h-4 w-4" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              ))}
+            </tbody>
+          </table>
         </div>
-
-        {/* Middle Stats Row */}
-        <div className="lg:col-span-1 min-h-[350px]">
-           <EfficiencyRadialChart efficiency={data.efficiency} />
-        </div>
-        
-        <div className="lg:col-span-1 min-h-[350px]">
-           <LoadDistributionChart machines={data.machinery.machines} />
-        </div>
-
-        <div className="lg:col-span-2 min-h-[350px]">
-           <TopMachinesChart data={data.topMachines} />
-        </div>
-
-        {/* Bottom Metrics Row */}
-        <div className="lg:col-span-2 min-h-[350px]">
-          <TopClientsCard 
-            data={data.topClients} 
-            title={t("topClientsTitle")}
-            description={t("clientPortfolioImpact")}
-          />
-        </div>
-
-        <div className="lg:col-span-2 min-h-[350px]">
-           <ShiftsDonut 
-             title={t("shiftsTitle")}
-             description={t("opShiftBalancer")}
-           />
-        </div>
-        
       </div>
     </div>
   )
