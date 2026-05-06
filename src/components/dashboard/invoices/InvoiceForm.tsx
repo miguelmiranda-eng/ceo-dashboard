@@ -133,7 +133,10 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
       state: initData?.shipping_address?.state || "",
       zip: initData?.shipping_address?.zip || ""
     },
-    items: initData?.items && initData.items.length > 0 ? initData.items : [{
+    items: initData?.items && initData.items.length > 0 ? initData.items.map((it: any) => ({
+      ...it,
+      items_count: it.items_count || 0
+    })) : [{
       category: "Screen Printing",
       item_number: "",
       color: "",
@@ -142,8 +145,10 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
       quantity: 0,
       price: 0,
       amount: 0,
-      sizes: { "XS": "", "S": "", "M": "", "L": "", "XL": "", "2XL": "", "3XL": "", "4XL": "" }
+      items_count: 0,
+      sizes: (initData?.size_columns || SIZE_KEYS).reduce((acc: any, s: string) => ({ ...acc, [s]: 0 }), {})
     }],
+    size_columns: initData?.size_columns || [...SIZE_KEYS],
     production_notes: initData?.production_notes || "ART LINKS ONLY. FOR ART DEPARTAMENT ONLY. NO ADDITIONAL NOTES.",
     production_lines: initData?.production_lines || ["", "", "", "", "", "", "", "", "", ""],
     art_links: initData?.art_links || [""],
@@ -189,13 +194,15 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
 
   const addItem = () => {
     const newItem: any = {
+      category: "Screen Printing",
       item_number: "",
       description: "",
       color: "",
       quantity: 0,
       price: 0,
       amount: 0,
-      sizes: { "XS": 0, "S": 0, "M": 0, "L": 0, "XL": 0, "2XL": 0, "3XL": 0, "4XL": 0 }
+      items_count: 0,
+      sizes: formData.size_columns.reduce((acc: any, s: string) => ({ ...acc, [s]: 0 }), {})
     }
     setFormData((prev: any) => {
       const newItems = [...(prev.items || []), newItem]
@@ -230,6 +237,44 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
       }
 
       return { ...prev, ...updates }
+    })
+  }
+
+  const addSizeColumn = () => {
+    const name = prompt("Enter new size name (e.g. 5XL, Youth S):")
+    if (!name) return
+    const cleanName = name.toUpperCase().trim()
+    if (formData.size_columns.includes(cleanName)) return
+
+    setFormData((prev: any) => ({
+      ...prev,
+      size_columns: [...prev.size_columns, cleanName],
+      items: prev.items.map((item: any) => ({
+        ...item,
+        sizes: { ...item.sizes, [cleanName]: 0 }
+      }))
+    }))
+  }
+
+  const removeSizeColumn = (name: string) => {
+    if (!confirm(`Are you sure you want to remove the size column "${name}"?`)) return
+    setFormData((prev: any) => {
+      const newCols = prev.size_columns.filter((c: string) => c !== name)
+      return {
+        ...prev,
+        size_columns: newCols,
+        items: prev.items.map((item: any) => {
+          const newSizes = { ...item.sizes }
+          delete newSizes[name]
+          const newQty = Object.values(newSizes).reduce((a, b) => a + (Number(b) || 0), 0)
+          return {
+            ...item,
+            sizes: newSizes,
+            quantity: newQty,
+            amount: newQty * (item.price || 0)
+          }
+        })
+      }
     })
   }
 
@@ -781,10 +826,20 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
 
                     <div className="mt-10 flex flex-col xl:flex-row items-end justify-between gap-10">
                        <div className="flex-1 w-full space-y-4">
-                          <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 block">Global Matrix (XS-4XL)</Label>
-                          <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
-                             {SIZE_KEYS.map(size => (
-                               <div key={size} className="flex flex-col items-center gap-3 bg-slate-950/60 border border-slate-800/50 rounded-2xl py-4 group/size hover:bg-[#0091D5]/5 transition-all">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 block">Global Matrix (Sizes)</Label>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              onClick={addSizeColumn}
+                              className="h-6 px-2 text-[8px] font-black uppercase tracking-widest text-[#0091D5] hover:bg-blue-500/10"
+                            >
+                              <Plus className="h-3 w-3 mr-1" /> Add Size
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
+                             {formData.size_columns.map((size: string) => (
+                               <div key={size} className="relative flex flex-col items-center gap-3 bg-slate-950/60 border border-slate-800/50 rounded-2xl py-4 group/size hover:bg-[#0091D5]/5 transition-all">
                                   <span className="text-[9px] font-black text-slate-600 group-hover/size:text-[#0091D5] uppercase">{size}</span>
                                   <input
                                     type="text"
@@ -793,17 +848,34 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
                                     onChange={e => updateSize(idx, size, e.target.value.replace(/[^0-9]/g, ""))}
                                     className="w-full bg-transparent border-none text-center text-xl font-black text-white focus:ring-0 p-0"
                                   />
+                                  <button
+                                    type="button"
+                                    onClick={() => removeSizeColumn(size)}
+                                    className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5 opacity-0 group-hover/size:opacity-100 transition-opacity"
+                                  >
+                                    <X className="h-2 w-2" />
+                                  </button>
                                </div>
                              ))}
                           </div>
                        </div>
 
-                       <div className="flex items-center gap-10 bg-slate-950/80 p-6 rounded-[2rem] border border-[#0091D5]/20 shadow-2xl">
+                       <div className="flex flex-wrap items-center gap-6 bg-slate-950/80 p-6 rounded-[2rem] border border-[#0091D5]/20 shadow-2xl">
                           <div className="text-center">
                              <p className="text-[9px] font-black uppercase text-slate-500 mb-1">Total Qty</p>
                              <p className="text-4xl font-black text-white tracking-tighter">{item.quantity || 0}</p>
                           </div>
-                          <div className="w-px h-16 bg-slate-800" />
+                          <div className="w-px h-16 bg-slate-800 hidden md:block" />
+                          <div className="text-center">
+                             <p className="text-[9px] font-black uppercase text-[#0091D5] mb-1">Items</p>
+                             <input
+                               type="number"
+                               value={item.items_count || 0}
+                               onChange={e => updateItem(idx, "items_count", parseInt(e.target.value) || 0)}
+                               className="w-20 bg-transparent border-none text-3xl font-black text-white focus:ring-0 p-0 text-center"
+                             />
+                          </div>
+                          <div className="w-px h-16 bg-slate-800 hidden md:block" />
                           <div className="text-center">
                              <p className="text-[9px] font-black uppercase text-emerald-500 mb-1">Unit Val</p>
                              <div className="flex items-center gap-1">

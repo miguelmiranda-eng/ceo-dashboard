@@ -57,11 +57,15 @@ export interface DashboardData {
 }
 
 export interface InvoiceItem {
+  category?: string
+  item_number?: string
+  color?: string
   description: string
   quantity: number
   price: number
   amount: number
   sizes?: Record<string, number>
+  items_count?: number
 }
 
 export interface Invoice {
@@ -94,6 +98,7 @@ export interface Invoice {
   production_notes?: string
   seps?: string
   art_links?: string[]
+  size_columns?: string[]
   created_at: string
   updated_at: string
 }
