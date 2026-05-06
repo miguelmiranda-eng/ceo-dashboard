@@ -127,12 +127,16 @@ export async function GET(request: NextRequest) {
     // Completed: DATE-FILTERED (represents money collected/finished in the selected period)
     const completed = billingInRange.filter(r => r.printavo_status === 'Completed');
 
-    // Financial calculations
-    const totalBilled = completed.reduce((sum, r) => sum + (r.printavo_total || 0), 0);
-    const totalReady = finalBill.reduce((sum, r) => sum + (r.printavo_total || 0), 0);
-    const totalValue = totalBilled + totalReady;
+    // Financial calculations: Proportional value based on what was produced in the period
+    let totalValueProduced = 0;
+    results.forEach(r => {
+      if (r.is_matched && r.mos_pieces > 0 && r.mos_produced > 0) {
+        const unitPrice = r.printavo_total / r.mos_pieces;
+        totalValueProduced += r.mos_produced * unitPrice;
+      }
+    });
     
-    const avgUnitPrice = trueTotalProduced > 0 ? (totalValue / trueTotalProduced) : 0;
+    const avgUnitPrice = trueTotalProduced > 0 ? (totalValueProduced / trueTotalProduced) : 0;
 
     const stats = {
       total_orders: allMatched.length,
@@ -141,10 +145,10 @@ export async function GET(request: NextRequest) {
 
       total_pieces_produced: trueTotalProduced,
       avg_unit_price: avgUnitPrice,
-      total_value_produced: totalValue,
+      total_value_produced: totalValueProduced,
 
-      total_pieces_billed: totalBilled,
-      total_pieces_ready:  totalReady,
+      total_pieces_billed: completed.reduce((sum, r) => sum + (r.printavo_total || 0), 0),
+      total_pieces_ready:  finalBill.reduce((sum, r) => sum + (r.printavo_total || 0), 0),
     };
 
 
