@@ -175,7 +175,8 @@ export function normalizeImageUrl(url: string | undefined): string {
   if (!url) return "";
   
   // Caso 1: Data URLs o links externos completos (dejarlos igual)
-  if (url.startsWith('data:') || (url.startsWith('http') && !url.includes('localhost:8000'))) {
+  // Pero si contienen 'invoices/static/', debemos procesarlos en el Caso 3 para que pasen por el proxy
+  if (url.startsWith('data:') || (url.startsWith('http') && !url.includes('localhost:8000') && !url.includes('invoices/static/'))) {
     return url;
   }
   
