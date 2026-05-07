@@ -27,8 +27,16 @@ function ImageModal({ file, onClose }: { file: any; onClose: () => void }) {
           <a href={file.data || file.url} download={file.name} className="bg-blue-600 text-white px-3 py-1 rounded text-[9px] font-black uppercase flex items-center gap-1"><Download className="h-2.5 w-2.5" />DL</a>
         </DialogHeader>
         <div className="p-6 bg-slate-800 flex items-center justify-center min-h-[300px] overflow-auto max-h-[85vh]">
-          <div style={{ transform: `scale(${zoom})`, transition: 'transform 0.2s' }}>
-            <img src={normalizeImageUrl(file.data || file.url)} alt={file.name} className="max-w-[80vw] shadow-2xl rounded-lg" />
+          <div style={{ transform: `scale(${zoom})`, transition: 'transform 0.2s', width: '100%', height: '100%' }}>
+            {(file.mime === 'application/pdf' || file.name?.toLowerCase().endsWith('.pdf')) ? (
+              <iframe 
+                src={normalizeImageUrl(file.url || file.data)} 
+                className="w-full h-[80vh] border-none rounded bg-white"
+                title={file.name}
+              />
+            ) : (
+              <img src={normalizeImageUrl(file.data || file.url)} alt={file.name} className="max-w-[80vw] mx-auto shadow-2xl rounded-lg" />
+            )}
           </div>
         </div>
       </DialogContent>
@@ -44,7 +52,9 @@ export function ProsperInvoice({ invoice, showFinancials = false }: ProsperInvoi
   
   const artLinks = Array.isArray(inv.art_links) ? inv.art_links : []
 
-  const imageAttachments = (inv.production_attachments || []).filter((a: any) => a?.type === 'image' || a?.mime?.startsWith('image/'))
+  const visualAttachments = (inv.production_attachments || []).filter((a: any) => 
+    a?.type === 'image' || a?.mime?.startsWith('image/') || a?.type === 'pdf' || a?.mime === 'application/pdf' || a?.name?.toLowerCase().endsWith('.pdf')
+  )
 
   return (
     <div id="prosper-production-sheet" className="bg-white text-[#0F172A] max-w-[1400px] mx-auto font-sans" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
@@ -267,21 +277,31 @@ export function ProsperInvoice({ invoice, showFinancials = false }: ProsperInvoi
         </div>
 
         {/* ── VISUAL ATTACHMENTS ── */}
-        {imageAttachments.length > 0 && (
+        {visualAttachments.length > 0 && (
           <div className="border border-gray-300 rounded p-3 bg-gray-50/30">
             <div className="font-black text-[11px] border-b border-gray-200 pb-1 mb-2 uppercase tracking-widest">Adjuntos Visuales / Visual Attachments</div>
             <div className="flex flex-wrap gap-4">
-              {imageAttachments.map((file: any, i: number) => (
-                <div key={i} className="flex flex-col items-center gap-1 cursor-pointer group" onClick={() => setSelectedImage(file)}>
-                  <div className="relative border border-gray-300 bg-white overflow-hidden group-hover:border-blue-400 transition-colors" style={{ width: 72, height: 72 }}>
-                    <img src={normalizeImageUrl(file.url || file.data)} alt={file.name} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <ZoomIn className="h-5 w-5 text-white" />
+              {visualAttachments.map((file: any, i: number) => {
+                const isPdf = file.mime === 'application/pdf' || file.name?.toLowerCase().endsWith('.pdf');
+                return (
+                  <div key={i} className="flex flex-col items-center gap-1 cursor-pointer group" onClick={() => setSelectedImage(file)}>
+                    <div className="relative border border-gray-300 bg-white overflow-hidden group-hover:border-blue-400 transition-colors" style={{ width: 72, height: 72 }}>
+                      {isPdf ? (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-red-50 text-red-600">
+                          <span className="text-[20px]">📄</span>
+                          <span className="text-[8px] font-black mt-1">PDF</span>
+                        </div>
+                      ) : (
+                        <img src={normalizeImageUrl(file.url || file.data)} alt={file.name} className="w-full h-full object-cover" />
+                      )}
+                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <ZoomIn className="h-5 w-5 text-white" />
+                      </div>
                     </div>
+                    <div className="text-[8px] font-black uppercase text-gray-500 text-center max-w-[72px] truncate">{file.name}</div>
                   </div>
-                  <div className="text-[8px] font-black uppercase text-gray-500 text-center max-w-[72px] truncate">{file.name}</div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
@@ -300,11 +320,17 @@ export function ProsperInvoice({ invoice, showFinancials = false }: ProsperInvoi
               <div className="flex flex-wrap gap-3">
                 {inv.packing_attachments.map((f: any, i: number) => {
                    const isImg = f.type === 'image' || f.mime?.startsWith('image/')
+                   const isPdf = f.type === 'pdf' || f.mime === 'application/pdf' || f.name?.toLowerCase().endsWith('.pdf')
                    return (
-                    <div key={i} className="relative group cursor-pointer" onClick={() => isImg && setSelectedImage(f)}>
-                      <div className="w-16 h-16 border border-gray-300 bg-white flex items-center justify-center text-[8px] font-black text-gray-500 uppercase text-center p-1 break-all overflow-hidden">
+                    <div key={i} className="relative group cursor-pointer" onClick={() => (isImg || isPdf) && setSelectedImage(f)}>
+                      <div className="w-16 h-16 border border-gray-300 bg-white flex items-center justify-center text-[8px] font-black text-gray-500 uppercase text-center p-1 break-all overflow-hidden group-hover:border-blue-400">
                         {isImg ? (
                           <img src={normalizeImageUrl(f.url || f.data)} alt={f.name} className="w-full h-full object-cover" />
+                        ) : isPdf ? (
+                          <div className="flex flex-col items-center">
+                            <span className="text-xl">📄</span>
+                            <span className="mt-1 text-red-600">PDF</span>
+                          </div>
                         ) : (
                           <span>{f.name}</span>
                         )}
