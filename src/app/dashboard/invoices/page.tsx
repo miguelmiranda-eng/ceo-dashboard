@@ -65,6 +65,7 @@ export default function InvoicesPage() {
   const [sorting, setSorting] = useState<SortingState>([])
   const [isCreating, setIsCreating] = useState<any>(false)
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null)
+  const [previewShowFinancials, setPreviewShowFinancials] = useState(false)
   const [showDeleted, setShowDeleted] = useState(false)
 
   const handlePrint = () => {
@@ -493,12 +494,34 @@ export default function InvoicesPage() {
                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
                   <Printer className="h-5 w-5" />
                </div>
-               <div>
+                <div>
                   <h2 className="text-slate-900 font-black uppercase tracking-tight text-sm">Prosper Manufacturing Format</h2>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Internal Document Preview</p>
-               </div>
-            </div>
-            <div className="flex gap-3">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    {previewShowFinancials ? "Billing / Facturación Mode" : "Production / Piso Mode"}
+                  </p>
+                </div>
+             </div>
+             <div className="flex items-center gap-4">
+                <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                  <button 
+                    onClick={() => setPreviewShowFinancials(false)}
+                    className={cn(
+                      "px-4 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all",
+                      !previewShowFinancials ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                    )}
+                  >
+                    Producción
+                  </button>
+                  <button 
+                    onClick={() => setPreviewShowFinancials(true)}
+                    className={cn(
+                      "px-4 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all",
+                      previewShowFinancials ? "bg-white text-[#0091D5] shadow-sm" : "text-slate-400 hover:text-slate-600"
+                    )}
+                  >
+                    Facturación
+                  </button>
+                </div>
               <Button onClick={handlePrint} className="bg-[#0091D5] hover:bg-[#0081C0] text-white font-black uppercase text-[10px] px-10 h-12 rounded-2xl shadow-xl shadow-blue-500/20 transition-all active:scale-95 flex items-center gap-2">
                 <Printer className="h-4 w-4" /> Final Print Document
               </Button>
@@ -509,7 +532,7 @@ export default function InvoicesPage() {
           </div>
           <div className="p-12">
             <div className="bg-white shadow-[0_30px_100px_rgba(0,0,0,0.12)] border border-slate-200 transform scale-[0.98] origin-top overflow-hidden rounded-sm">
-              {previewInvoice && <ProsperInvoice invoice={previewInvoice} />}
+              {previewInvoice && <ProsperInvoice invoice={previewInvoice} showFinancials={previewShowFinancials} />}
             </div>
           </div>
         </DialogContent>

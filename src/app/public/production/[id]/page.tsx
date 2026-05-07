@@ -3,9 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { Invoice } from "@/lib/api"
-import { ProductionSheet } from "@/components/dashboard/production/ProductionSheet"
-import { Button } from "@/components/ui/button"
-import { Download, Printer } from "lucide-react"
+import { ProsperInvoice } from "@/components/dashboard/invoices/ProsperInvoice"
 
 export default function PublicProductionPage() {
   const { id } = useParams()
@@ -13,8 +11,6 @@ export default function PublicProductionPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Usamos el nuevo endpoint público para evitar problemas de autenticación en la vista de planta
-    // Usamos el proxy interno para evitar problemas de CORS y URLs locales
     fetch(`/api/mos?endpoint=/api/invoices/public/${id}`)
       .then(res => res.json())
       .then(data => {
@@ -27,23 +23,26 @@ export default function PublicProductionPage() {
       })
   }, [id])
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen bg-[#0B1120] text-white">Loading Production Sheet...</div>
-  if (!invoice) return <div className="flex items-center justify-center min-h-screen bg-[#0B1120] text-white">Order not found</div>
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-screen bg-slate-50">
+      <div className="text-center space-y-3">
+        <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Loading Production Sheet...</p>
+      </div>
+    </div>
+  )
+
+  if (!invoice) return (
+    <div className="flex items-center justify-center min-h-screen bg-slate-50 text-slate-700 font-black uppercase tracking-widest text-sm">
+      Order not found
+    </div>
+  )
 
   return (
-    <div className="min-h-screen bg-[#0B1120] py-12 px-4 scroll-smooth">
-      <div className="max-w-[1200px] mx-auto space-y-6">
-        <div className="flex justify-between items-center no-print bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-2xl">
-          <div className="flex items-center gap-3">
-             <div className="w-2 h-8 bg-blue-500 rounded-full" />
-             <h2 className="text-white font-black uppercase tracking-widest text-sm italic">Prosper Production Console</h2>
-          </div>
-          <Button onClick={() => window.print()} className="bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest text-[10px] h-10 px-6 shadow-[0_0_20px_rgba(37,99,235,0.3)]">
-            <Printer className="mr-2 h-4 w-4" /> Print Production Sheet
-          </Button>
-        </div>
-        <div className="bg-white shadow-none rounded-none overflow-hidden">
-          <ProductionSheet invoice={invoice} />
+    <div className="min-h-screen bg-slate-100">
+      <div className="max-w-[1400px] mx-auto">
+        <div className="bg-white shadow-sm">
+          <ProsperInvoice invoice={invoice} showFinancials={false} />
         </div>
       </div>
     </div>

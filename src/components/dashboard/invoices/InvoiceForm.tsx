@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Save, X, Loader2, ZoomIn, ZoomOut, Download } from "lucide-react"
+import { Save, X, Loader2, ZoomIn, ZoomOut, Download, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Invoice, InvoiceItem, fetchOptions, normalizeImageUrl } from "@/lib/api"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -87,8 +87,15 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
         }],
     production_notes: inv?.production_notes || "",
     finishing_notes: inv?.finishing_notes || "",
-    production_attachments: inv?.production_attachments || [],
+    production_attachments: inv?.production_attachments || inv?.attachments || [],
+    packing_attachments: inv?.packing_attachments || [],
     open_text_field: inv?.open_text_field || "",
+    checklist_items: inv?.checklist_items || [
+      { label: "Front Print", note: "(Según CAD)", checked: false },
+      { label: "Neck Label", note: "(Etiqueta de cuello)", checked: false },
+      { label: "Finishing", note: "(Acabado)", checked: false },
+      { label: "Pick & Pack", note: "(Selección y empaque)", checked: false },
+    ],
   })
 
   useEffect(() => { fetchOptions().then(setOptions).catch(console.error) }, [])
@@ -169,36 +176,13 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
     try {
       for (const file of Array.from(files)) {
         const fd = new FormData()
-        let fileToUpload: File | Blob = file
-        if (file.type.startsWith('image/') && file.size > 800 * 1024) {
-          const compressed = await new Promise<string>(resolve => {
-            const reader = new FileReader()
-            reader.readAsDataURL(file)
-            reader.onload = e => {
-              const img = new Image()
-              img.src = e.target?.result as string
-              img.onload = () => {
-                const canvas = document.createElement('canvas')
-                const max = 1000
-                let w = img.width, h = img.height
-                if (w > max) { h = h * max / w; w = max }
-                if (h > max) { w = w * max / h; h = max }
-                canvas.width = w; canvas.height = h
-                canvas.getContext('2d')?.drawImage(img, 0, 0, w, h)
-                resolve(canvas.toDataURL('image/jpeg', 0.5))
-              }
-            }
-          })
-          const res2 = await fetch(compressed)
-          fileToUpload = await res2.blob()
-        }
-        fd.append('file', fileToUpload, file.name)
+        fd.append('file', file)
         const uploadRes = await fetch('/api/mos?endpoint=invoices/upload', { method: 'POST', body: fd })
         if (!uploadRes.ok) throw new Error("Upload failed")
         const { url } = await uploadRes.json()
         const cleanPath = url.startsWith('/api/') ? url.replace('/api/', '') : url
         const proxyUrl = `/api/mos?endpoint=${cleanPath}`
-        const att = { url: proxyUrl, name: file.name, type: file.type.startsWith('image/') ? 'image' : 'other', mime: file.type, data: "" }
+        const att = { url: proxyUrl, name: file.name, type: file.type.startsWith('image/') ? 'image' : 'other', mime: file.type }
         setForm((p: any) => ({ ...p, production_attachments: [...(p.production_attachments || []), att] }))
       }
     } catch { alert("Error al subir archivo") } finally { setIsUploading(false) }
@@ -209,6 +193,55 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
     a.splice(i, 1)
     return { ...p, production_attachments: a }
   })
+
+  const handlePackingFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+    setIsUploading(true)
+    try {
+      for (const file of Array.from(files)) {
+        const fd = new FormData()
+        fd.append('file', file)
+        const uploadRes = await fetch('/api/mos?endpoint=invoices/upload', { method: 'POST', body: fd })
+        if (!uploadRes.ok) throw new Error("Upload failed")
+        const { url } = await uploadRes.json()
+        const cleanPath = url.startsWith('/api/') ? url.replace('/api/', '') : url
+        const proxyUrl = `/api/mos?endpoint=${cleanPath}`
+        const att = { url: proxyUrl, name: file.name, type: file.type.startsWith('image/') ? 'image' : 'other', mime: file.type }
+        setForm((p: any) => ({ ...p, packing_attachments: [...(p.packing_attachments || []), att] }))
+      }
+    } catch { alert("Error al subir archivo") } finally { setIsUploading(false) }
+  }
+
+  const removePackingAttachment = (i: number) => setForm((p: any) => {
+    const a = [...p.packing_attachments]
+    a.splice(i, 1)
+    return { ...p, packing_attachments: a }
+  })
+
+  const toggleChecklist = (idx: number) => {
+    const items = [...(form.checklist_items || [])]
+    items[idx] = { ...items[idx], checked: !items[idx].checked }
+    set("checklist_items", items)
+  }
+
+  const addChecklistItem = () => {
+    const items = [...(form.checklist_items || [])]
+    items.push({ label: "Nuevo Item", note: "", checked: false })
+    set("checklist_items", items)
+  }
+
+  const updateChecklistItem = (idx: number, field: string, val: any) => {
+    const items = [...(form.checklist_items || [])]
+    items[idx] = { ...items[idx], [field]: val }
+    set("checklist_items", items)
+  }
+
+  const removeChecklistItem = (idx: number) => {
+    const items = [...(form.checklist_items || [])]
+    items.splice(idx, 1)
+    set("checklist_items", items)
+  }
 
   const handleSave = () => {
     let art_links: string[] = []
@@ -277,7 +310,7 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
                   <select value={form.sample} onChange={e => set("sample", e.target.value)}
                     className="text-[9px] font-black border border-emerald-300 rounded px-1 bg-emerald-50 text-emerald-700 focus:outline-none">
                     <option value="NO SAMPLE">NO SAMPLE</option>
-                    {(options?.sample_options || []).map((s: string) =>
+                    {(options?.samples || ["EJEMPLO PRIMERO", "EJEMPLO APROBADO", "LICENCIA", "APR. POR FOTO", "APR. PARA EJEMPLO"]).map((s: string) =>
                       <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
@@ -391,19 +424,39 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
               />
             </div>
 
-            {/* Checklist (Now below) */}
+            {/* Checklist (Interactive) */}
             <div className="border border-gray-400 rounded p-3 bg-gray-50/30">
-              <div className="font-black text-[11px] border-b border-gray-300 pb-1 mb-2">Checklist de Procesos y Acabados</div>
+              <div className="flex justify-between items-center border-b border-gray-300 pb-1 mb-2">
+                <div className="font-black text-[11px]">Checklist de Procesos y Acabados</div>
+                <button onClick={addChecklistItem} className="text-[9px] font-black text-blue-600 hover:text-blue-800 flex items-center gap-0.5">
+                  <Plus className="h-2.5 w-2.5" /> Agregar Item
+                </button>
+              </div>
               <div className="grid grid-cols-2 gap-x-8 gap-y-1.5">
-                {[
-                  { label: "Front Print", note: "(Según CAD)" },
-                  { label: "Neck Label", note: "(Etiqueta de cuello)" },
-                  { label: "Finishing", note: "(Acabado)" },
-                  { label: "Pick & Pack", note: "(Selección y empaque)" },
-                ].map((it, i) => (
-                  <div key={i} className="flex items-start gap-1.5 text-[10px]">
-                    <div className="w-3.5 h-3.5 border border-gray-500 rounded-sm mt-0.5 flex-shrink-0" />
-                    <div><span className="font-black">{it.label}: </span><span className="text-gray-500">{it.note}</span></div>
+                {(form.checklist_items || []).map((it: any, i: number) => (
+                  <div key={i} className="flex items-start gap-1.5 text-[10px] group">
+                    <input 
+                      type="checkbox" 
+                      checked={it.checked} 
+                      onChange={() => toggleChecklist(i)}
+                      className="w-3.5 h-3.5 border border-gray-500 rounded-sm mt-0.5 cursor-pointer accent-blue-600" 
+                    />
+                    <div className="flex-1">
+                      <input 
+                        value={it.label} 
+                        onChange={e => updateChecklistItem(i, "label", e.target.value)}
+                        className="font-black bg-transparent border-b border-transparent focus:border-gray-300 focus:outline-none uppercase w-full"
+                      />
+                      <input 
+                        value={it.note} 
+                        onChange={e => updateChecklistItem(i, "note", e.target.value)}
+                        placeholder="(Nota...)"
+                        className="text-gray-500 bg-transparent border-b border-transparent focus:border-gray-300 focus:outline-none text-[9px] w-full"
+                      />
+                    </div>
+                    <button onClick={() => removeChecklistItem(i)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-opacity">
+                      <X className="h-3 w-3" />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -426,13 +479,25 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
         {/* ── PACKING SPECS ── */}
         <div className="border border-gray-400 rounded p-3 bg-gray-50">
           <div className="font-black text-[12px] mb-2">Especificaciones de Empaque (Packing Dept)</div>
-          <div className="flex items-start gap-2">
+          <div className="flex items-start gap-2 mb-3">
             <span className="text-[10px] font-bold whitespace-nowrap mt-1">Instrucciones:</span>
             <textarea value={form.finishing_notes} onChange={e => set("finishing_notes", e.target.value)}
               placeholder="Instrucciones de doblado, cajas y empaque..."
               rows={2}
               className="flex-1 text-[10px] border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-blue-400 bg-white resize-none" />
           </div>
+
+          <div className="mb-2">
+            <div className="text-[9px] font-black text-gray-500 uppercase mb-1">Adjuntos de Empaque (Guías, Etiquetas, PDF)</div>
+            <AttachmentUploader
+              attachments={form.packing_attachments || []}
+              onAdd={handlePackingFileChange}
+              onRemove={removePackingAttachment}
+              onSelect={setSelectedImage}
+              isUploading={isUploading}
+            />
+          </div>
+
           <div className="text-[10px] mt-2">
             <span className="font-black">Cantidades por Caja (Bulk): </span>
             <span className="text-gray-600">

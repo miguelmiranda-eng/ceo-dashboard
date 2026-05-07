@@ -2,11 +2,14 @@
 
 import { useState } from "react"
 import { Invoice } from "@/lib/api"
-import { ZoomIn, ZoomOut, Download, ExternalLink, Printer } from "lucide-react"
+import { ZoomIn, ZoomOut, Download, Printer, Check } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { normalizeImageUrl } from "@/lib/api"
 
-interface ProsperInvoiceProps { invoice: Invoice }
+interface ProsperInvoiceProps { 
+  invoice: Invoice;
+  showFinancials?: boolean;
+}
 
 function ImageModal({ file, onClose }: { file: any; onClose: () => void }) {
   const [zoom, setZoom] = useState(1)
@@ -32,96 +35,38 @@ function ImageModal({ file, onClose }: { file: any; onClose: () => void }) {
   )
 }
 
-function QRCode() {
-  return (
-    <svg viewBox="0 0 21 21" className="w-full h-full" style={{ imageRendering: 'pixelated' }}>
-      {/* TL block */}
-      <rect x="1" y="1" width="7" height="7" fill="none" stroke="#000" strokeWidth="0.8"/>
-      <rect x="2.5" y="2.5" width="4" height="4" fill="#000"/>
-      {/* TR block */}
-      <rect x="13" y="1" width="7" height="7" fill="none" stroke="#000" strokeWidth="0.8"/>
-      <rect x="14.5" y="2.5" width="4" height="4" fill="#000"/>
-      {/* BL block */}
-      <rect x="1" y="13" width="7" height="7" fill="none" stroke="#000" strokeWidth="0.8"/>
-      <rect x="2.5" y="14.5" width="4" height="4" fill="#000"/>
-      {/* Data dots */}
-      <rect x="9" y="1" width="1.5" height="1.5" fill="#000"/>
-      <rect x="11" y="1" width="1.5" height="1.5" fill="#000"/>
-      <rect x="9" y="3" width="1.5" height="1.5" fill="#000"/>
-      <rect x="11" y="3" width="1.5" height="1.5" fill="#000"/>
-      <rect x="9" y="5" width="1.5" height="1.5" fill="#000"/>
-      <rect x="1" y="9" width="1.5" height="1.5" fill="#000"/>
-      <rect x="3" y="9" width="1.5" height="1.5" fill="#000"/>
-      <rect x="5" y="9" width="1.5" height="1.5" fill="#000"/>
-      <rect x="7" y="9" width="1.5" height="1.5" fill="#000"/>
-      <rect x="9" y="9" width="1.5" height="1.5" fill="#000"/>
-      <rect x="11" y="9" width="1.5" height="1.5" fill="#000"/>
-      <rect x="13" y="9" width="1.5" height="1.5" fill="#000"/>
-      <rect x="15" y="9" width="1.5" height="1.5" fill="#000"/>
-      <rect x="17" y="9" width="1.5" height="1.5" fill="#000"/>
-      <rect x="19" y="9" width="1.5" height="1.5" fill="#000"/>
-      <rect x="9" y="11" width="1.5" height="1.5" fill="#000"/>
-      <rect x="13" y="11" width="1.5" height="1.5" fill="#000"/>
-      <rect x="15" y="11" width="1.5" height="1.5" fill="#000"/>
-      <rect x="11" y="13" width="1.5" height="1.5" fill="#000"/>
-      <rect x="15" y="13" width="1.5" height="1.5" fill="#000"/>
-      <rect x="9" y="15" width="1.5" height="1.5" fill="#000"/>
-      <rect x="13" y="15" width="1.5" height="1.5" fill="#000"/>
-      <rect x="17" y="15" width="1.5" height="1.5" fill="#000"/>
-      <rect x="9" y="17" width="1.5" height="1.5" fill="#000"/>
-      <rect x="11" y="17" width="1.5" height="1.5" fill="#000"/>
-      <rect x="15" y="17" width="1.5" height="1.5" fill="#000"/>
-      <rect x="19" y="17" width="1.5" height="1.5" fill="#000"/>
-      <rect x="13" y="19" width="1.5" height="1.5" fill="#000"/>
-      <rect x="17" y="19" width="1.5" height="1.5" fill="#000"/>
-    </svg>
-  )
-}
-
-export function ProsperInvoice({ invoice }: ProsperInvoiceProps) {
+export function ProsperInvoice({ invoice, showFinancials = false }: ProsperInvoiceProps) {
   const [selectedImage, setSelectedImage] = useState<any | null>(null)
   const inv = invoice as any
 
-  const fmtDate = (d: any) => {
-    if (!d) return "N/A"
-    try { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) } catch { return d }
-  }
-
-  const artLinks: string[] = Array.isArray(inv.art_links)
-    ? inv.art_links.filter(Boolean)
-    : typeof inv.art_links === 'string'
-    ? inv.art_links.split('\n').filter(Boolean)
-    : []
-
-  const allAttachments: any[] = [
-    ...(inv.production_attachments || []),
-    ...(inv.items || []).flatMap((it: any) => it.attachments || [])
-  ]
-  const imageAttachments = allAttachments.filter(a => a?.type === 'image' || a?.mime?.startsWith('image/'))
-
   const sizeColumns: string[] = inv.size_columns || ["XS","S","M","L","XL","2XL","3XL","4XL"]
+  
+  const artLinks = Array.isArray(inv.art_links) ? inv.art_links : []
+
+  const imageAttachments = (inv.production_attachments || []).filter((a: any) => a?.type === 'image' || a?.mime?.startsWith('image/'))
 
   return (
-    <div id="prosper-production-sheet" className="bg-white text-[#0F172A] max-w-[1400px] mx-auto font-sans select-none" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
-
-      {/* Print button — screen only */}
+    <div id="prosper-production-sheet" className="bg-white text-[#0F172A] max-w-[1400px] mx-auto font-sans" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
+      
+      {/* Top bar (Screen only) */}
       <div className="print:hidden flex justify-between items-center px-4 py-2 bg-gray-100 border-b border-gray-300">
-        <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">PROSPER PRODUCTION CONSOLE</span>
-        <button onClick={() => window.print()} className="flex items-center gap-2 bg-[#0F172A] text-white px-4 py-1.5 rounded text-[10px] font-black uppercase hover:bg-slate-700 transition-colors">
-          <Printer className="h-3.5 w-3.5" /> Print Production Sheet
+        <span className="text-xs font-black text-gray-600 uppercase tracking-widest">
+          Vista de Impresión: Orden #{inv.invoice_id}
+        </span>
+        <button onClick={() => window.print()} className="h-8 px-4 text-[10px] font-black uppercase bg-[#0F172A] text-white hover:bg-slate-700 flex items-center gap-1.5 rounded">
+          <Printer className="h-3.5 w-3.5" /> Imprimir Hoja de Piso
         </button>
       </div>
 
-      <div className="p-6 space-y-0 text-[11px]">
+      <div className="p-6 space-y-4 text-[11px]">
 
-        {/* ── 1. SMART HEADER ── */}
-        <div className="text-center text-[10px] font-bold text-gray-500 mb-1">Cabecera de Identificación Rápida (Smart Header)</div>
-        <table className="w-full border-collapse border border-gray-400 mb-4" style={{ tableLayout: 'fixed' }}>
+        {/* ── SMART HEADER (Mirrored from InvoiceForm) ── */}
+        <table className="w-full border-collapse border border-gray-400" style={{ tableLayout: 'fixed' }}>
           <tbody>
             <tr>
-              {/* Logo + Contact */}
+              {/* Left: Logo + Badges */}
               <td className="border border-gray-400 p-3 align-top w-[28%]">
-                <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex items-center gap-2 mb-2">
                   <div className="w-9 h-9 bg-[#0F172A] rounded-full flex items-center justify-center flex-shrink-0">
                     <svg viewBox="0 0 100 100" className="w-5 h-5" fill="none" stroke="white" strokeWidth="10" strokeLinecap="round">
                       <path d="M20 50 Q50 10 80 50 T80 90" />
@@ -130,49 +75,44 @@ export function ProsperInvoice({ invoice }: ProsperInvoiceProps) {
                   </div>
                   <div>
                     <div className="font-black text-sm leading-tight">Prosper Manufacturing</div>
-                    <div className="text-[9px] text-gray-500">Contact | #04ie Data</div>
                     <div className="text-[9px] text-gray-500">prospermfg.com</div>
                   </div>
                 </div>
-                {/* Status Badges */}
                 <div className="flex flex-wrap gap-1">
-                  {inv.priority && (
-                    <span className="text-[8px] font-black border border-amber-400 rounded px-1 bg-amber-50 text-amber-700 uppercase whitespace-nowrap">{inv.priority}</span>
-                  )}
-                  {inv.artwork_status && (
-                    <span className="text-[8px] font-black border border-blue-400 rounded px-1 bg-blue-50 text-blue-700 uppercase whitespace-nowrap">{inv.artwork_status}</span>
-                  )}
-                  {inv.sample && inv.sample !== "NO SAMPLE" && (
-                    <span className="text-[8px] font-black border border-emerald-400 rounded px-1 bg-emerald-50 text-emerald-700 uppercase whitespace-nowrap">{inv.sample}</span>
-                  )}
+                  <span className="text-[9px] font-black border border-amber-400 rounded px-1 bg-amber-50 text-amber-700 uppercase">{inv.priority}</span>
+                  <span className="text-[9px] font-black border border-blue-300 rounded px-1 bg-blue-50 text-blue-700 uppercase">{inv.artwork_status}</span>
+                  <span className="text-[9px] font-black border border-emerald-300 rounded px-1 bg-emerald-50 text-emerald-700 uppercase">{inv.sample}</span>
                 </div>
               </td>
 
-              {/* WO + PO Center */}
-              <td className="border border-gray-400 p-3 text-center align-middle w-[42%]">
-                <div className="font-black text-3xl leading-tight tracking-tight">WORK ORDER: #{inv.invoice_id || "NEW"}</div>
-                {inv.customer_po && <div className="font-black text-2xl tracking-tight">PO: #{inv.customer_po}</div>}
-                {inv.client && <div className="text-sm font-bold text-gray-600 mt-1 uppercase">{inv.client}</div>}
+              {/* Center: WO# + PO + Client */}
+              <td className="border border-gray-400 p-3 text-center align-middle w-[42%] bg-gray-50">
+                <div className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Work Order</div>
+                <div className="font-black text-3xl leading-tight tracking-tight text-gray-700">
+                  #{inv.invoice_id || "AUTO"}
+                </div>
+                <div className="flex items-center justify-center gap-1 mt-2">
+                  <span className="text-[9px] font-black text-gray-500">PO:</span>
+                  <span className="text-xl font-black text-center w-36 uppercase">{inv.customer_po || "—"}</span>
+                </div>
+                <div className="mt-2 text-sm font-bold uppercase">{inv.client || "—"}</div>
                 {inv.store_po && (
-                  <div className="mt-2 text-[#0091D5] font-black text-sm uppercase">Store PO: {inv.store_po}</div>
+                  <div className="mt-2 text-[10px] font-black text-[#0091D5] uppercase tracking-widest">
+                    Store PO #: {inv.store_po}
+                  </div>
                 )}
               </td>
 
-              {/* Dates + QR */}
+              {/* Right: Dates */}
               <td className="border border-gray-400 p-3 align-top w-[30%]">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="space-y-1 text-[10px]">
-                    <div>
-                      <span className="font-bold">Created: </span>
-                      <span>{fmtDate(inv.dates?.created)}</span>
-                    </div>
-                    {inv.cancel_date && (
-                      <div><span className="font-bold text-orange-600">CANCEL: </span><span className="font-black text-orange-600">{fmtDate(inv.cancel_date)}</span></div>
-                    )}
-                    <div className="text-[9px] text-gray-500 mt-2 font-bold">QR Code linking to<br/>Digital Packing List</div>
+                <div className="space-y-2 text-[10px]">
+                  <div>
+                    <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Created</div>
+                    <div className="text-[10px] font-bold">{inv.dates?.created || "—"}</div>
                   </div>
-                  <div className="w-16 h-16 flex-shrink-0 border border-gray-300 p-0.5">
-                    <QRCode />
+                  <div>
+                    <div className="text-[9px] font-black text-orange-500 uppercase tracking-widest">Cancel Date</div>
+                    <div className="text-[10px] font-bold text-orange-600">{inv.cancel_date || "—"}</div>
                   </div>
                 </div>
               </td>
@@ -180,139 +120,159 @@ export function ProsperInvoice({ invoice }: ProsperInvoiceProps) {
           </tbody>
         </table>
 
-        {/* ── 2. ART PANEL ── */}
-        <div className="flex gap-4 mb-3">
-          <div className="border-2 border-blue-600 rounded p-3 w-[38%] flex-shrink-0">
-            <div className="font-black text-[11px] text-blue-800 mb-2 underline">DEPARTAMENTO DE ARTE:</div>
-            {artLinks.length > 0 ? artLinks.map((linkStr, i) => {
-              let label = `LINK ${i+1}`
-              let url = linkStr
-              if (linkStr.includes('|')) {
-                const parts = linkStr.split('|')
-                label = parts[0] || label
-                url = parts[1] || ""
-              }
-              if (!url) return null;
-              
-              return (
-                <div key={i} className="flex items-center gap-1 mb-1 text-[10px]">
-                  <span className="font-black">• {label}: </span>
-                  <a href={url} target="_blank" rel="noopener noreferrer"
-                    className="text-blue-600 font-bold underline flex items-center gap-0.5 truncate hover:text-blue-800">
-                    <ExternalLink className="h-2.5 w-2.5 flex-shrink-0" />
-                    <span className="truncate max-w-[120px]">[Clean Button/Link]</span>
-                  </a>
-                </div>
-              )
-            }) : (
-              <div className="text-[10px] text-gray-400 italic">No art links</div>
-            )}
-            {inv.seps && <div className="text-[9px] text-gray-600 font-bold mt-1">SEPS: {inv.seps}</div>}
-            <div className="text-[9px] font-bold text-gray-600 mt-2 border-t border-blue-200 pt-1">
-              SOLO LINKS DE ARTE. SIN NOTAS ADICIONALES
+        {/* ── ART PANEL + Art Name ── */}
+        <div className="flex gap-4">
+          <div className="w-[38%] flex-shrink-0">
+            <div className="border border-gray-300 rounded p-3 bg-gray-50">
+              <div className="font-black text-[10px] text-gray-400 uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">Art Links / Technical Assets</div>
+              <div className="space-y-1.5">
+                {artLinks.map((al: any, i: number) => (
+                  <div key={i} className="flex items-center gap-1.5 text-[10px]">
+                    <span className="font-black text-gray-600 uppercase w-24 flex-shrink-0">{al.label || `LINK ${i+1}`}:</span>
+                    <span className="text-blue-600 font-bold underline truncate text-[9px]">{al.url || "N/A"}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 pt-2 border-t border-gray-200 flex items-center gap-2">
+                <span className="text-[9px] font-black text-gray-500 uppercase">SEPS #:</span>
+                <span className="text-[10px] font-mono font-bold uppercase">{inv.seps || "—"}</span>
+              </div>
             </div>
           </div>
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-lg font-black text-gray-400 mb-2">Panel de Activos Técnicos (Art &amp; Seps)</div>
-            </div>
+          <div className="flex-1 border border-gray-200 rounded p-3 bg-gray-50/50">
+            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Art Name / Descripción del Arte</div>
+            <div className="text-lg font-black uppercase text-gray-700">{inv.job_title_a?.desc || "—"}</div>
           </div>
         </div>
 
-        {/* ── 3. PRODUCTION MATRIX + CHECKLIST ── */}
-        <div className="space-y-4 mb-3">
-          {/* Matrix (Full Width) */}
-          <div>
-            <div className="text-[10px] font-bold text-gray-600 mb-0.5">Matriz de Producción Principal</div>
-            <div className="text-xl font-black mb-0.5">Cliente: {inv.client || "—"}</div>
-            {inv.job_title_a?.desc && <div className="text-lg font-black mb-2">Art Name: {inv.job_title_a.desc}</div>}
-
-            <table className="w-full border-collapse border border-gray-400 text-[10px]">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-gray-400 py-1 px-2 text-left font-black whitespace-nowrap">Item / Estilo</th>
-                  <th className="border border-gray-400 py-1 px-2 text-left font-black">Color / Descripción</th>
-                  {sizeColumns.map(s => (
-                    <th key={s} className="border border-gray-400 py-1 px-1 text-center font-black w-8">{s}</th>
-                  ))}
-                  <th className="border border-gray-400 py-1 px-2 text-center font-black">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(inv.items || []).map((item: any, idx: number) => (
-                  <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                    <td className="border border-gray-300 py-1.5 px-2 font-bold whitespace-nowrap">{item.item_number || "—"}</td>
-                    <td className="border border-gray-300 py-1.5 px-2 font-bold uppercase">{item.description || "—"}</td>
-                    {sizeColumns.map(s => (
-                      <td key={s} className="border border-gray-300 py-1.5 px-1 text-center font-bold">
-                        {item.sizes?.[s] ? item.sizes[s] : <span className="text-gray-300">-</span>}
-                      </td>
-                    ))}
-                    <td className="border border-gray-300 py-1.5 px-2 text-center font-black text-sm">{item.quantity || 0}</td>
-                  </tr>
+        {/* ── PRODUCTION MATRIX ── */}
+        <div>
+          <div className="text-[10px] font-bold text-gray-600 mb-0.5">Matriz de Producción Principal</div>
+          <table className="w-full border-collapse border border-gray-400 text-[10px]">
+            <thead>
+              <tr className="bg-gray-100 text-gray-700">
+                <th className="border border-gray-400 py-1 px-2 text-left font-black w-20">Item / Estilo</th>
+                <th className="border border-gray-400 py-1 px-2 text-left font-black w-24">Color</th>
+                <th className="border border-gray-400 py-1 px-2 text-left font-black">Descripción</th>
+                {sizeColumns.map(s => (
+                  <th key={s} className="border border-gray-400 py-1 px-1 text-center font-black w-10">{s}</th>
                 ))}
-              </tbody>
-              {(inv.items || []).length > 0 && (
-                <tfoot>
-                  <tr className="bg-gray-200">
-                    <td className="border border-gray-400 py-1 px-2 font-black" colSpan={2}>TOTAL</td>
-                    {sizeColumns.map(s => {
-                      const t = (inv.items || []).reduce((a: number, it: any) => a + (Number(it.sizes?.[s]) || 0), 0)
-                      return <td key={s} className="border border-gray-400 py-1 px-1 text-center font-black">{t > 0 ? t : "—"}</td>
-                    })}
-                    <td className="border border-gray-400 py-1 px-2 text-center font-black text-sm">
-                      {(inv.items || []).reduce((a: number, it: any) => a + (Number(it.quantity) || 0), 0)}
+                <th className="border border-gray-400 py-1 px-2 text-center font-black w-12">Total</th>
+                {showFinancials && (
+                  <>
+                    <th className="border border-gray-400 py-1 px-2 text-center font-black w-16">Price</th>
+                    <th className="border border-gray-400 py-1 px-2 text-center font-black w-16">Amount</th>
+                  </>
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {(inv.items || []).map((item: any, idx: number) => (
+                <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                  <td className="border border-gray-300 py-1.5 px-2 font-bold whitespace-pre-wrap">{item.item_number || "—"}</td>
+                  <td className="border border-gray-300 py-1.5 px-2 font-bold uppercase whitespace-pre-wrap">{item.color || "—"}</td>
+                  <td className="border border-gray-300 py-1.5 px-2 font-bold uppercase whitespace-pre-wrap">{item.description || "—"}</td>
+                  {sizeColumns.map(s => (
+                    <td key={s} className="border border-gray-300 py-1.5 px-1 text-center font-black">
+                      {item.sizes?.[s] || "—"}
                     </td>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
+                  ))}
+                  <td className="border border-gray-300 py-1.5 px-2 text-center font-black text-sm">{item.quantity || 0}</td>
+                  {showFinancials && (
+                    <>
+                      <td className="border border-gray-300 py-1.5 px-2 text-right font-bold">${(item.price || 0).toFixed(2)}</td>
+                      <td className="border border-gray-300 py-1.5 px-2 text-right font-black">${(item.amount || 0).toFixed(2)}</td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="bg-gray-200 font-black">
+                <td className="border border-gray-400 py-1 px-2" colSpan={3}>TOTALES POR TALLA</td>
+                {sizeColumns.map(s => {
+                  const t = (inv.items || []).reduce((a: number, it: any) => a + (Number(it.sizes?.[s]) || 0), 0)
+                  return <td key={s} className="border border-gray-400 py-1 px-1 text-center">{t > 0 ? t : "—"}</td>
+                })}
+                <td className="border border-gray-400 py-1 px-2 text-center text-sm">
+                  {(inv.items || []).reduce((a: number, it: any) => a + (Number(it.quantity) || 0), 0)}
+                </td>
+                {showFinancials && (
+                  <>
+                    <td className="border border-gray-400" />
+                    <td className="border border-gray-400 py-1 px-2 text-right text-sm">
+                      ${(inv.items || []).reduce((a: number, it: any) => a + (Number(it.amount) || 0), 0).toFixed(2)}
+                    </td>
+                  </>
+                )}
+              </tr>
+            </tfoot>
+          </table>
+        </div>
 
-            {/* Open Text Field */}
-            {inv.open_text_field && (
-              <div className="mt-4 border border-gray-300 rounded p-4 bg-white">
-                <div className="text-[10px] font-black text-gray-700 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                  <div className="h-[1px] flex-1 bg-gray-200"></div>
-                  <span>CAMPO DE TEXTO ABIERTO</span>
-                  <div className="h-[1px] flex-1 bg-gray-200"></div>
+        {/* ── OPEN TEXT FIELD ── */}
+        {inv.open_text_field && (
+          <div className="mt-4 border border-gray-300 rounded p-4 bg-white">
+            <div className="text-[11px] font-black text-gray-700 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+              <div className="h-[1px] flex-1 bg-gray-200"></div>
+              <span>CAMPO DE TEXTO ABIERTO</span>
+              <div className="h-[1px] flex-1 bg-gray-200"></div>
+            </div>
+            <div className="text-[12px] font-medium leading-relaxed whitespace-pre-wrap">
+              {inv.open_text_field}
+            </div>
+          </div>
+        )}
+
+        {/* ── FINANCIAL SUMMARY (Billing only) ── */}
+        {showFinancials && (
+          <div className="flex justify-end">
+            <div className="w-[280px] bg-slate-50 border border-gray-300 rounded p-4 space-y-2">
+              <div className="flex justify-between items-center text-[10px] font-bold text-gray-500 uppercase">
+                <span>Subtotal:</span>
+                <span className="text-gray-700">${(inv.amounts?.subtotal || 0).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center text-[10px] font-bold text-gray-500 uppercase">
+                <span>Sales Tax (0%):</span>
+                <span className="text-gray-700">$0.00</span>
+              </div>
+              <div className="pt-2 border-t border-gray-300 flex justify-between items-end">
+                <span className="text-[10px] font-black text-[#0091D5] uppercase tracking-widest">Total Amount:</span>
+                <span className="text-xl font-black text-gray-800">${(inv.amounts?.total || 0).toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── CHECKLIST (Mirrored from InvoiceForm) ── */}
+        <div className="border border-gray-400 rounded p-3 bg-gray-50/30">
+          <div className="font-black text-[11px] border-b border-gray-300 pb-1 mb-2 uppercase">Checklist de Procesos y Acabados</div>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-1.5">
+            {(inv.checklist_items || []).map((it: any, i: number) => (
+              <div key={i} className="flex items-start gap-1.5 text-[10px]">
+                <div className={`w-3.5 h-3.5 border border-gray-500 rounded-sm mt-0.5 flex-shrink-0 flex items-center justify-center ${it.checked ? 'bg-gray-200' : ''}`}>
+                  {it.checked && <Check className="h-2.5 w-2.5 text-gray-800" />}
                 </div>
-                <div className="text-[12px] font-medium leading-relaxed whitespace-pre-wrap">
-                  {inv.open_text_field}
+                <div>
+                  <span className="font-black uppercase">{it.label}: </span>
+                  <span className="text-gray-500">{it.note}</span>
                 </div>
               </div>
-            )}
+            ))}
           </div>
-
-          {/* Checklist (Now below) */}
-          <div className="border border-gray-400 rounded p-3 bg-gray-50/30">
-            <div className="font-black text-[11px] border-b border-gray-300 pb-1 mb-2">Checklist de Procesos y Acabados</div>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-1.5">
-              {[
-                { label: "Front Print", note: "(Según CAD)" },
-                { label: "Neck Label", note: "(Etiqueta de cuello)" },
-                { label: "Finishing", note: "(Acabado)" },
-                { label: "Pick & Pack", note: "(Selección y empaque)" },
-              ].map((it, i) => (
-                <div key={i} className="flex items-start gap-1.5 text-[10px]">
-                  <div className="w-3.5 h-3.5 border border-gray-500 rounded-sm mt-0.5 flex-shrink-0 print:border-gray-600" />
-                  <div><span className="font-black">{it.label}: </span><span className="text-gray-500">{it.note}</span></div>
-                </div>
-              ))}
-            </div>
-            <div className="text-[9px] mt-3 pt-2 border-t border-gray-200 text-gray-600">
-              <span className="font-black">Método de Aprobación:</span> Seguir CAD y enviar foto para aprobación final
-            </div>
+          <div className="text-[9px] mt-3 pt-2 border-t border-gray-200 text-gray-600">
+            <span className="font-black">Método de Aprobación:</span> Seguir CAD y enviar foto para aprobación final
           </div>
         </div>
 
-        {/* ── 4. VISUAL ATTACHMENTS ── */}
+        {/* ── VISUAL ATTACHMENTS ── */}
         {imageAttachments.length > 0 && (
-          <div className="border border-gray-300 rounded p-3 mb-3">
-            <div className="font-black text-[11px] border-b border-gray-200 pb-1 mb-2">Adjuntos Visuales / Visual Attachments</div>
+          <div className="border border-gray-300 rounded p-3 bg-gray-50/30">
+            <div className="font-black text-[11px] border-b border-gray-200 pb-1 mb-2 uppercase tracking-widest">Adjuntos Visuales / Visual Attachments</div>
             <div className="flex flex-wrap gap-4">
               {imageAttachments.map((file: any, i: number) => (
                 <div key={i} className="flex flex-col items-center gap-1 cursor-pointer group" onClick={() => setSelectedImage(file)}>
-                  <div className="relative border border-gray-300 bg-gray-50 overflow-hidden group-hover:border-blue-400 transition-colors" style={{ width: 72, height: 72 }}>
+                  <div className="relative border border-gray-300 bg-white overflow-hidden group-hover:border-blue-400 transition-colors" style={{ width: 72, height: 72 }}>
                     <img src={normalizeImageUrl(file.url || file.data)} alt={file.name} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <ZoomIn className="h-5 w-5 text-white" />
@@ -325,19 +285,40 @@ export function ProsperInvoice({ invoice }: ProsperInvoiceProps) {
           </div>
         )}
 
-        {/* ── 5. PACKING SPECS ── */}
+        {/* ── PACKING SPECS (Mirrored from InvoiceForm) ── */}
         <div className="border border-gray-400 rounded p-3 bg-gray-50">
-          <div className="font-black text-[12px] mb-1">Especificaciones de Empaque (Packing Dept)</div>
-          <div className="text-[10px] mb-1">
-            <span className="font-bold">Instrucciones de Doblado/Caja: </span>
-            {inv.finishing_notes
-              ? <span>{inv.finishing_notes}</span>
-              : <span>Referenciadas en los adjuntos.</span>
-            }
+          <div className="font-black text-[12px] mb-2 uppercase tracking-widest border-b border-gray-200 pb-1">Especificaciones de Empaque (Packing Dept)</div>
+          <div className="flex items-start gap-2 mb-3">
+            <span className="text-[10px] font-bold whitespace-nowrap">Instrucciones:</span>
+            <div className="text-[10px] font-medium leading-tight whitespace-pre-wrap flex-1">{inv.finishing_notes || "N/A"}</div>
           </div>
-          <div className="text-[10px]">
-            <span className="font-black">Cantidades por Caja (Bulk): </span>
-            <span>
+
+          {inv.packing_attachments && inv.packing_attachments.length > 0 && (
+            <div className="mb-3">
+              <div className="text-[9px] font-black text-gray-500 uppercase mb-1">Adjuntos de Empaque (Guías, Etiquetas, PDF)</div>
+              <div className="flex flex-wrap gap-3">
+                {inv.packing_attachments.map((f: any, i: number) => {
+                   const isImg = f.type === 'image' || f.mime?.startsWith('image/')
+                   return (
+                    <div key={i} className="relative group cursor-pointer" onClick={() => isImg && setSelectedImage(f)}>
+                      <div className="w-16 h-16 border border-gray-300 bg-white flex items-center justify-center text-[8px] font-black text-gray-500 uppercase text-center p-1 break-all overflow-hidden">
+                        {isImg ? (
+                          <img src={normalizeImageUrl(f.url || f.data)} alt={f.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span>{f.name}</span>
+                        )}
+                      </div>
+                      <div className="text-[7px] font-bold text-gray-400 text-center mt-0.5 max-w-[64px] truncate uppercase">{f.name}</div>
+                    </div>
+                   )
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="text-[10px] pt-2 border-t border-gray-200">
+            <span className="font-black uppercase tracking-tighter">Cantidades por Caja (Bulk): </span>
+            <span className="text-gray-700 font-bold">
               {sizeColumns.map(s => {
                 const t = (inv.items || []).reduce((a: number, it: any) => a + (Number(it.sizes?.[s]) || 0), 0)
                 return t > 0 ? `${s}: ${t}` : null
@@ -346,20 +327,24 @@ export function ProsperInvoice({ invoice }: ProsperInvoiceProps) {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-between items-center pt-3 mt-3 border-t border-gray-200 text-[8px] text-gray-400 font-bold uppercase">
-          <span>Prosper Manufacturing LLC — Production Control Document</span>
+        {/* Print Footer */}
+        <div className="flex justify-between items-center pt-3 border-t border-gray-200 text-[8px] text-gray-400 font-black uppercase tracking-[0.2em]">
+          <span>Prosper Manufacturing — Production Control Document</span>
           <span>WO #{inv.invoice_id} · Printed: {new Date().toLocaleDateString()}</span>
         </div>
       </div>
 
       {selectedImage && <ImageModal file={selectedImage} onClose={() => setSelectedImage(null)} />}
 
-      <style>{`
+      <style jsx>{`
         @media print {
-          #prosper-production-sheet { max-width: 100%; }
+          #prosper-production-sheet { max-width: 100%; border: none; }
+          .p-6 { padding: 0 !important; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .print\\:hidden { display: none !important; }
+          .bg-gray-50 { background-color: #f9fafb !important; }
+          .bg-gray-100 { background-color: #f3f4f6 !important; }
+          .border-gray-400 { border-color: #9ca3af !important; }
         }
       `}</style>
     </div>

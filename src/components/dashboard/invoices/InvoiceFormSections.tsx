@@ -62,7 +62,8 @@ export function SizeMatrixTable({
         <thead>
           <tr className="bg-gray-100">
             <th className="border border-gray-400 py-1 px-2 text-left font-black whitespace-nowrap w-20">Item / Estilo</th>
-            <th className="border border-gray-400 py-1 px-2 text-left font-black">Color / Descripción</th>
+            <th className="border border-gray-400 py-1 px-2 text-left font-black whitespace-nowrap w-24">Color</th>
+            <th className="border border-gray-400 py-1 px-2 text-left font-black">Descripción</th>
             {sizeColumns.map(s => (
               <th key={s} className="border border-gray-400 py-1 px-1 text-center font-black w-10 relative group">
                 <span>{s}</span>
@@ -83,16 +84,31 @@ export function SizeMatrixTable({
           {items.map((item, idx) => (
             <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
               <td className="border border-gray-300 py-1 px-1">
-                <input value={item.item_number || ""} onChange={e => onUpdateItem(idx, "item_number", e.target.value)}
-                  placeholder="gi5000" className="w-full text-[10px] font-bold bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none uppercase" />
+                <textarea
+                  value={item.item_number || ""}
+                  onChange={e => onUpdateItem(idx, "item_number", e.target.value)}
+                  placeholder="gi5000"
+                  rows={2}
+                  className="w-full text-[10px] font-bold bg-transparent border-none focus:ring-0 focus:outline-none uppercase resize-none leading-tight min-h-[40px]"
+                />
               </td>
               <td className="border border-gray-300 py-1 px-1">
-                <input value={item.description || ""} onChange={e => onUpdateItem(idx, "description", e.target.value)}
-                  placeholder="Descripción del arte" className="w-full text-[10px] font-bold bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none uppercase" />
-                {item.color !== undefined && (
-                  <input value={item.color || ""} onChange={e => onUpdateItem(idx, "color", e.target.value)}
-                    placeholder="Color" className="w-full text-[9px] text-gray-500 bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none mt-0.5" />
-                )}
+                <textarea
+                  value={item.color || ""}
+                  onChange={e => onUpdateItem(idx, "color", e.target.value)}
+                  placeholder="Color"
+                  rows={2}
+                  className="w-full text-[10px] font-bold bg-transparent border-none focus:ring-0 focus:outline-none uppercase resize-none leading-tight min-h-[40px]"
+                />
+              </td>
+              <td className="border border-gray-300 py-1 px-1">
+                <textarea
+                  value={item.description || ""}
+                  onChange={e => onUpdateItem(idx, "description", e.target.value)}
+                  placeholder="Descripción y detalles..."
+                  rows={2}
+                  className="w-full text-[10px] font-bold bg-transparent border-none focus:ring-0 focus:outline-none uppercase resize-none leading-tight min-h-[40px]"
+                />
               </td>
               {sizeColumns.map(s => (
                 <td key={s} className="border border-gray-300 py-1 px-1 text-center">
@@ -125,7 +141,7 @@ export function SizeMatrixTable({
         </tbody>
         <tfoot>
           <tr className="bg-gray-200">
-            <td className="border border-gray-400 py-1 px-2 font-black" colSpan={2}>
+            <td className="border border-gray-400 py-1 px-2 font-black" colSpan={3}>
               <button onClick={onAddItem} className="text-blue-700 font-black text-[9px] flex items-center gap-0.5 hover:text-blue-900">
                 <Plus className="h-3 w-3" /> Add Item
               </button>
