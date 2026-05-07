@@ -487,7 +487,7 @@ export default function InvoicesPage() {
 
       {/* Invoice Preview Modal */}
       <Dialog open={!!previewInvoice} onOpenChange={() => setPreviewInvoice(null)}>
-        <DialogContent className="max-w-[95vw] w-full max-h-[95vh] overflow-y-auto bg-slate-50 border-slate-200 p-0 shadow-2xl rounded-2xl">
+        <DialogContent className="max-w-[98vw] w-full h-[98vh] max-h-[98vh] overflow-y-auto bg-slate-50 border-slate-200 p-0 shadow-2xl rounded-2xl flex flex-col">
           <DialogTitle className="sr-only">Prosper Invoice Preview</DialogTitle>
           <div className="sticky top-0 z-10 bg-white border-b border-slate-200 p-5 flex justify-between items-center shadow-sm">
             <div className="flex items-center gap-3">
@@ -530,8 +530,8 @@ export default function InvoicesPage() {
               </Button>
             </div>
           </div>
-          <div className="p-12">
-            <div className="bg-white shadow-[0_30px_100px_rgba(0,0,0,0.12)] border border-slate-200 transform scale-[0.98] origin-top overflow-hidden rounded-sm">
+          <div className="flex-1 p-4 bg-slate-200/50 overflow-y-auto flex justify-center">
+            <div className="bg-white shadow-[0_30px_100px_rgba(0,0,0,0.12)] border border-slate-200 transform scale-100 origin-top overflow-hidden rounded-sm h-fit">
               {previewInvoice && <ProsperInvoice invoice={previewInvoice} showFinancials={previewShowFinancials} />}
             </div>
           </div>

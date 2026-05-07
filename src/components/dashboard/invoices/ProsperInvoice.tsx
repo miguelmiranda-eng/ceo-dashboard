@@ -158,7 +158,14 @@ export function ProsperInvoice({ invoice, showFinancials = false }: ProsperInvoi
                 {artLinks.map((al: any, i: number) => (
                   <div key={i} className="flex items-center gap-1.5 text-[10px]">
                     <span className="font-black text-gray-600 uppercase w-24 flex-shrink-0">{al.label || `LINK ${i+1}`}:</span>
-                    <span className="text-blue-600 font-bold underline truncate text-[9px]">{al.url || "N/A"}</span>
+                    <a 
+                      href={al.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 font-bold underline truncate text-[9px] hover:text-blue-800 transition-colors"
+                    >
+                      {al.url || "N/A"}
+                    </a>
                   </div>
                 ))}
               </div>
