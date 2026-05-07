@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Invoice } from "@/lib/api"
 import { ZoomIn, ZoomOut, Download, Printer, Check } from "lucide-react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { normalizeImageUrl } from "@/lib/api"
 
 interface ProsperInvoiceProps { 
@@ -18,6 +18,7 @@ function ImageModal({ file, onClose }: { file: any; onClose: () => void }) {
       <DialogContent className="max-w-[95vw] w-fit h-fit p-0 bg-slate-900 border-slate-800 overflow-hidden rounded-xl">
         <DialogHeader className="p-3 border-b border-slate-800 bg-slate-950 flex-row justify-between items-center space-y-0 gap-6">
           <DialogTitle className="text-white font-black uppercase tracking-widest text-xs truncate">{file.name}</DialogTitle>
+          <DialogDescription className="sr-only">Visualización de adjunto técnico para la orden de producción.</DialogDescription>
           <div className="flex items-center gap-1">
             <button onClick={() => setZoom(p => Math.max(0.5, p - 0.25))} className="p-1 hover:bg-slate-800 rounded text-slate-400"><ZoomOut className="h-3.5 w-3.5" /></button>
             <span className="text-[9px] text-slate-500 w-8 text-center">{Math.round(zoom * 100)}%</span>

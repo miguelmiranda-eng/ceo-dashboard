@@ -118,8 +118,13 @@ export async function GET(request: NextRequest) {
 
   // Limpiamos el endpoint para evitar doble /api/ o barras repetidas
   const cleanEndpoint = endpoint.startsWith('/api/') ? endpoint.replace('/api/', '') : endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
-  const upstream = new URL(`${MOS_BACKEND_URL}/api/${cleanEndpoint}`)
-  console.log(`[MOS Proxy GET] Upstream URL: ${upstream.toString()}`)
+  
+  // Robust construction: ensure /api/ is only present once
+  const baseUrl = MOS_BACKEND_URL.endsWith('/') ? MOS_BACKEND_URL : `${MOS_BACKEND_URL}/`;
+  const finalPath = cleanEndpoint.startsWith('api/') ? cleanEndpoint : `api/${cleanEndpoint}`;
+  const upstream = new URL(finalPath, baseUrl);
+  
+  console.log(`[MOS Proxy GET] Final Upstream: ${upstream.toString()}`);
   searchParams.forEach((value, key) => {
     if (key !== 'endpoint') {
       upstream.searchParams.set(key, value)
