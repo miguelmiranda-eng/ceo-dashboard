@@ -60,7 +60,15 @@ export function ProsperInvoice({ invoice, showFinancials = false }: ProsperInvoi
 
   const sizeColumns: string[] = inv.size_columns || ["XS","S","M","L","XL","2XL","3XL","4XL"]
   
-  const artLinks = Array.isArray(inv.art_links) ? inv.art_links : []
+  const artLinks = Array.isArray(inv.art_links) 
+    ? inv.art_links.map((al: any) => {
+        if (typeof al === 'string' && al.includes('|')) {
+          const [l, u] = al.split('|')
+          return { label: l, url: u }
+        }
+        return typeof al === 'string' ? { label: "", url: al } : (al || { label: "", url: "" })
+      })
+    : []
 
   const visualAttachments = (inv.production_attachments || []).filter((a: any) => 
     a?.type === 'image' || a?.mime?.startsWith('image/') || a?.type === 'pdf' || a?.mime === 'application/pdf' || a?.name?.toLowerCase().endsWith('.pdf')
