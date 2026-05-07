@@ -34,7 +34,7 @@ function AttachmentPreview({ file, isImage }: { file: any, isImage: boolean }) {
   const [zoom, setZoom] = useState(1);
 
   return (
-    <DialogContent className="max-w-[98vw] w-[98vw] h-[95vh] p-0 bg-slate-900 border-slate-800 overflow-hidden flex flex-col">
+    <DialogContent aria-describedby={undefined} className="max-w-[98vw] w-[98vw] h-[95vh] p-0 bg-slate-900 border-slate-800 overflow-hidden flex flex-col">
       <DialogHeader className="p-4 border-b border-slate-800 bg-slate-950 flex-row justify-between items-center space-y-0 gap-8">
         <div className="flex items-center gap-4">
           <DialogTitle className="text-white font-black uppercase tracking-widest text-xs truncate">

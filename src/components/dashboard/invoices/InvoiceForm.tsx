@@ -13,7 +13,7 @@ function ImagePreviewModal({ file, onClose }: { file: any; onClose: () => void }
   const [zoom, setZoom] = useState(1)
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] w-fit h-fit p-0 bg-slate-900 border-slate-800 overflow-hidden rounded-xl">
+      <DialogContent aria-describedby={undefined} className="max-w-[95vw] w-fit h-fit p-0 bg-slate-900 border-slate-800 overflow-hidden rounded-xl">
         <DialogHeader className="p-3 border-b border-slate-800 bg-slate-950 flex-row justify-between items-center space-y-0 gap-6">
           <DialogTitle className="text-white font-black uppercase tracking-widest text-xs truncate">{file.name}</DialogTitle>
           <div className="flex items-center gap-1">

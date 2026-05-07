@@ -302,7 +302,7 @@ export default function AutomationsPage() {
 
       {/* Wizard Dialog */}
       <Dialog open={isWizardOpen} onOpenChange={setIsWizardOpen}>
-        <DialogContent className="max-w-3xl bg-white border-slate-200 text-slate-900 p-0 overflow-hidden rounded-[2rem] shadow-2xl">
+        <DialogContent aria-describedby={undefined} className="max-w-3xl bg-white border-slate-200 text-slate-900 p-0 overflow-hidden rounded-[2rem] shadow-2xl">
           <DialogHeader className="p-8 border-b border-slate-100 bg-slate-50/50">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center border border-blue-100 shadow-inner">

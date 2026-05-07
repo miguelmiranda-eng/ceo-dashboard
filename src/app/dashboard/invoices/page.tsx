@@ -475,7 +475,7 @@ export default function InvoicesPage() {
 
       {/* Invoice Creation/Edit Modal */}
       <Dialog open={!!isCreating} onOpenChange={() => setIsCreating(false)}>
-        <DialogContent className="max-w-[95vw] w-full max-h-[95vh] overflow-y-auto bg-white border-slate-200 p-0 shadow-2xl rounded-2xl">
+        <DialogContent aria-describedby={undefined} className="max-w-[95vw] w-full max-h-[95vh] overflow-y-auto bg-white border-slate-200 p-0 shadow-2xl rounded-2xl">
           <DialogTitle className="sr-only">Prosper Order Entry</DialogTitle>
           <InvoiceForm 
             initialData={typeof isCreating === 'object' ? isCreating : undefined}
@@ -487,7 +487,7 @@ export default function InvoicesPage() {
 
       {/* Invoice Preview Modal */}
       <Dialog open={!!previewInvoice} onOpenChange={() => setPreviewInvoice(null)}>
-        <DialogContent className="max-w-[98vw] w-full h-[98vh] max-h-[98vh] overflow-y-auto bg-slate-50 border-slate-200 p-0 shadow-2xl rounded-2xl flex flex-col">
+        <DialogContent aria-describedby={undefined} className="max-w-[98vw] w-full h-[98vh] max-h-[98vh] overflow-y-auto bg-slate-50 border-slate-200 p-0 shadow-2xl rounded-2xl flex flex-col">
           <DialogTitle className="sr-only">Prosper Invoice Preview</DialogTitle>
           <div className="sticky top-0 z-10 bg-white border-b border-slate-200 p-5 flex justify-between items-center shadow-sm">
             <div className="flex items-center gap-3">

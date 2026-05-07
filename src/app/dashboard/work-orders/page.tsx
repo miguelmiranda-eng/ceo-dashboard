@@ -115,7 +115,7 @@ function WorkOrderDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg bg-white border-slate-200">
+      <DialogContent aria-describedby={undefined} className="max-w-lg bg-white border-slate-200">
         <DialogTitle className="text-slate-900 font-black uppercase tracking-widest text-sm">
           {isEditing ? `Edit: ${initialData?.work_order_id}` : "New Work Order"}
         </DialogTitle>
@@ -497,7 +497,7 @@ export default function WorkOrdersPage() {
 
       {/* Full InvoiceForm Modal — Create & Edit */}
       <Dialog open={isCreating || !!editingOrder} onOpenChange={(open) => { if (!open) { setIsCreating(false); setEditingOrder(null); } }}>
-        <DialogContent className="max-w-none w-screen h-screen p-0 bg-transparent border-none shadow-none overflow-y-auto m-0 rounded-none flex flex-col">
+        <DialogContent aria-describedby={undefined} className="max-w-none w-screen h-screen p-0 bg-transparent border-none shadow-none overflow-y-auto m-0 rounded-none flex flex-col">
           <DialogTitle className="sr-only">{editingOrder ? "Edit Production Order" : "Create New Production Order"}</DialogTitle>
           <div className="flex-1 w-full max-w-[1600px] mx-auto py-10 px-6">
             <InvoiceForm
