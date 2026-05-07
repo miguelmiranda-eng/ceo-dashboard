@@ -196,7 +196,7 @@ export function normalizeImageUrl(url: string | undefined): string {
     // Extraer solo la parte de invoices/static/...
     const match = url.match(/invoices\/static\/.+$/);
     if (match) {
-      return `/api/mos?endpoint=/api/${match[0]}`;
+      return `/api/mos?endpoint=${match[0]}`;
     }
   }
   

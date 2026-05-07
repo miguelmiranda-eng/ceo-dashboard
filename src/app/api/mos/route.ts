@@ -119,6 +119,7 @@ export async function GET(request: NextRequest) {
   // Limpiamos el endpoint para evitar doble /api/ o barras repetidas
   const cleanEndpoint = endpoint.startsWith('/api/') ? endpoint.replace('/api/', '') : endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
   const upstream = new URL(`${MOS_BACKEND_URL}/api/${cleanEndpoint}`)
+  console.log(`[MOS Proxy GET] Upstream URL: ${upstream.toString()}`)
   searchParams.forEach((value, key) => {
     if (key !== 'endpoint') {
       upstream.searchParams.set(key, value)
@@ -145,8 +146,9 @@ export async function GET(request: NextRequest) {
       },
       cache: 'no-store',
     })
-
+    
     const contentType = res.headers.get("content-type") || "";
+    console.log(`[MOS Proxy GET] Upstream status: ${res.status}, Content-Type: ${contentType}`)
     
     // Si es una imagen o archivo, devolver el stream directamente sin intentar parsear JSON
     if (contentType.includes("image/") || contentType.includes("application/pdf")) {
