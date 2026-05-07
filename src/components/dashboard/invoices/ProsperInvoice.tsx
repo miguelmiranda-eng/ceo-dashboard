@@ -10,28 +10,38 @@ interface ProsperInvoiceProps {
   invoice: Invoice;
   showFinancials?: boolean;
 }
-
 function ImageModal({ file, onClose }: { file: any; onClose: () => void }) {
   const [zoom, setZoom] = useState(1)
+  const isPdf = file.mime === 'application/pdf' || file.name?.toLowerCase().endsWith('.pdf')
+
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] w-fit h-fit p-0 bg-slate-900 border-slate-800 overflow-hidden rounded-xl">
+      <DialogContent className={`p-0 bg-slate-900 border-slate-800 overflow-hidden rounded-xl shadow-2xl transition-all ${isPdf ? 'max-w-[90vw] w-[90vw] h-[90vh]' : 'max-w-[95vw] w-fit h-fit'}`}>
         <DialogHeader className="p-3 border-b border-slate-800 bg-slate-950 flex-row justify-between items-center space-y-0 gap-6">
           <DialogTitle className="text-white font-black uppercase tracking-widest text-xs truncate">{file.name}</DialogTitle>
           <DialogDescription className="sr-only">Visualización de adjunto técnico para la orden de producción.</DialogDescription>
           <div className="flex items-center gap-1">
-            <button onClick={() => setZoom(p => Math.max(0.5, p - 0.25))} className="p-1 hover:bg-slate-800 rounded text-slate-400"><ZoomOut className="h-3.5 w-3.5" /></button>
-            <span className="text-[9px] text-slate-500 w-8 text-center">{Math.round(zoom * 100)}%</span>
-            <button onClick={() => setZoom(p => Math.min(5, p + 0.25))} className="p-1 hover:bg-slate-800 rounded text-slate-400"><ZoomIn className="h-3.5 w-3.5" /></button>
+            {!isPdf && (
+              <>
+                <button onClick={() => setZoom(p => Math.max(0.5, p - 0.25))} className="p-1 hover:bg-slate-800 rounded text-slate-400"><ZoomOut className="h-3.5 w-3.5" /></button>
+                <span className="text-[9px] text-slate-500 w-8 text-center">{Math.round(zoom * 100)}%</span>
+                <button onClick={() => setZoom(p => Math.min(5, p + 0.25))} className="p-1 hover:bg-slate-800 rounded text-slate-400"><ZoomIn className="h-3.5 w-3.5" /></button>
+              </>
+            )}
           </div>
           <a href={file.data || file.url} download={file.name} className="bg-blue-600 text-white px-3 py-1 rounded text-[9px] font-black uppercase flex items-center gap-1"><Download className="h-2.5 w-2.5" />DL</a>
         </DialogHeader>
-        <div className="p-6 bg-slate-800 flex items-center justify-center min-h-[300px] overflow-auto max-h-[85vh]">
-          <div style={{ transform: `scale(${zoom})`, transition: 'transform 0.2s', width: '100%', height: '100%' }}>
-            {(file.mime === 'application/pdf' || file.name?.toLowerCase().endsWith('.pdf')) ? (
+        <div className={`bg-slate-800 flex items-center justify-center overflow-auto ${isPdf ? 'h-[calc(90vh-45px)] w-full p-0' : 'p-6 min-h-[300px] max-h-[85vh]'}`}>
+          <div style={{ 
+            transform: isPdf ? 'none' : `scale(${zoom})`, 
+            transition: 'transform 0.2s', 
+            width: isPdf ? '100%' : 'auto', 
+            height: isPdf ? '100%' : 'auto' 
+          }}>
+            {isPdf ? (
               <iframe 
                 src={normalizeImageUrl(file.url || file.data)} 
-                className="w-full h-[80vh] border-none rounded bg-white"
+                className="w-full h-full border-none bg-white"
                 title={file.name}
               />
             ) : (
