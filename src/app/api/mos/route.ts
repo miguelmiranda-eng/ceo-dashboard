@@ -144,16 +144,28 @@ export async function GET(request: NextRequest) {
     }
 
 
+    const isStatic = endpoint.includes('static/');
+    
+    const headers: any = {
+      Cookie: `session_token=${token}`,
+    };
+    
+    // Only add Bearer token for API calls, sometimes static servers reject it
+    if (!isStatic) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const res = await fetch(upstream.toString(), {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Cookie: `session_token=${token}`,
-      },
+      headers,
       cache: 'no-store',
     })
     
     const contentType = res.headers.get("content-type") || "";
-    console.log(`[MOS Proxy GET] Upstream status: ${res.status}, Content-Type: ${contentType}`)
+    console.log(`[MOS Proxy GET] Upstream status: ${res.status}, Content-Type: ${contentType}, isStatic: ${isStatic}`);
+    
+    if (res.status === 404) {
+      console.warn(`[MOS Proxy GET] 404 Not Found from Upstream: ${upstream.toString()}`);
+    }
     
     // Si es una imagen o archivo, devolver el stream directamente sin intentar parsear JSON
     if (contentType.includes("image/") || contentType.includes("application/pdf")) {
