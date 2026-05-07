@@ -60,7 +60,7 @@ export default function AutomationsPage() {
   const [currentAuto, setCurrentAuto] = useState<any>({
     name: '',
     trigger_type: 'invoice_approve',
-    trigger_conditions: { watch_field: '', watch_value: '' },
+    trigger_conditions: { watch_field: '', watch_value: '', extra: [] as {field: string, value: string}[] },
     action_type: 'create_work_order',
     action_params: {},
     is_active: true,
@@ -110,11 +110,20 @@ export default function AutomationsPage() {
       return
     }
     try {
+      const dataToSave = { ...currentAuto };
+      // Transform extra conditions from array to object fields for backend
+      const { extra, ...baseConditions } = dataToSave.trigger_conditions;
+      const finalConditions = { ...baseConditions };
+      (extra || []).forEach((c: any) => {
+        if (c.field && c.value) finalConditions[c.field] = c.value;
+      });
+      dataToSave.trigger_conditions = finalConditions;
+
       if (currentAuto.automation_id) {
-        await updateAutomation(currentAuto.automation_id, currentAuto)
+        await updateAutomation(currentAuto.automation_id, dataToSave)
         toast.success("Regla actualizada")
       } else {
-        await createAutomation(currentAuto)
+        await createAutomation(dataToSave)
         toast.success("Regla creada exitosamente")
       }
       setIsWizardOpen(false)
@@ -144,8 +153,8 @@ export default function AutomationsPage() {
           onClick={() => {
             setCurrentAuto({
               name: '',
-              trigger_type: 'invoice_approve',
-              trigger_conditions: { watch_field: '', watch_value: '' },
+              trigger_type: 'status_change',
+              trigger_conditions: { watch_field: '', watch_value: '', extra: [] },
               action_type: 'create_work_order',
               action_params: {},
               is_active: true,
@@ -258,6 +267,14 @@ export default function AutomationsPage() {
                       <div className="text-xs font-black text-[#0F172A] uppercase">
                         {auto.trigger_conditions?.watch_field ? `Cuando ${auto.trigger_conditions.watch_field} sea "${auto.trigger_conditions.watch_value}"` : 'Ejecutar siempre'}
                       </div>
+                      {Object.entries(auto.trigger_conditions || {}).map(([field, val]) => {
+                        if (field === 'watch_field' || field === 'watch_value') return null;
+                        return (
+                          <div key={field} className="text-[10px] font-bold text-slate-400 mt-1 uppercase">
+                            AND {field} es "{String(val)}"
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
 
@@ -326,26 +343,93 @@ export default function AutomationsPage() {
                 </div>
 
                 <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Condiciones Opcionales (SI)</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Condición del Cambio (Trigger)</p>
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Campo</label>
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Campo a observar</label>
                       <Input 
-                        placeholder="Ej. status" 
+                        placeholder="Ej. production_status" 
                         value={currentAuto.trigger_conditions.watch_field}
                         onChange={(e) => setCurrentAuto({...currentAuto, trigger_conditions: {...currentAuto.trigger_conditions, watch_field: e.target.value}})}
                         className="bg-white border-slate-200 h-12 rounded-xl text-xs font-bold"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Valor esperado</label>
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Nuevo valor esperado</label>
                       <Input 
-                        placeholder="Ej. paid"
+                        placeholder="Ej. LISTO PARA ENVIO"
                         value={currentAuto.trigger_conditions.watch_value}
                         onChange={(e) => setCurrentAuto({...currentAuto, trigger_conditions: {...currentAuto.trigger_conditions, watch_value: e.target.value}})}
                         className="bg-white border-slate-200 h-12 rounded-xl text-xs font-bold"
                       />
                     </div>
+                  </div>
+                  <p className="text-[8px] text-slate-400 italic">Use 'date_updated', 'is_empty', 'not_empty' para condiciones especiales.</p>
+                </div>
+
+                <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Filtros Adicionales (SI además...)</p>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => {
+                        const extra = currentAuto.trigger_conditions.extra || [];
+                        setCurrentAuto({...currentAuto, trigger_conditions: {...currentAuto.trigger_conditions, extra: [...extra, {field: '', value: ''}]}});
+                      }}
+                      className="h-7 px-2 text-[9px] font-black uppercase text-[#0091D5] hover:bg-blue-50"
+                    >
+                      <Plus className="h-3 w-3 mr-1" /> Añadir Filtro
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {(currentAuto.trigger_conditions.extra || []).map((cond: any, idx: number) => (
+                      <div key={idx} className="flex gap-3 items-end group animate-in fade-in slide-in-from-top-1">
+                        <div className="flex-1 space-y-1.5">
+                          <label className="text-[8px] font-black text-slate-400 uppercase ml-1">Columna</label>
+                          <Input 
+                            placeholder="Ej. payment_status" 
+                            value={cond.field}
+                            onChange={(e) => {
+                              const extra = [...currentAuto.trigger_conditions.extra];
+                              extra[idx].field = e.target.value;
+                              setCurrentAuto({...currentAuto, trigger_conditions: {...currentAuto.trigger_conditions, extra}});
+                            }}
+                            className="bg-white border-slate-200 h-10 rounded-xl text-xs font-bold"
+                          />
+                        </div>
+                        <div className="flex-1 space-y-1.5">
+                          <label className="text-[8px] font-black text-slate-400 uppercase ml-1">Valor Requerido</label>
+                          <Input 
+                            placeholder="Ej. Pagado" 
+                            value={cond.value}
+                            onChange={(e) => {
+                              const extra = [...currentAuto.trigger_conditions.extra];
+                              extra[idx].value = e.target.value;
+                              setCurrentAuto({...currentAuto, trigger_conditions: {...currentAuto.trigger_conditions, extra}});
+                            }}
+                            className="bg-white border-slate-200 h-10 rounded-xl text-xs font-bold"
+                          />
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => {
+                            const extra = currentAuto.trigger_conditions.extra.filter((_: any, i: number) => i !== idx);
+                            setCurrentAuto({...currentAuto, trigger_conditions: {...currentAuto.trigger_conditions, extra}});
+                          }}
+                          className="h-10 w-10 text-slate-300 hover:text-rose-500 rounded-xl"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    {(!currentAuto.trigger_conditions.extra || currentAuto.trigger_conditions.extra.length === 0) && (
+                      <p className="text-[10px] text-slate-400 italic text-center py-2">No hay filtros adicionales activos</p>
+                    )}
                   </div>
                 </div>
               </div>
