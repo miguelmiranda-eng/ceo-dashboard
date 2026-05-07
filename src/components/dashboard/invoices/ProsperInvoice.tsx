@@ -134,6 +134,18 @@ export function ProsperInvoice({ invoice }: ProsperInvoiceProps) {
                     <div className="text-[9px] text-gray-500">prospermfg.com</div>
                   </div>
                 </div>
+                {/* Status Badges */}
+                <div className="flex flex-wrap gap-1">
+                  {inv.priority && (
+                    <span className="text-[8px] font-black border border-amber-400 rounded px-1 bg-amber-50 text-amber-700 uppercase whitespace-nowrap">{inv.priority}</span>
+                  )}
+                  {inv.artwork_status && (
+                    <span className="text-[8px] font-black border border-blue-400 rounded px-1 bg-blue-50 text-blue-700 uppercase whitespace-nowrap">{inv.artwork_status}</span>
+                  )}
+                  {inv.sample_status && inv.sample_status !== "NO SAMPLE" && (
+                    <span className="text-[8px] font-black border border-emerald-400 rounded px-1 bg-emerald-50 text-emerald-700 uppercase whitespace-nowrap">{inv.sample_status}</span>
+                  )}
+                </div>
               </td>
 
               {/* WO + PO Center */}
@@ -172,13 +184,20 @@ export function ProsperInvoice({ invoice }: ProsperInvoiceProps) {
         <div className="flex gap-4 mb-3">
           <div className="border-2 border-blue-600 rounded p-3 w-[38%] flex-shrink-0">
             <div className="font-black text-[11px] text-blue-800 mb-2 underline">DEPARTAMENTO DE ARTE:</div>
-            {artLinks.length > 0 ? artLinks.map((link, i) => {
-              const labels = ["SEPS (Separaciones)", "TAGS (Etiquetas)", "TAGS DOBLES"]
-              const label = labels[i] || `LINK ${i+1}`
+            {artLinks.length > 0 ? artLinks.map((linkStr, i) => {
+              let label = `LINK ${i+1}`
+              let url = linkStr
+              if (linkStr.includes('|')) {
+                const parts = linkStr.split('|')
+                label = parts[0] || label
+                url = parts[1] || ""
+              }
+              if (!url) return null;
+              
               return (
                 <div key={i} className="flex items-center gap-1 mb-1 text-[10px]">
                   <span className="font-black">• {label}: </span>
-                  <a href={link} target="_blank" rel="noopener noreferrer"
+                  <a href={url} target="_blank" rel="noopener noreferrer"
                     className="text-blue-600 font-bold underline flex items-center gap-0.5 truncate hover:text-blue-800">
                     <ExternalLink className="h-2.5 w-2.5 flex-shrink-0" />
                     <span className="truncate max-w-[120px]">[Clean Button/Link]</span>

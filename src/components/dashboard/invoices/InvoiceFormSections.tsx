@@ -3,27 +3,36 @@ import { ExternalLink, Plus, X, ZoomIn, Upload } from "lucide-react"
 import { normalizeImageUrl } from "@/lib/api"
 
 // ─── Art Links Panel ────────────────────────────────────────────────────────
-export function ArtLinksPanel({ artLinks, onChange }: { artLinks: string[]; onChange: (links: string[]) => void }) {
-  const labels = ["SEPS (Separaciones)", "TAGS (Etiquetas)", "TAGS DOBLES"]
-  const update = (i: number, v: string) => { const n = [...artLinks]; n[i] = v; onChange(n) }
-  const add = () => onChange([...artLinks, ""])
+export function ArtLinksPanel({ artLinks, onChange }: { artLinks: { label: string; url: string }[]; onChange: (links: { label: string; url: string }[]) => void }) {
+  const update = (i: number, field: 'label' | 'url', v: string) => { 
+    const n = [...artLinks]; 
+    n[i] = { ...n[i], [field]: v }; 
+    onChange(n) 
+  }
+  const add = () => onChange([...artLinks, { label: "", url: "" }])
   const remove = (i: number) => { const n = [...artLinks]; n.splice(i, 1); onChange(n) }
 
   return (
     <div className="border-2 border-blue-600 rounded p-3 bg-blue-50/30">
       <div className="font-black text-[11px] text-blue-800 mb-2 underline">DEPARTAMENTO DE ARTE:</div>
       <div className="space-y-1.5">
-        {artLinks.map((link, i) => (
+        {artLinks.map((item, i) => (
           <div key={i} className="flex items-center gap-1">
-            <span className="text-[9px] font-black text-gray-600 w-28 flex-shrink-0">• {labels[i] || `LINK ${i+1}`}:</span>
+            <span className="text-[9px] font-black text-gray-400 w-4 flex-shrink-0">•</span>
             <input
-              value={link}
-              onChange={e => update(i, e.target.value)}
+              value={item.label}
+              onChange={e => update(i, 'label', e.target.value)}
+              placeholder="Nombre del link..."
+              className="text-[9px] font-black text-gray-600 w-28 flex-shrink-0 border-b border-transparent focus:border-gray-400 focus:outline-none bg-transparent uppercase"
+            />
+            <input
+              value={item.url}
+              onChange={e => update(i, 'url', e.target.value)}
               placeholder="https://..."
               className="flex-1 text-[10px] font-mono border border-blue-300 rounded px-1.5 py-0.5 bg-white text-blue-700 focus:outline-none focus:border-blue-500"
             />
-            {link && <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700"><ExternalLink className="h-3 w-3" /></a>}
-            {i >= 3 && <button onClick={() => remove(i)} className="text-red-400 hover:text-red-600"><X className="h-3 w-3" /></button>}
+            {item.url && <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700"><ExternalLink className="h-3 w-3" /></a>}
+            <button onClick={() => remove(i)} className="text-red-400 hover:text-red-600 ml-0.5"><X className="h-3 w-3" /></button>
           </div>
         ))}
       </div>

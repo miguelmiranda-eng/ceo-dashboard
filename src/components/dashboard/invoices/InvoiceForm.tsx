@@ -62,8 +62,21 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
     blank_status: inv?.blank_status || "PENDIENTE",
     artwork_status: inv?.artwork_status || "NEW",
     priority: inv?.priority || "PRIORITY 2",
+    sample_status: inv?.sample_status || "NO SAMPLE",
     seps: inv?.seps || "",
-    art_links: inv?.art_links || ["","",""],
+    art_links: Array.isArray(inv?.art_links) 
+      ? inv.art_links.map((al: any) => {
+          if (typeof al === 'string' && al.includes('|')) {
+            const [l, u] = al.split('|')
+            return { label: l, url: u }
+          }
+          return typeof al === 'string' ? { label: "", url: al } : (al || { label: "", url: "" })
+        })
+      : [
+          { label: "SEPS (Separaciones)", url: "" },
+          { label: "TAGS (Etiquetas)", url: "" },
+          { label: "TAGS DOBLES", url: "" }
+        ],
     size_columns: inv?.size_columns || [...DEFAULT_SIZES],
     items: inv?.items?.length > 0
       ? inv.items.map((it: any) => ({ ...it, items_count: it.items_count || 0 }))
@@ -199,8 +212,11 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
 
   const handleSave = () => {
     let art_links: string[] = []
-    if (typeof form.art_links === 'string') art_links = form.art_links.split('\n').map((l: string) => l.trim()).filter(Boolean)
-    else if (Array.isArray(form.art_links)) art_links = form.art_links.map((l: any) => String(l).trim()).filter(Boolean)
+    if (Array.isArray(form.art_links)) {
+      art_links = form.art_links
+        .map((item: any) => `${item.label}|${item.url}`)
+        .filter(str => str !== "|")
+    }
     onSubmit({ ...form, art_links })
   }
 
@@ -256,6 +272,11 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
                   <select value={form.artwork_status} onChange={e => set("artwork_status", e.target.value)}
                     className="text-[9px] font-black border border-blue-300 rounded px-1 bg-blue-50 text-blue-700 focus:outline-none">
                     {(options?.artwork_statuses || ["NEW","REORDER","APPROVED","PENDING"]).map((s: string) =>
+                      <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <select value={form.sample_status} onChange={e => set("sample_status", e.target.value)}
+                    className="text-[9px] font-black border border-emerald-300 rounded px-1 bg-emerald-50 text-emerald-700 focus:outline-none">
+                    {["NO SAMPLE","REQUIRED","SENT","APPROVED"].map((s: string) =>
                       <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
