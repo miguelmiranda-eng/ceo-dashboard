@@ -248,7 +248,7 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
     if (Array.isArray(form.art_links)) {
       art_links = form.art_links
         .map((item: any) => `${item.label}|${item.url}`)
-        .filter(str => str !== "|")
+        .filter((str: string) => str !== "|")
     }
     onSubmit({ ...form, art_links })
   }
