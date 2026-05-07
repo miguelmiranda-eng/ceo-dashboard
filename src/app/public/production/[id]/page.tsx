@@ -39,9 +39,17 @@ export default function PublicProductionPage() {
   )
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-slate-100 p-4 print:p-0 print:bg-white">
       <div className="max-w-[1400px] mx-auto">
-        <div className="bg-white shadow-sm">
+        <div className="flex justify-end mb-4 print:hidden">
+          <button 
+            onClick={() => window.print()}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-black uppercase tracking-widest text-[10px] flex items-center gap-2 shadow-lg transition-all active:scale-95"
+          >
+            <span className="text-sm">🖨️</span> Imprimir Orden
+          </button>
+        </div>
+        <div className="bg-white shadow-xl print:shadow-none border border-slate-200 print:border-none">
           <ProsperInvoice invoice={invoice} showFinancials={false} />
         </div>
       </div>
