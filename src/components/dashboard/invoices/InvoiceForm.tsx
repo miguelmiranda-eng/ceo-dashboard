@@ -62,7 +62,7 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
     blank_status: inv?.blank_status || "PENDIENTE",
     artwork_status: inv?.artwork_status || "NEW",
     priority: inv?.priority || "PRIORITY 2",
-    sample_status: inv?.sample_status || "NO SAMPLE",
+    sample: inv?.sample || "NO SAMPLE",
     seps: inv?.seps || "",
     art_links: Array.isArray(inv?.art_links) 
       ? inv.art_links.map((al: any) => {
@@ -274,9 +274,10 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
                     {(options?.artwork_statuses || ["NEW","REORDER","APPROVED","PENDING"]).map((s: string) =>
                       <option key={s} value={s}>{s}</option>)}
                   </select>
-                  <select value={form.sample_status} onChange={e => set("sample_status", e.target.value)}
+                  <select value={form.sample} onChange={e => set("sample", e.target.value)}
                     className="text-[9px] font-black border border-emerald-300 rounded px-1 bg-emerald-50 text-emerald-700 focus:outline-none">
-                    {["NO SAMPLE","REQUIRED","SENT","APPROVED"].map((s: string) =>
+                    <option value="NO SAMPLE">NO SAMPLE</option>
+                    {(options?.sample_options || []).map((s: string) =>
                       <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>

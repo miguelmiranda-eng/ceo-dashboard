@@ -142,8 +142,8 @@ export function ProsperInvoice({ invoice }: ProsperInvoiceProps) {
                   {inv.artwork_status && (
                     <span className="text-[8px] font-black border border-blue-400 rounded px-1 bg-blue-50 text-blue-700 uppercase whitespace-nowrap">{inv.artwork_status}</span>
                   )}
-                  {inv.sample_status && inv.sample_status !== "NO SAMPLE" && (
-                    <span className="text-[8px] font-black border border-emerald-400 rounded px-1 bg-emerald-50 text-emerald-700 uppercase whitespace-nowrap">{inv.sample_status}</span>
+                  {inv.sample && inv.sample !== "NO SAMPLE" && (
+                    <span className="text-[8px] font-black border border-emerald-400 rounded px-1 bg-emerald-50 text-emerald-700 uppercase whitespace-nowrap">{inv.sample}</span>
                   )}
                 </div>
               </td>
