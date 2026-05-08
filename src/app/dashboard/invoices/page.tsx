@@ -174,14 +174,14 @@ export default function InvoicesPage() {
       accessorKey: "client",
       header: ({ column }: any) => (
         <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} className="pl-0 font-black uppercase tracking-widest text-[10px] text-slate-500 hover:text-blue-600 transition-colors">
-          Client <ArrowUpDown className="ml-2 h-3 w-3" />
+          {t("client")} <ArrowUpDown className="ml-2 h-3 w-3" />
         </Button>
       ),
       cell: ({ row }: any) => <div className="font-bold text-slate-800 uppercase text-xs">{row.getValue("client")}</div>,
     },
     {
       accessorKey: "status",
-      header: () => <div className="font-black uppercase tracking-widest text-[10px] text-slate-500">Status</div>,
+      header: () => <div className="font-black uppercase tracking-widest text-[10px] text-slate-500">{t("status")}</div>,
       cell: ({ row }: any) => {
         const status = row.getValue("status") as string
         const invoiceId = row.original.invoice_id

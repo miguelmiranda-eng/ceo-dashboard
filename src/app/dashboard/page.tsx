@@ -158,10 +158,10 @@ export default function MatchingPage() {
         <div className="space-y-1">
           <h1 className="text-4xl font-black text-[#0F172A] tracking-tight uppercase italic flex items-center gap-3">
             <span className="w-2 h-10 bg-blue-600 rounded-full inline-block" />
-            Conciliación Directa
+            {t("matching")}
           </h1>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] ml-5">
-            MOS Production vs Printavo Billing
+            {t("matchingSubtitle")}
           </p>
         </div>
         
@@ -264,7 +264,7 @@ export default function MatchingPage() {
               className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-black uppercase tracking-[0.2em] text-[10px] px-10 h-12 rounded-2xl shadow-xl shadow-blue-500/30 transition-all active:scale-95 flex items-center gap-3 group"
             >
               <ArrowUpDown className={cn("w-3.5 h-3.5 transition-transform group-hover:rotate-180", loading && "animate-spin")} />
-              Actualizar Datos
+              {t("forceRefresh")}
             </Button>
           </div>
 
@@ -321,7 +321,7 @@ export default function MatchingPage() {
             <div className="mt-6 flex items-center justify-between">
               <div className="flex items-center gap-2 text-[10px] font-bold text-blue-500 uppercase tracking-wider bg-blue-50 w-fit px-3 py-1 rounded-full">
                 <TrendingUp className="w-3 h-3" />
-                Producción Verificada
+                {t("producedTitle")}
               </div>
               <div className="flex flex-col items-end">
                 <TooltipProvider>
@@ -352,7 +352,7 @@ export default function MatchingPage() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-2 mb-4 cursor-help w-fit">
-                    <p className="text-[10px] font-black text-blue-100 uppercase tracking-[0.2em]">Listo para Cobro (Final Bill)</p>
+                    <p className="text-[10px] font-black text-blue-100 uppercase tracking-[0.2em]">{t("readyToBill")}</p>
                     <Info className="w-3 h-3 text-blue-200/50" />
                   </div>
                 </TooltipTrigger>
@@ -370,10 +370,10 @@ export default function MatchingPage() {
               </h2>
               <span className="text-blue-100 font-bold text-xs uppercase tracking-widest">USD</span>
             </div>
-            <div className="mt-2 text-[10px] text-blue-200 font-semibold">{data?.stats?.unbilled_count || 0} órdenes pendientes</div>
+            <div className="mt-2 text-[10px] text-blue-200 font-semibold">{data?.stats?.unbilled_count || 0} {t("pendingBilling").toLowerCase()}</div>
             <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-white uppercase tracking-wider bg-white/20 w-fit px-3 py-1 rounded-full border border-white/30 backdrop-blur-md">
               <AlertCircle className="w-3 h-3" />
-              Pendiente de Facturar
+              {t("pendingBilling")}
             </div>
           </CardContent>
         </Card>
@@ -387,7 +387,7 @@ export default function MatchingPage() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-2 mb-4 cursor-help w-fit">
-                    <p className="text-[10px] font-black text-emerald-50 uppercase tracking-[0.2em]">Cobrado (Completed)</p>
+                    <p className="text-[10px] font-black text-emerald-50 uppercase tracking-[0.2em]">{t("billed")}</p>
                     <Info className="w-3 h-3 text-emerald-100/50" />
                   </div>
                 </TooltipTrigger>
@@ -408,7 +408,7 @@ export default function MatchingPage() {
             <div className="mt-2 text-[10px] text-emerald-100 font-semibold">{data?.stats?.billed_count || 0} órdenes cobradas</div>
             <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-white uppercase tracking-wider bg-white/20 w-fit px-3 py-1 rounded-full border border-white/30 backdrop-blur-md">
               <CheckCircle2 className="w-3 h-3" />
-              Ingreso Confirmado
+              {t("syncEstablished")}
             </div>
           </CardContent>
         </Card>
@@ -435,7 +435,7 @@ export default function MatchingPage() {
               filter === 'all' ? "bg-white text-blue-600 shadow-lg shadow-slate-200" : "text-slate-400 hover:text-slate-600"
             )}
           >
-            Todos
+            {t("all")}
           </Button>
           <Button 
             variant="ghost" 
@@ -445,7 +445,7 @@ export default function MatchingPage() {
               filter === 'final_bill' ? "bg-[#0091D5] text-white shadow-lg shadow-blue-500/30" : "text-slate-400 hover:text-slate-600"
             )}
           >
-            Por Cobrar
+            {t("unbilled")}
           </Button>
           <Button 
             variant="ghost" 
@@ -455,7 +455,7 @@ export default function MatchingPage() {
               filter === 'completed' ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30" : "text-slate-400 hover:text-slate-600"
             )}
           >
-            Cobrados
+            {t("billed")}
           </Button>
         </div>
       </div>
