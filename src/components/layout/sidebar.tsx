@@ -22,7 +22,8 @@ import {
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "next-themes"
-import { Sun, Moon, Languages } from "lucide-react"
+import { Sun, Moon, Languages, Globe } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
 import { NotificationCenter } from "./notification-center"
 import { 
   DropdownMenu, 
@@ -195,15 +196,15 @@ export function Sidebar() {
 
       <div className="p-4 border-t border-white/10">
         <div className={cn("flex items-center justify-between gap-2 p-2", collapsed && "flex-col")}>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-10 w-10 rounded-xl hover:bg-white/10 text-[#0091D5] hover:text-white transition-all font-black text-[10px] tracking-tighter"
-            onClick={() => setLanguage(language === "en" ? "es" : "en")}
-            title={t("language")}
-          >
-            {language.toUpperCase()}
-          </Button>
+          <div className="flex flex-col items-center gap-1.5 p-1 rounded-xl hover:bg-white/5 transition-all">
+            <span className="text-[8px] font-bold text-slate-500 tracking-tighter">ES / EN</span>
+            <Switch 
+              checked={language === "en"} 
+              onCheckedChange={(checked) => setLanguage(checked ? "en" : "es")}
+              size="sm"
+              className="data-checked:bg-[#0091D5]"
+            />
+          </div>
 
           <Button 
             variant="ghost" 
