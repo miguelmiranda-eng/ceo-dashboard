@@ -23,7 +23,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Prosper Manufacturing | Enterprise Production Intelligence",
+  title: "Prosper Pipeline | Production & Billing Control",
   description: "High-speed logistics, cross-border manufacturing, and real-time production monitoring.",
 };
 
