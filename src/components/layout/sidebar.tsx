@@ -195,21 +195,15 @@ export function Sidebar() {
 
       <div className="p-4 border-t border-white/10">
         <div className={cn("flex items-center justify-between gap-2 p-2", collapsed && "flex-col")}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-all">
-                <Languages className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" className="rounded-xl bg-[#0F172A] border border-white/10 text-white shadow-2xl">
-              <DropdownMenuItem onClick={() => setLanguage("en")} className={cn(language === "en" ? "bg-primary" : "", "cursor-pointer font-bold uppercase text-[9px] tracking-widest")}>
-                English
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setLanguage("es")} className={cn(language === "es" ? "bg-primary" : "", "cursor-pointer font-bold uppercase text-[9px] tracking-widest")}>
-                Español
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-10 w-10 rounded-xl hover:bg-white/10 text-[#0091D5] hover:text-white transition-all font-black text-[10px] tracking-tighter"
+            onClick={() => setLanguage(language === "en" ? "es" : "en")}
+            title={t("language")}
+          >
+            {language.toUpperCase()}
+          </Button>
 
           <Button 
             variant="ghost" 
