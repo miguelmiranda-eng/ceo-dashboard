@@ -124,13 +124,6 @@ const translations = {
     workOrders: "Work Orders",
     automations: "Automations",
     client: "Client",
-    producedTitle: "Verified Output",
-    readyToBill: "Ready for Final Bill",
-    pendingBilling: "Pending Bill",
-    syncEstablished: "Income Confirmed",
-    unbilled: "Unbilled",
-    billed: "Billed",
-    forceRefresh: "Force Refresh",
   },
   es: {
     dashboard: "Gráficos",
