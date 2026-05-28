@@ -77,8 +77,8 @@ export function Sidebar() {
               </svg>
             </div>
             <div className="flex flex-col">
-               <span className="font-black text-[20px] leading-tight tracking-[-0.03em] text-white uppercase italic">Prosper</span>
-               <span className="font-black text-[10px] leading-none tracking-[0.3em] text-[#0091D5] uppercase mt-1">Pipeline</span>
+               <span className="font-black text-[20px] leading-tight tracking-[-0.03em] text-white uppercase italic">Mos</span>
+               <span className="font-black text-[10px] leading-none tracking-[0.3em] text-[#0091D5] uppercase mt-1">Atlas</span>
             </div>
           </div>
         )}

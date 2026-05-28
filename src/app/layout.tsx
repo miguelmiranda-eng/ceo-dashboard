@@ -23,7 +23,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Prosper Pipeline | Production & Billing Control",
+  title: "Mos-atlas | Production & Billing Control",
   description: "High-speed logistics, cross-border manufacturing, and real-time production monitoring.",
 };
 

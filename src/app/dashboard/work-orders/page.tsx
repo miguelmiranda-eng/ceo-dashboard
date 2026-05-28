@@ -520,7 +520,7 @@ export default function WorkOrdersPage() {
              </h1>
           </div>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-6 opacity-70">
-            Prosper Manufacturing &bull; Production Control Pipeline
+            Prosper Manufacturing &bull; Mos-atlas Production Control
           </p>
         </div>
 

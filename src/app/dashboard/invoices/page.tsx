@@ -50,7 +50,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { ProsperInvoice } from "@/components/dashboard/invoices/ProsperInvoice"
+import { MosAtlasInvoice } from "@/components/dashboard/invoices/MosAtlasInvoice"
 import {
   flexRender,
   getCoreRowModel,
@@ -278,7 +278,7 @@ export default function InvoicesPage() {
                   onClick={() => handleOpenInvoice(invoice.invoice_id, 'preview', invoice)}
                   className="hover:bg-slate-50 cursor-pointer flex items-center gap-2 font-bold text-xs uppercase tracking-tight p-3"
                 >
-                  <Printer className="h-4 w-4 text-slate-400" /> Print Prosper Invoice
+                  <Printer className="h-4 w-4 text-slate-400" /> Print Mos-atlas Invoice
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={() => handleOpenInvoice(invoice.invoice_id, 'edit', invoice)}
@@ -475,8 +475,8 @@ export default function InvoicesPage() {
 
       {/* Invoice Creation/Edit Modal */}
       <Dialog open={!!isCreating} onOpenChange={() => setIsCreating(false)}>
-        <DialogContent aria-describedby={undefined} className="max-w-[95vw] w-full max-h-[95vh] overflow-y-auto bg-white border-slate-200 p-0 shadow-2xl rounded-2xl">
-          <DialogTitle className="sr-only">Prosper Order Entry</DialogTitle>
+        <DialogContent aria-describedby={undefined} className="max-w-[100vw] w-screen h-screen max-h-screen overflow-y-auto bg-white border-0 p-0 shadow-none rounded-none translate-x-0 translate-y-0 left-0 top-0 sm:rounded-none">
+          <DialogTitle className="sr-only">Mos-atlas Order Entry</DialogTitle>
           <InvoiceForm 
             initialData={typeof isCreating === 'object' ? isCreating : undefined}
             onSubmit={handleCreate}
@@ -488,7 +488,7 @@ export default function InvoicesPage() {
       {/* Invoice Preview Modal */}
       <Dialog open={!!previewInvoice} onOpenChange={() => setPreviewInvoice(null)}>
         <DialogContent aria-describedby={undefined} className="max-w-[98vw] w-full h-[98vh] max-h-[98vh] overflow-y-auto bg-slate-50 border-slate-200 p-0 shadow-2xl rounded-2xl flex flex-col">
-          <DialogTitle className="sr-only">Prosper Invoice Preview</DialogTitle>
+          <DialogTitle className="sr-only">Mos-atlas Invoice Preview</DialogTitle>
           <div className="sticky top-0 z-10 bg-white border-b border-slate-200 p-5 flex justify-between items-center shadow-sm">
             <div className="flex items-center gap-3">
                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
@@ -532,7 +532,7 @@ export default function InvoicesPage() {
           </div>
           <div className="flex-1 p-4 bg-slate-200/50 overflow-y-auto flex justify-center">
             <div className="bg-white shadow-[0_30px_100px_rgba(0,0,0,0.12)] border border-slate-200 transform scale-100 origin-top overflow-hidden rounded-sm h-fit">
-              {previewInvoice && <ProsperInvoice invoice={previewInvoice} showFinancials={previewShowFinancials} />}
+              {previewInvoice && <MosAtlasInvoice invoice={previewInvoice} showFinancials={previewShowFinancials} />}
             </div>
           </div>
         </DialogContent>

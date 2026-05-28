@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Mail, Lock, AlertCircle, ArrowRight, Cpu, BarChart3, TrendingUp } from "lucide-react"
 
-const ProsperLogo = ({ size = 48 }: { size?: number }) => (
+const MosAtlasLogo = ({ size = 48 }: { size?: number }) => (
   <svg viewBox="0 0 100 100" width={size} height={size} fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <mask id="loginGlobeMask">
@@ -87,9 +87,9 @@ export default function LoginPage() {
 
           {/* Logo */}
           <div className="flex items-center gap-4">
-            <ProsperLogo size={44} />
+            <MosAtlasLogo size={44} />
             <div className="flex flex-col">
-              <span className="font-black text-[15px] leading-tight tracking-tight text-white uppercase">Prosper</span>
+              <span className="font-black text-[15px] leading-tight tracking-tight text-white uppercase">Mos-atlas</span>
               <span className="font-bold text-[9px] leading-none tracking-[0.35em] text-sky-400 uppercase mt-0.5">Manufacturing</span>
             </div>
           </div>
@@ -144,9 +144,9 @@ export default function LoginPage() {
 
         {/* Mobile logo */}
         <div className="lg:hidden flex items-center gap-3 mb-10">
-          <ProsperLogo size={36} />
+          <MosAtlasLogo size={36} />
           <div className="flex flex-col">
-            <span className="font-black text-sm leading-tight tracking-tight text-white uppercase">Prosper</span>
+            <span className="font-black text-sm leading-tight tracking-tight text-white uppercase">Mos-atlas</span>
             <span className="font-bold text-[8px] leading-none tracking-[0.3em] text-sky-400 uppercase mt-0.5">Manufacturing</span>
           </div>
         </div>

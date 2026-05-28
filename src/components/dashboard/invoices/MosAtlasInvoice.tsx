@@ -6,7 +6,7 @@ import { ZoomIn, ZoomOut, Download, Printer, Check } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { normalizeImageUrl } from "@/lib/api"
 
-interface ProsperInvoiceProps { 
+interface MosAtlasInvoiceProps {
   invoice: Invoice;
   showFinancials?: boolean;
 }
@@ -54,7 +54,7 @@ function ImageModal({ file, onClose }: { file: any; onClose: () => void }) {
   )
 }
 
-export function ProsperInvoice({ invoice, showFinancials = false }: ProsperInvoiceProps) {
+export function MosAtlasInvoice({ invoice, showFinancials = false }: MosAtlasInvoiceProps) {
   const [selectedImage, setSelectedImage] = useState<any | null>(null)
   const inv = invoice as any
 
@@ -176,7 +176,7 @@ export function ProsperInvoice({ invoice, showFinancials = false }: ProsperInvoi
             </div>
           </div>
           <div className="flex-1 border border-gray-200 rounded p-3 bg-gray-50/50">
-            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Art Name / Descripción del Arte</div>
+            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Art Style / Descripción del Estilo</div>
             <div className="text-lg font-black uppercase text-gray-700">{inv.job_title_a?.desc || "—"}</div>
           </div>
         </div>
@@ -208,11 +208,17 @@ export function ProsperInvoice({ invoice, showFinancials = false }: ProsperInvoi
                   <td className="border border-gray-300 py-1.5 px-2 font-bold whitespace-pre-wrap">{item.item_number || "—"}</td>
                   <td className="border border-gray-300 py-1.5 px-2 font-bold uppercase whitespace-pre-wrap">{item.color || "—"}</td>
                   <td className="border border-gray-300 py-1.5 px-2 font-bold uppercase whitespace-pre-wrap">{item.description || "—"}</td>
-                  {sizeColumns.map(s => (
-                    <td key={s} className="border border-gray-300 py-1.5 px-1 text-center font-black">
-                      {item.sizes?.[s] || "—"}
+                  {item.has_sizes === false ? (
+                    <td colSpan={sizeColumns.length} className="border border-gray-300 py-1.5 px-2 text-center italic text-gray-500 bg-gray-50/60">
+                      Sin tallas — Caja / Extra
                     </td>
-                  ))}
+                  ) : (
+                    sizeColumns.map(s => (
+                      <td key={s} className="border border-gray-300 py-1.5 px-1 text-center font-black">
+                        {item.sizes?.[s] || "—"}
+                      </td>
+                    ))
+                  )}
                   <td className="border border-gray-300 py-1.5 px-2 text-center font-black text-sm">{item.quantity || 0}</td>
                   {showFinancials && (
                     <>
@@ -223,26 +229,16 @@ export function ProsperInvoice({ invoice, showFinancials = false }: ProsperInvoi
                 </tr>
               ))}
             </tbody>
-            <tfoot>
-              <tr className="bg-gray-200 font-black">
-                <td className="border border-gray-400 py-1 px-2" colSpan={3}>TOTALES POR TALLA</td>
-                {sizeColumns.map(s => {
-                  const t = (inv.items || []).reduce((a: number, it: any) => a + (Number(it.sizes?.[s]) || 0), 0)
-                  return <td key={s} className="border border-gray-400 py-1 px-1 text-center">{t > 0 ? t : "—"}</td>
-                })}
-                <td className="border border-gray-400 py-1 px-2 text-center text-sm">
-                  {(inv.items || []).reduce((a: number, it: any) => a + (Number(it.quantity) || 0), 0)}
-                </td>
-                {showFinancials && (
-                  <>
-                    <td className="border border-gray-400" />
-                    <td className="border border-gray-400 py-1 px-2 text-right text-sm">
-                      ${(inv.items || []).reduce((a: number, it: any) => a + (Number(it.amount) || 0), 0).toFixed(2)}
-                    </td>
-                  </>
-                )}
-              </tr>
-            </tfoot>
+            {showFinancials && (
+              <tfoot>
+                <tr className="bg-gray-200 font-black">
+                  <td className="border border-gray-400 py-1 px-2" colSpan={sizeColumns.length + 4} />
+                  <td className="border border-gray-400 py-1 px-2 text-right text-sm">
+                    ${(inv.items || []).reduce((a: number, it: any) => a + (Number(it.amount) || 0), 0).toFixed(2)}
+                  </td>
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
 
@@ -259,6 +255,22 @@ export function ProsperInvoice({ invoice, showFinancials = false }: ProsperInvoi
             </div>
           </div>
         )}
+
+        {/* ── CAMPOS DE TEXTO ADICIONALES ── */}
+        {Array.isArray(inv.custom_fields) && inv.custom_fields.map((cf: any, i: number) => (
+          (cf.title || cf.content) && (
+            <div key={i} className="mt-4 border border-gray-300 rounded p-4 bg-white">
+              <div className="text-[11px] font-black text-gray-700 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                <div className="h-[1px] flex-1 bg-gray-200"></div>
+                <span>{cf.title || "CAMPO DE TEXTO ABIERTO"}</span>
+                <div className="h-[1px] flex-1 bg-gray-200"></div>
+              </div>
+              <div className="text-[12px] font-medium leading-relaxed whitespace-pre-wrap">
+                {cf.content}
+              </div>
+            </div>
+          )
+        ))}
 
         {/* ── FINANCIAL SUMMARY (Billing only) ── */}
         {showFinancials && (
@@ -297,7 +309,7 @@ export function ProsperInvoice({ invoice, showFinancials = false }: ProsperInvoi
             ))}
           </div>
           <div className="text-[9px] mt-3 pt-2 border-t border-gray-200 text-gray-600">
-            <span className="font-black">Método de Aprobación:</span> Seguir CAD y enviar foto para aprobación final
+            <span className="font-black">Método de Aprobación:</span> {inv.approval_method || "Seguir CAD y enviar foto para aprobación final"}
           </div>
         </div>
 
@@ -368,15 +380,6 @@ export function ProsperInvoice({ invoice, showFinancials = false }: ProsperInvoi
             </div>
           )}
 
-          <div className="text-[10px] pt-2 border-t border-gray-200">
-            <span className="font-black uppercase tracking-tighter">Cantidades por Caja (Bulk): </span>
-            <span className="text-gray-700 font-bold">
-              {sizeColumns.map(s => {
-                const t = (inv.items || []).reduce((a: number, it: any) => a + (Number(it.sizes?.[s]) || 0), 0)
-                return t > 0 ? `${s}: ${t}` : null
-              }).filter(Boolean).join(' | ') || 'N/A'}
-            </span>
-          </div>
         </div>
 
         {/* Print Footer */}

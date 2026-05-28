@@ -14,22 +14,22 @@ export function ArtLinksPanel({ artLinks, onChange }: { artLinks: { label: strin
 
   return (
     <div className="border-2 border-blue-600 rounded p-3 bg-blue-50/30">
-      <div className="font-black text-[11px] text-blue-800 mb-2 underline">DEPARTAMENTO DE ARTE:</div>
+      <div className="font-black text-[14px] text-blue-800 mb-2 underline">DEPARTAMENTO DE ARTE:</div>
       <div className="space-y-1.5">
         {artLinks.map((item, i) => (
           <div key={i} className="flex items-center gap-1">
-            <span className="text-[9px] font-black text-gray-400 w-4 flex-shrink-0">•</span>
+            <span className="text-[12px] font-black text-gray-400 w-4 flex-shrink-0">•</span>
             <input
               value={item.label}
               onChange={e => update(i, 'label', e.target.value)}
               placeholder="Nombre del link..."
-              className="text-[9px] font-black text-gray-600 w-28 flex-shrink-0 border-b border-transparent focus:border-gray-400 focus:outline-none bg-transparent uppercase"
+              className="text-[12px] font-black text-gray-600 w-28 flex-shrink-0 border-b border-transparent focus:border-gray-400 focus:outline-none bg-transparent uppercase"
             />
             <input
               value={item.url}
               onChange={e => update(i, 'url', e.target.value)}
               placeholder="https://..."
-              className="flex-1 text-[10px] font-mono border border-blue-300 rounded px-1.5 py-0.5 bg-white text-blue-700 focus:outline-none focus:border-blue-500"
+              className="flex-1 text-[13px] font-mono border border-blue-300 rounded px-1.5 py-0.5 bg-white text-blue-700 focus:outline-none focus:border-blue-500"
             />
             {item.url && <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700"><ExternalLink className="h-3 w-3" /></a>}
             <button onClick={() => remove(i)} className="text-red-400 hover:text-red-600 ml-0.5"><X className="h-3 w-3" /></button>
@@ -37,8 +37,8 @@ export function ArtLinksPanel({ artLinks, onChange }: { artLinks: { label: strin
         ))}
       </div>
       <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-blue-200">
-        <span className="text-[9px] font-bold text-gray-500 italic">SOLO LINKS DE ARTE. SIN NOTAS ADICIONALES</span>
-        <button onClick={add} className="text-[9px] font-black text-blue-600 flex items-center gap-0.5 hover:text-blue-800">
+        <span className="text-[12px] font-bold text-gray-500 italic">SOLO LINKS DE ARTE. SIN NOTAS ADICIONALES</span>
+        <button onClick={add} className="text-[12px] font-black text-blue-600 flex items-center gap-0.5 hover:text-blue-800">
           <Plus className="h-3 w-3" /> Agregar
         </button>
       </div>
@@ -48,17 +48,19 @@ export function ArtLinksPanel({ artLinks, onChange }: { artLinks: { label: strin
 
 // ─── Size Matrix Row ────────────────────────────────────────────────────────
 export function SizeMatrixTable({
-  items, sizeColumns, onUpdateSize, onUpdateItem, onAddSize, onRemoveSize, onAddItem, onRemoveItem
+  items, sizeColumns, onUpdateSize, onUpdateItem, onUpdateQuantity, onToggleSizes, onAddSize, onRemoveSize, onAddItem, onRemoveItem
 }: {
   items: any[]; sizeColumns: string[];
   onUpdateSize: (idx: number, size: string, val: string) => void;
   onUpdateItem: (idx: number, field: string, val: any) => void;
+  onUpdateQuantity: (idx: number, val: string) => void;
+  onToggleSizes: (idx: number) => void;
   onAddSize: () => void; onRemoveSize: (s: string) => void;
   onAddItem: () => void; onRemoveItem: (i: number) => void;
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse border border-gray-400 text-[10px]">
+      <table className="w-full border-collapse border border-gray-400 text-[13px]">
         <thead>
           <tr className="bg-gray-100">
             <th className="border border-gray-400 py-1 px-2 text-left font-black whitespace-nowrap w-20">Item / Estilo</th>
@@ -76,7 +78,7 @@ export function SizeMatrixTable({
             <th className="border border-gray-400 py-1 px-2 text-center font-black w-16">Price</th>
             <th className="border border-gray-400 py-1 px-2 text-center font-black w-16">Amount</th>
             <th className="border border-gray-300 py-1 px-1 w-6 bg-blue-50">
-              <button onClick={onAddSize} title="Add size" className="text-blue-600 hover:text-blue-800 font-black text-[10px]">+S</button>
+              <button onClick={onAddSize} title="Add size" className="text-blue-600 hover:text-blue-800 font-black text-[13px]">+S</button>
             </th>
           </tr>
         </thead>
@@ -89,7 +91,7 @@ export function SizeMatrixTable({
                   onChange={e => onUpdateItem(idx, "item_number", e.target.value)}
                   placeholder="gi5000"
                   rows={2}
-                  className="w-full text-[10px] font-bold bg-transparent border-none focus:ring-0 focus:outline-none uppercase resize-none leading-tight min-h-[40px]"
+                  className="w-full text-[13px] font-bold bg-transparent border-none focus:ring-0 focus:outline-none uppercase resize-none leading-tight min-h-[40px]"
                 />
               </td>
               <td className="border border-gray-300 py-1 px-1">
@@ -98,7 +100,7 @@ export function SizeMatrixTable({
                   onChange={e => onUpdateItem(idx, "color", e.target.value)}
                   placeholder="Color"
                   rows={2}
-                  className="w-full text-[10px] font-bold bg-transparent border-none focus:ring-0 focus:outline-none uppercase resize-none leading-tight min-h-[40px]"
+                  className="w-full text-[13px] font-bold bg-transparent border-none focus:ring-0 focus:outline-none uppercase resize-none leading-tight min-h-[40px]"
                 />
               </td>
               <td className="border border-gray-300 py-1 px-1">
@@ -107,28 +109,55 @@ export function SizeMatrixTable({
                   onChange={e => onUpdateItem(idx, "description", e.target.value)}
                   placeholder="Descripción y detalles..."
                   rows={2}
-                  className="w-full text-[10px] font-bold bg-transparent border-none focus:ring-0 focus:outline-none uppercase resize-none leading-tight min-h-[40px]"
+                  className="w-full text-[13px] font-bold bg-transparent border-none focus:ring-0 focus:outline-none uppercase resize-none leading-tight min-h-[40px]"
                 />
               </td>
-              {sizeColumns.map(s => (
-                <td key={s} className="border border-gray-300 py-1 px-1 text-center">
+              {item.has_sizes === false ? (
+                <td colSpan={sizeColumns.length} className="border border-gray-300 py-1 px-2 text-center text-[12px] italic text-gray-400 bg-gray-50/60">
+                  Sin tallas — Caja / Extra
+                  <button
+                    onClick={() => onToggleSizes(idx)}
+                    title="Convertir a ítem con tallas"
+                    className="ml-2 text-blue-500 hover:text-blue-700 not-italic font-bold text-[11px] underline"
+                    type="button"
+                  >
+                    usar tallas
+                  </button>
+                </td>
+              ) : (
+                sizeColumns.map(s => (
+                  <td key={s} className="border border-gray-300 py-1 px-1 text-center">
+                    <input
+                      type="text" inputMode="numeric"
+                      value={item.sizes?.[s] || ""}
+                      onChange={e => onUpdateSize(idx, s, e.target.value.replace(/[^0-9]/g, ""))}
+                      className="w-full text-center text-[14px] font-black bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none"
+                    />
+                  </td>
+                ))
+              )}
+              <td className="border border-gray-300 py-1 px-2 text-center font-black text-[14px]">
+                {item.has_sizes === false ? (
                   <input
                     type="text" inputMode="numeric"
-                    value={item.sizes?.[s] || ""}
-                    onChange={e => onUpdateSize(idx, s, e.target.value.replace(/[^0-9]/g, ""))}
-                    className="w-full text-center text-[11px] font-black bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none"
+                    value={item.quantity || ""}
+                    onChange={e => onUpdateQuantity(idx, e.target.value.replace(/[^0-9]/g, ""))}
+                    placeholder="0"
+                    title="Cantidad (cajas / extras)"
+                    className="w-full text-center text-[14px] font-black bg-transparent border-b border-dashed border-blue-300 focus:border-blue-500 focus:outline-none"
                   />
-                </td>
-              ))}
-              <td className="border border-gray-300 py-1 px-2 text-center font-black text-[11px]">{item.quantity || 0}</td>
+                ) : (
+                  sizeColumns.reduce((a, s) => a + (Number(item.sizes?.[s]) || 0), 0)
+                )}
+              </td>
               <td className="border border-gray-300 py-1 px-1">
                 <div className="flex items-center">
                   <span className="text-gray-400 mr-0.5">$</span>
                   <input type="number" step="0.01" value={item.price || ""} onChange={e => onUpdateItem(idx, "price", parseFloat(e.target.value) || 0)}
-                    className="w-full text-right text-[10px] font-bold bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none" />
+                    className="w-full text-right text-[13px] font-bold bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none" />
                 </div>
               </td>
-              <td className="border border-gray-300 py-1 px-2 text-right font-black text-[11px]">
+              <td className="border border-gray-300 py-1 px-2 text-right font-black text-[14px]">
                 ${(item.amount || 0).toFixed(2)}
               </td>
               <td className="border border-gray-300 py-1 px-1 text-center">
@@ -141,20 +170,12 @@ export function SizeMatrixTable({
         </tbody>
         <tfoot>
           <tr className="bg-gray-200">
-            <td className="border border-gray-400 py-1 px-2 font-black" colSpan={3}>
-              <button onClick={onAddItem} className="text-blue-700 font-black text-[9px] flex items-center gap-0.5 hover:text-blue-900">
+            <td className="border border-gray-400 py-1 px-2 font-black" colSpan={sizeColumns.length + 4}>
+              <button onClick={onAddItem} className="text-blue-700 font-black text-[12px] flex items-center gap-0.5 hover:text-blue-900">
                 <Plus className="h-3 w-3" /> Add Item
               </button>
             </td>
-            {sizeColumns.map(s => {
-              const t = items.reduce((a, it) => a + (Number(it.sizes?.[s]) || 0), 0)
-              return <td key={s} className="border border-gray-400 py-1 px-1 text-center font-black">{t > 0 ? t : "—"}</td>
-            })}
-            <td className="border border-gray-400 py-1 px-2 text-center font-black text-[11px]">
-              {items.reduce((a, it) => a + (Number(it.quantity) || 0), 0)}
-            </td>
-            <td className="border border-gray-400" />
-            <td className="border border-gray-400 py-1 px-2 text-right font-black text-[11px]">
+            <td className="border border-gray-400 py-1 px-2 text-right font-black text-[14px]">
               ${items.reduce((a, it) => a + (Number(it.amount) || 0), 0).toFixed(2)}
             </td>
             <td className="border border-gray-400" />
@@ -177,7 +198,7 @@ export function AttachmentUploader({
 
   return (
     <div className="border border-gray-300 rounded p-3 bg-gray-50">
-      <div className="font-black text-[11px] border-b border-gray-200 pb-1 mb-2">Adjuntos Visuales / Visual Attachments</div>
+      <div className="font-black text-[14px] border-b border-gray-200 pb-1 mb-2">Adjuntos Visuales / Visual Attachments</div>
       <div className="flex flex-wrap gap-3 mb-2">
         {images.map((f, i) => (
           <div key={i} className="relative group cursor-pointer" onClick={() => onSelect(f)}>

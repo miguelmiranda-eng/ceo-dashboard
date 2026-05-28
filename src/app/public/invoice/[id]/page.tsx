@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation"
 import useSWR from "swr"
 import { fetchInvoice } from "@/lib/api"
-import { ProsperInvoice } from "@/components/dashboard/invoices/ProsperInvoice"
+import { MosAtlasInvoice } from "@/components/dashboard/invoices/MosAtlasInvoice"
 import { Loader2 } from "lucide-react"
 
 export default function PublicInvoicePage() {
@@ -30,7 +30,7 @@ export default function PublicInvoicePage() {
   return (
     <div className="bg-slate-50 min-h-screen py-12">
       <div className="print:p-0">
-        <ProsperInvoice invoice={invoice} />
+        <MosAtlasInvoice invoice={invoice} />
       </div>
       <div className="text-center mt-8 no-print pb-12">
         <p className="text-xs text-slate-400">Prosper Manufacturing - Production View</p>

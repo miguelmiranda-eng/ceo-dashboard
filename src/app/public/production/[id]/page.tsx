@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { Invoice } from "@/lib/api"
-import { ProsperInvoice } from "@/components/dashboard/invoices/ProsperInvoice"
+import { MosAtlasInvoice } from "@/components/dashboard/invoices/MosAtlasInvoice"
 
 export default function PublicProductionPage() {
   const { id } = useParams()
@@ -50,7 +50,7 @@ export default function PublicProductionPage() {
           </button>
         </div>
         <div className="bg-white shadow-xl print:shadow-none border border-slate-200 print:border-none">
-          <ProsperInvoice invoice={invoice} showFinancials={false} />
+          <MosAtlasInvoice invoice={invoice} showFinancials={false} />
         </div>
       </div>
     </div>

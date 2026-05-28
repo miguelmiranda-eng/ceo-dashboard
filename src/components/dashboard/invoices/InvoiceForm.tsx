@@ -18,10 +18,10 @@ function ImagePreviewModal({ file, onClose }: { file: any; onClose: () => void }
           <DialogTitle className="text-white font-black uppercase tracking-widest text-xs truncate">{file.name}</DialogTitle>
           <div className="flex items-center gap-1">
             <button onClick={() => setZoom(p => Math.max(0.5, p - 0.25))} className="p-1 hover:bg-slate-800 rounded text-slate-400"><ZoomOut className="h-3.5 w-3.5" /></button>
-            <span className="text-[9px] text-slate-500 w-8 text-center">{Math.round(zoom * 100)}%</span>
+            <span className="text-[12px] text-slate-500 w-8 text-center">{Math.round(zoom * 100)}%</span>
             <button onClick={() => setZoom(p => Math.min(5, p + 0.25))} className="p-1 hover:bg-slate-800 rounded text-slate-400"><ZoomIn className="h-3.5 w-3.5" /></button>
           </div>
-          <a href={file.data || file.url} download={file.name} className="bg-blue-600 text-white px-3 py-1 rounded text-[9px] font-black uppercase flex items-center gap-1"><Download className="h-2.5 w-2.5" />DL</a>
+          <a href={file.data || file.url} download={file.name} className="bg-blue-600 text-white px-3 py-1 rounded text-[12px] font-black uppercase flex items-center gap-1"><Download className="h-2.5 w-2.5" />DL</a>
         </DialogHeader>
         <div className="p-6 bg-slate-800 flex items-center justify-center min-h-[300px] overflow-auto max-h-[85vh]">
           <div style={{ transform: `scale(${zoom})`, transition: 'transform 0.2s' }}>
@@ -80,16 +80,27 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
     size_columns: inv?.size_columns || [...DEFAULT_SIZES],
     items: inv?.items?.length > 0
       ? inv.items.map((it: any) => ({ ...it, items_count: it.items_count || 0 }))
-      : [{
-          item_number: "", color: "", description: "",
-          quantity: 0, price: 0, amount: 0, items_count: 0,
-          sizes: DEFAULT_SIZES.reduce((a: any, s) => ({ ...a, [s]: 0 }), {})
-        }],
+      : [
+          {
+            item_number: "", color: "", description: "",
+            quantity: 0, price: 0, amount: 0, items_count: 0,
+            has_sizes: true,
+            sizes: DEFAULT_SIZES.reduce((a: any, s) => ({ ...a, [s]: 0 }), {})
+          },
+          {
+            item_number: "CAJA NUEVA", color: "N/A", description: "N/A",
+            quantity: 0, price: 0, amount: 0, items_count: 0,
+            has_sizes: false,
+            sizes: {}
+          }
+        ],
     production_notes: inv?.production_notes || "",
     finishing_notes: inv?.finishing_notes || "",
     production_attachments: inv?.production_attachments || inv?.attachments || [],
     packing_attachments: inv?.packing_attachments || [],
     open_text_field: inv?.open_text_field || "",
+    approval_method: inv?.approval_method || "Seguir CAD y enviar foto para aprobación final",
+    custom_fields: inv?.custom_fields || [],
     checklist_items: inv?.checklist_items || [
       { label: "Front Print", note: "(Según CAD)", checked: false },
       { label: "Neck Label", note: "(Etiqueta de cuello)", checked: false },
@@ -110,12 +121,29 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
 
   const addItem = () => {
     const newItem = {
-      item_number: "", color: "", description: "",
+      item_number: "CAJA NUEVA", color: "N/A", description: "N/A",
       quantity: 0, price: 0, amount: 0, items_count: 0,
-      sizes: form.size_columns.reduce((a: any, s: string) => ({ ...a, [s]: 0 }), {})
+      has_sizes: false,
+      sizes: {}
     }
     setForm((p: any) => ({ ...p, items: [...p.items, newItem], amounts: calcTotals([...p.items, newItem]) }))
   }
+
+  const toggleItemSizes = (idx: number) => setForm((p: any) => {
+    const items = [...p.items]
+    const item = { ...items[idx] }
+    const currentlyHasSizes = item.has_sizes !== false
+    item.has_sizes = !currentlyHasSizes
+    if (item.has_sizes) {
+      item.sizes = p.size_columns.reduce((a: any, s: string) => ({ ...a, [s]: 0 }), {})
+      item.quantity = 0
+    } else {
+      item.sizes = {}
+    }
+    item.amount = (Number(item.quantity) || 0) * (Number(item.price) || 0)
+    items[idx] = item
+    return { ...p, items, amounts: calcTotals(items) }
+  })
 
   const removeItem = (i: number) => setForm((p: any) => {
     const items = p.items.filter((_: any, idx: number) => idx !== i)
@@ -137,6 +165,15 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
     item.sizes = sizes
     item.quantity = Object.values(sizes).reduce((a: any, b: any) => a + (Number(b) || 0), 0) as number
     item.amount = item.quantity * (item.price || 0)
+    items[idx] = item
+    return { ...p, items, amounts: calcTotals(items) }
+  })
+
+  const updateQuantity = (idx: number, val: string) => setForm((p: any) => {
+    const items = [...p.items]
+    const item = { ...items[idx] }
+    item.quantity = parseInt(val) || 0
+    item.amount = item.quantity * (Number(item.price) || 0)
     items[idx] = item
     return { ...p, items, amounts: calcTotals(items) }
   })
@@ -243,6 +280,24 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
     set("checklist_items", items)
   }
 
+  const addCustomField = () => {
+    const fields = [...(form.custom_fields || [])]
+    fields.push({ title: "CAMPO DE TEXTO ABIERTO", content: "" })
+    set("custom_fields", fields)
+  }
+
+  const updateCustomField = (idx: number, field: string, val: any) => {
+    const fields = [...(form.custom_fields || [])]
+    fields[idx] = { ...fields[idx], [field]: val }
+    set("custom_fields", fields)
+  }
+
+  const removeCustomField = (idx: number) => {
+    const fields = [...(form.custom_fields || [])]
+    fields.splice(idx, 1)
+    set("custom_fields", fields)
+  }
+
   const handleSave = () => {
     let art_links: string[] = []
     if (Array.isArray(form.art_links)) {
@@ -264,18 +319,18 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
         </span>
         <div className="flex gap-2">
           <Button variant="outline" onClick={onCancel} disabled={isLoading || isUploading}
-            className="h-8 px-4 text-[10px] font-black uppercase border-gray-300">
+            className="h-8 px-4 text-[13px] font-black uppercase border-gray-300">
             <X className="h-3.5 w-3.5 mr-1" /> Cancelar
           </Button>
           <Button onClick={handleSave} disabled={isLoading || isUploading}
-            className="h-8 px-4 text-[10px] font-black uppercase bg-[#0F172A] text-white hover:bg-slate-700">
+            className="h-8 px-4 text-[13px] font-black uppercase bg-[#0F172A] text-white hover:bg-slate-700">
             {isLoading || isUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Save className="h-3.5 w-3.5 mr-1" />}
             {isUploading ? "Subiendo..." : isLoading ? "Guardando..." : "Guardar Orden"}
           </Button>
         </div>
       </div>
 
-      <div className="p-6 space-y-4 text-[11px]">
+      <div className="p-6 space-y-4 text-[14px]">
 
         {/* ── SMART HEADER ── */}
         <table className="w-full border-collapse border border-gray-400" style={{ tableLayout: 'fixed' }}>
@@ -292,23 +347,23 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
                   </div>
                   <div>
                     <div className="font-black text-sm leading-tight">Prosper Manufacturing</div>
-                    <div className="text-[9px] text-gray-500">prospermfg.com</div>
+                    <div className="text-[12px] text-gray-500">prospermfg.com</div>
                   </div>
                 </div>
                 {/* Priority + Status badges */}
                 <div className="flex flex-wrap gap-1">
                   <select value={form.priority} onChange={e => set("priority", e.target.value)}
-                    className="text-[9px] font-black border border-amber-400 rounded px-1 bg-amber-50 text-amber-700 focus:outline-none">
+                    className="text-[12px] font-black border border-amber-400 rounded px-1 bg-amber-50 text-amber-700 focus:outline-none">
                     {(options?.priorities || ["PRIORITY 1","PRIORITY 2","PRIORITY 3"]).map((p: string) =>
                       <option key={p} value={p}>{p}</option>)}
                   </select>
                   <select value={form.artwork_status} onChange={e => set("artwork_status", e.target.value)}
-                    className="text-[9px] font-black border border-blue-300 rounded px-1 bg-blue-50 text-blue-700 focus:outline-none">
+                    className="text-[12px] font-black border border-blue-300 rounded px-1 bg-blue-50 text-blue-700 focus:outline-none">
                     {(options?.artwork_statuses || ["NEW","REORDER","APPROVED","PENDING"]).map((s: string) =>
                       <option key={s} value={s}>{s}</option>)}
                   </select>
                   <select value={form.sample} onChange={e => set("sample", e.target.value)}
-                    className="text-[9px] font-black border border-emerald-300 rounded px-1 bg-emerald-50 text-emerald-700 focus:outline-none">
+                    className="text-[12px] font-black border border-emerald-300 rounded px-1 bg-emerald-50 text-emerald-700 focus:outline-none">
                     <option value="NO SAMPLE">NO SAMPLE</option>
                     {(options?.samples || ["EJEMPLO PRIMERO", "EJEMPLO APROBADO", "LICENCIA", "APR. POR FOTO", "APR. PARA EJEMPLO"]).map((s: string) =>
                       <option key={s} value={s}>{s}</option>)}
@@ -318,12 +373,12 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
 
               {/* Center: WO# + PO + Client */}
               <td className="border border-gray-400 p-3 text-center align-middle w-[42%] bg-gray-50">
-                <div className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Work Order</div>
+                <div className="text-[12px] font-bold text-gray-500 uppercase tracking-widest mb-1">Work Order</div>
                 <div className="font-black text-3xl leading-tight tracking-tight text-gray-700">
                   #{form.invoice_id || <span className="text-gray-300">AUTO</span>}
                 </div>
                 <div className="flex items-center justify-center gap-1 mt-2">
-                  <span className="text-[9px] font-black text-gray-500">PO:</span>
+                  <span className="text-[12px] font-black text-gray-500">PO:</span>
                   <input value={form.customer_po} onChange={e => set("customer_po", e.target.value)}
                     placeholder="#19029"
                     className="text-xl font-black text-center border-b-2 border-gray-300 focus:border-blue-500 focus:outline-none w-36 bg-transparent" />
@@ -336,7 +391,7 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
                   </select>
                 </div>
                 <div className="mt-2 flex items-center justify-center gap-2">
-                  <span className="text-[10px] font-black text-[#0091D5] uppercase tracking-widest">Store PO #:</span>
+                  <span className="text-[13px] font-black text-[#0091D5] uppercase tracking-widest">Store PO #:</span>
                   <input value={form.store_po} onChange={e => set("store_po", e.target.value)}
                     placeholder="Store PO #"
                     className="text-sm font-black border-b border-[#0091D5] focus:border-blue-600 focus:outline-none w-40 bg-transparent text-[#0091D5]" />
@@ -345,18 +400,18 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
 
               {/* Right: Dates */}
               <td className="border border-gray-400 p-3 align-top w-[30%]">
-                <div className="space-y-2 text-[10px]">
+                <div className="space-y-2 text-[13px]">
                   <div>
-                    <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Created</div>
+                    <div className="text-[12px] font-black text-gray-400 uppercase tracking-widest">Created</div>
                     <input type="date" value={form.dates?.created || ""}
                       onChange={e => set("dates", { ...form.dates, created: e.target.value })}
-                      className="border-b border-gray-300 focus:border-blue-400 focus:outline-none text-[10px] font-bold w-full bg-transparent" />
+                      className="border-b border-gray-300 focus:border-blue-400 focus:outline-none text-[13px] font-bold w-full bg-transparent" />
                   </div>
                   <div>
-                    <div className="text-[9px] font-black text-orange-500 uppercase tracking-widest">Cancel Date</div>
+                    <div className="text-[12px] font-black text-orange-500 uppercase tracking-widest">Cancel Date</div>
                     <input type="date" value={form.cancel_date || ""}
                       onChange={e => set("cancel_date", e.target.value)}
-                      className="border-b border-orange-300 focus:border-orange-500 focus:outline-none text-[10px] font-bold text-orange-600 w-full bg-transparent" />
+                      className="border-b border-orange-300 focus:border-orange-500 focus:outline-none text-[13px] font-bold text-orange-600 w-full bg-transparent" />
                   </div>
                 </div>
               </td>
@@ -372,14 +427,14 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
               onChange={links => set("art_links", links)}
             />
             <div className="mt-2 flex items-center gap-2">
-              <span className="text-[9px] font-black text-gray-500 uppercase">SEPS #:</span>
+              <span className="text-[12px] font-black text-gray-500 uppercase">SEPS #:</span>
               <input value={form.seps} onChange={e => set("seps", e.target.value)}
                 placeholder="Separaciones"
-                className="flex-1 text-[10px] border-b border-gray-300 focus:border-blue-400 focus:outline-none bg-transparent font-mono" />
+                className="flex-1 text-[13px] border-b border-gray-300 focus:border-blue-400 focus:outline-none bg-transparent font-mono" />
             </div>
           </div>
           <div className="flex-1 border border-gray-200 rounded p-3 bg-gray-50/50">
-            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Art Name / Descripción del Arte</div>
+            <div className="text-[12px] font-black text-gray-400 uppercase tracking-widest mb-1">Art Style / Descripción del Estilo</div>
             <input value={form.job_title_a?.desc || ""} onChange={e => set("job_title_a", { ...form.job_title_a, desc: e.target.value })}
               placeholder="HELL GRIP TEE - SATAN UNIVERSITY"
               className="w-full text-lg font-black uppercase border-b-2 border-gray-200 focus:border-blue-400 focus:outline-none bg-transparent mb-2" />
@@ -388,13 +443,7 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
 
         {/* ── PRODUCTION MATRIX ── */}
         <div>
-          <div className="text-[10px] font-bold text-gray-600 mb-0.5">Matriz de Producción Principal</div>
-          <div className="text-base font-black mb-1 uppercase">
-            Cliente: {form.client || <span className="text-gray-300">— seleccionar —</span>}
-          </div>
-          {form.job_title_a?.desc && (
-            <div className="text-base font-black mb-2 uppercase">Art Name: {form.job_title_a.desc}</div>
-          )}
+          <div className="text-[13px] font-bold text-gray-600 mb-2">Matriz de Producción Principal</div>
           <div className="space-y-4">
             {/* Matrix */}
             <SizeMatrixTable
@@ -402,6 +451,8 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
               sizeColumns={form.size_columns}
               onUpdateSize={updateSize}
               onUpdateItem={updateItem}
+              onUpdateQuantity={updateQuantity}
+              onToggleSizes={toggleItemSizes}
               onAddSize={addSizeColumn}
               onRemoveSize={removeSizeColumn}
               onAddItem={addItem}
@@ -410,13 +461,13 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
             
             {/* Open Text Field */}
             <div className="mt-4">
-              <div className="text-[11px] font-black text-gray-700 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+              <div className="text-[14px] font-black text-gray-700 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
                 <div className="h-[1px] flex-1 bg-gray-200"></div>
                 <span>CAMPO DE TEXTO ABIERTO</span>
                 <div className="h-[1px] flex-1 bg-gray-200"></div>
               </div>
-              <textarea 
-                value={form.open_text_field || ""} 
+              <textarea
+                value={form.open_text_field || ""}
                 onChange={e => set("open_text_field", e.target.value)}
                 placeholder="Ingrese información adicional aquí..."
                 rows={4}
@@ -424,17 +475,59 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
               />
             </div>
 
+            {/* Campos de Texto Adicionales (agregables) */}
+            {(form.custom_fields || []).map((cf: any, i: number) => (
+              <div key={i} className="mt-4 group relative">
+                <div className="text-[14px] font-black text-gray-700 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                  <div className="h-[1px] flex-1 bg-gray-200"></div>
+                  <input
+                    value={cf.title || ""}
+                    onChange={e => updateCustomField(i, "title", e.target.value)}
+                    placeholder="TÍTULO DEL CAMPO"
+                    className="text-center bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none font-black tracking-[0.2em] uppercase min-w-[260px] px-2"
+                  />
+                  <div className="h-[1px] flex-1 bg-gray-200"></div>
+                  <button
+                    type="button"
+                    onClick={() => removeCustomField(i)}
+                    className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-opacity ml-1"
+                    title="Eliminar este campo"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <textarea
+                  value={cf.content || ""}
+                  onChange={e => updateCustomField(i, "content", e.target.value)}
+                  placeholder="Ingrese información adicional aquí..."
+                  rows={4}
+                  className="w-full text-[12px] p-3 border border-gray-300 rounded focus:border-blue-500 focus:outline-none bg-white font-medium"
+                />
+              </div>
+            ))}
+
+            {/* Botón para agregar nuevo Campo de Texto */}
+            <div className="mt-3 flex justify-center">
+              <button
+                type="button"
+                onClick={addCustomField}
+                className="text-[12px] font-black text-blue-600 hover:text-blue-800 flex items-center gap-1 px-3 py-1.5 border border-dashed border-blue-300 hover:border-blue-500 rounded transition-colors"
+              >
+                <Plus className="h-3 w-3" /> Agregar Campo de Texto
+              </button>
+            </div>
+
             {/* Checklist (Interactive) */}
             <div className="border border-gray-400 rounded p-3 bg-gray-50/30">
               <div className="flex justify-between items-center border-b border-gray-300 pb-1 mb-2">
-                <div className="font-black text-[11px]">Checklist de Procesos y Acabados</div>
-                <button onClick={addChecklistItem} className="text-[9px] font-black text-blue-600 hover:text-blue-800 flex items-center gap-0.5">
+                <div className="font-black text-[14px]">Checklist de Procesos y Acabados</div>
+                <button onClick={addChecklistItem} className="text-[12px] font-black text-blue-600 hover:text-blue-800 flex items-center gap-0.5">
                   <Plus className="h-2.5 w-2.5" /> Agregar Item
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-x-8 gap-y-1.5">
                 {(form.checklist_items || []).map((it: any, i: number) => (
-                  <div key={i} className="flex items-start gap-1.5 text-[10px] group">
+                  <div key={i} className="flex items-start gap-1.5 text-[13px] group">
                     <input 
                       type="checkbox" 
                       checked={it.checked} 
@@ -451,7 +544,7 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
                         value={it.note} 
                         onChange={e => updateChecklistItem(i, "note", e.target.value)}
                         placeholder="(Nota...)"
-                        className="text-gray-500 bg-transparent border-b border-transparent focus:border-gray-300 focus:outline-none text-[9px] w-full"
+                        className="text-gray-500 bg-transparent border-b border-transparent focus:border-gray-300 focus:outline-none text-[12px] w-full"
                       />
                     </div>
                     <button onClick={() => removeChecklistItem(i)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-opacity">
@@ -460,9 +553,16 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
                   </div>
                 ))}
               </div>
-              <div className="text-[9px] mt-3 pt-2 border-t border-gray-200 text-gray-600">
-                <span className="font-black">Método de Aprobación:</span> Seguir CAD y enviar foto para aprobación final
+              <div className="text-[12px] mt-3 pt-2 border-t border-gray-200 text-gray-600 flex items-center gap-2">
+                <span className="font-black whitespace-nowrap">Método de Aprobación:</span>
+                <input
+                  value={form.approval_method || ""}
+                  onChange={e => set("approval_method", e.target.value)}
+                  placeholder="Escribe el método de aprobación..."
+                  className="flex-1 bg-transparent border-b border-gray-200 focus:border-blue-400 focus:outline-none text-[12px] text-gray-600"
+                />
               </div>
+
             </div>
           </div>
         </div>
@@ -480,15 +580,15 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
         <div className="border border-gray-400 rounded p-3 bg-gray-50">
           <div className="font-black text-[12px] mb-2">Especificaciones de Empaque (Packing Dept)</div>
           <div className="flex items-start gap-2 mb-3">
-            <span className="text-[10px] font-bold whitespace-nowrap mt-1">Instrucciones:</span>
+            <span className="text-[13px] font-bold whitespace-nowrap mt-1">Instrucciones:</span>
             <textarea value={form.finishing_notes} onChange={e => set("finishing_notes", e.target.value)}
               placeholder="Instrucciones de doblado, cajas y empaque..."
               rows={2}
-              className="flex-1 text-[10px] border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-blue-400 bg-white resize-none" />
+              className="flex-1 text-[13px] border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-blue-400 bg-white resize-none" />
           </div>
 
           <div className="mb-2">
-            <div className="text-[9px] font-black text-gray-500 uppercase mb-1">Adjuntos de Empaque (Guías, Etiquetas, PDF)</div>
+            <div className="text-[12px] font-black text-gray-500 uppercase mb-1">Adjuntos de Empaque (Guías, Etiquetas, PDF)</div>
             <AttachmentUploader
               attachments={form.packing_attachments || []}
               onAdd={handlePackingFileChange}
@@ -498,30 +598,21 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
             />
           </div>
 
-          <div className="text-[10px] mt-2">
-            <span className="font-black">Cantidades por Caja (Bulk): </span>
-            <span className="text-gray-600">
-              {form.size_columns.map((s: string) => {
-                const t = form.items.reduce((a: number, it: any) => a + (Number(it.sizes?.[s]) || 0), 0)
-                return t > 0 ? `${s}: ${t}` : null
-              }).filter(Boolean).join(' | ') || 'Se calculará automáticamente'}
-            </span>
-          </div>
         </div>
 
         {/* ── FINANCIAL SUMMARY ── */}
         <div className="flex justify-end">
           <div className="w-[280px] bg-slate-50 border border-gray-300 rounded p-4 space-y-2">
-            <div className="flex justify-between items-center text-[10px] font-bold text-gray-500 uppercase">
+            <div className="flex justify-between items-center text-[13px] font-bold text-gray-500 uppercase">
               <span>Subtotal:</span>
               <span className="text-gray-700">${(form.amounts?.subtotal || 0).toFixed(2)}</span>
             </div>
-            <div className="flex justify-between items-center text-[10px] font-bold text-gray-500 uppercase">
+            <div className="flex justify-between items-center text-[13px] font-bold text-gray-500 uppercase">
               <span>Sales Tax (0%):</span>
               <span className="text-gray-700">$0.00</span>
             </div>
             <div className="pt-2 border-t border-gray-300 flex justify-between items-end">
-              <span className="text-[10px] font-black text-[#0091D5] uppercase tracking-widest">Total Amount:</span>
+              <span className="text-[13px] font-black text-[#0091D5] uppercase tracking-widest">Total Amount:</span>
               <span className="text-xl font-black text-gray-800">${(form.amounts?.total || 0).toFixed(2)}</span>
             </div>
           </div>
@@ -530,11 +621,11 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
         {/* ── FOOTER ACTIONS ── */}
         <div className="flex justify-end gap-3 pt-3 border-t border-gray-200">
           <Button variant="outline" onClick={onCancel} disabled={isLoading || isUploading}
-            className="h-9 px-6 text-[10px] font-black uppercase border-gray-300">
+            className="h-9 px-6 text-[13px] font-black uppercase border-gray-300">
             <X className="h-3.5 w-3.5 mr-1" /> Cancelar
           </Button>
           <Button onClick={handleSave} disabled={isLoading || isUploading}
-            className="h-9 px-8 text-[10px] font-black uppercase bg-[#0F172A] text-white hover:bg-slate-700 shadow-lg">
+            className="h-9 px-8 text-[13px] font-black uppercase bg-[#0F172A] text-white hover:bg-slate-700 shadow-lg">
             {isLoading || isUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Save className="h-3.5 w-3.5 mr-1" />}
             {isUploading ? "Subiendo archivos..." : isLoading ? "Guardando..." : "Guardar Orden"}
           </Button>
