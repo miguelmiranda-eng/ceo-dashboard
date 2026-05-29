@@ -371,19 +371,13 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
                 </div>
               </td>
 
-              {/* Center: WO# + PO + Client */}
+              {/* Center: WO# + Client */}
               <td className="border border-gray-400 p-3 text-center align-middle w-[42%] bg-gray-50">
                 <div className="text-[12px] font-bold text-gray-500 uppercase tracking-widest mb-1">Work Order</div>
                 <div className="font-black text-3xl leading-tight tracking-tight text-gray-700">
                   #{form.invoice_id || <span className="text-gray-300">AUTO</span>}
                 </div>
-                <div className="flex items-center justify-center gap-1 mt-2">
-                  <span className="text-[12px] font-black text-gray-500">PO:</span>
-                  <input value={form.customer_po} onChange={e => set("customer_po", e.target.value)}
-                    placeholder="#19029"
-                    className="text-xl font-black text-center border-b-2 border-gray-300 focus:border-blue-500 focus:outline-none w-36 bg-transparent" />
-                </div>
-                <div className="mt-2">
+                <div className="mt-3">
                   <select value={form.client} onChange={e => set("client", e.target.value)}
                     className="text-sm font-bold text-center border border-gray-300 rounded px-2 py-1 w-full focus:outline-none focus:border-blue-400 uppercase bg-white">
                     <option value="">— Seleccionar Cliente —</option>
