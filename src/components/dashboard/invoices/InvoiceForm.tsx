@@ -45,6 +45,11 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
   const [isUploading, setIsUploading] = useState(false)
   const [selectedImage, setSelectedImage] = useState<any | null>(null)
   const [options, setOptions] = useState<any>(null)
+  const [approvalOptions, setApprovalOptions] = useState<string[]>(() => {
+    const base = ["Por foto (Produccion)", "PP Sample", "Reorden"]
+    const current = inv?.approval_method
+    return current && !base.includes(current) ? [...base, current] : base
+  })
 
   const [form, setForm] = useState<any>({
     invoice_id: inv?.invoice_id,
@@ -73,9 +78,11 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
           return typeof al === 'string' ? { label: "", url: al } : (al || { label: "", url: "" })
         })
       : [
-          { label: "SEPS (Separaciones)", url: "" },
-          { label: "TAGS (Etiquetas)", url: "" },
-          { label: "TAGS DOBLES", url: "" }
+          { label: "FRONT", url: "" },
+          { label: "BACK", url: "" },
+          { label: "L SLEEVE", url: "" },
+          { label: "R SLEEVE", url: "" },
+          { label: "NECK LABEL 1", url: "" }
         ],
     size_columns: inv?.size_columns || [...DEFAULT_SIZES],
     items: inv?.items?.length > 0
@@ -99,13 +106,32 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
     production_attachments: inv?.production_attachments || inv?.attachments || [],
     packing_attachments: inv?.packing_attachments || [],
     open_text_field: inv?.open_text_field || "",
-    approval_method: inv?.approval_method || "Seguir CAD y enviar foto para aprobación final",
+    approval_method: inv?.approval_method || "Por foto (Produccion)",
     custom_fields: inv?.custom_fields || [],
     checklist_items: inv?.checklist_items || [
-      { label: "Front Print", note: "(Según CAD)", checked: false },
-      { label: "Neck Label", note: "(Etiqueta de cuello)", checked: false },
-      { label: "Finishing", note: "(Acabado)", checked: false },
-      { label: "Pick & Pack", note: "(Selección y empaque)", checked: false },
+      { label: "NECK LABEL PRINT", note: "", checked: false },
+      { label: "ORIGINAL VENDOR TAG", note: "", checked: false },
+      { label: "PUFF INK", note: "", checked: false },
+      { label: "HD INK", note: "", checked: false },
+      { label: "GLITTER INK", note: "", checked: false },
+      { label: "UV INK", note: "", checked: false },
+      { label: "RHINESTONE", note: "", checked: false },
+      { label: "JUMBO PRINT", note: "", checked: false },
+    ],
+    packing_checklist_items: inv?.packing_checklist_items || [
+      { label: "BULK PACK", note: "", checked: false },
+      { label: "PREPACK", note: "", checked: false },
+      { label: "PICK & PACK", note: "", checked: false },
+      { label: "FOLD", note: "", checked: false },
+      { label: "INDIVIDUAL POLYBAG", note: "", checked: false },
+      { label: "PREPACK POLYBAG", note: "", checked: false },
+      { label: "MASTER BAG", note: "", checked: false },
+      { label: "UPC STICKER", note: "", checked: false },
+      { label: "SHIPPING LABEL", note: "", checked: false },
+      { label: "BOX ID LABEL", note: "", checked: false },
+    ],
+    packing_groups: inv?.packing_groups || [
+      { po: "", content: "" },
     ],
   })
 
@@ -178,8 +204,7 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
     return { ...p, items, amounts: calcTotals(items) }
   })
 
-  const addSizeColumn = () => {
-    const name = prompt("Nombre de la nueva talla (ej: 5XL, Youth S):")
+  const addSizeColumn = (name: string) => {
     if (!name) return
     const clean = name.toUpperCase().trim()
     if (form.size_columns.includes(clean)) return
@@ -280,22 +305,46 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
     set("checklist_items", items)
   }
 
-  const addCustomField = () => {
-    const fields = [...(form.custom_fields || [])]
-    fields.push({ title: "CAMPO DE TEXTO ABIERTO", content: "" })
-    set("custom_fields", fields)
+  const togglePackingChecklist = (idx: number) => {
+    const items = [...(form.packing_checklist_items || [])]
+    items[idx] = { ...items[idx], checked: !items[idx].checked }
+    set("packing_checklist_items", items)
   }
 
-  const updateCustomField = (idx: number, field: string, val: any) => {
-    const fields = [...(form.custom_fields || [])]
-    fields[idx] = { ...fields[idx], [field]: val }
-    set("custom_fields", fields)
+  const addPackingChecklistItem = () => {
+    const items = [...(form.packing_checklist_items || [])]
+    items.push({ label: "Nuevo Item", note: "", checked: false })
+    set("packing_checklist_items", items)
   }
 
-  const removeCustomField = (idx: number) => {
-    const fields = [...(form.custom_fields || [])]
-    fields.splice(idx, 1)
-    set("custom_fields", fields)
+  const updatePackingChecklistItem = (idx: number, field: string, val: any) => {
+    const items = [...(form.packing_checklist_items || [])]
+    items[idx] = { ...items[idx], [field]: val }
+    set("packing_checklist_items", items)
+  }
+
+  const removePackingChecklistItem = (idx: number) => {
+    const items = [...(form.packing_checklist_items || [])]
+    items.splice(idx, 1)
+    set("packing_checklist_items", items)
+  }
+
+  const addPackingGroup = () => {
+    const groups = [...(form.packing_groups || [])]
+    groups.push({ po: "", content: "" })
+    set("packing_groups", groups)
+  }
+
+  const updatePackingGroup = (idx: number, field: string, val: any) => {
+    const groups = [...(form.packing_groups || [])]
+    groups[idx] = { ...groups[idx], [field]: val }
+    set("packing_groups", groups)
+  }
+
+  const removePackingGroup = (idx: number) => {
+    const groups = [...(form.packing_groups || [])]
+    groups.splice(idx, 1)
+    set("packing_groups", groups)
   }
 
   const handleSave = () => {
@@ -453,64 +502,6 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
               onRemoveItem={removeItem}
             />
             
-            {/* Open Text Field */}
-            <div className="mt-4">
-              <div className="text-[14px] font-black text-gray-700 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                <div className="h-[1px] flex-1 bg-gray-200"></div>
-                <span>CAMPO DE TEXTO ABIERTO</span>
-                <div className="h-[1px] flex-1 bg-gray-200"></div>
-              </div>
-              <textarea
-                value={form.open_text_field || ""}
-                onChange={e => set("open_text_field", e.target.value)}
-                placeholder="Ingrese información adicional aquí..."
-                rows={4}
-                className="w-full text-[12px] p-3 border border-gray-300 rounded focus:border-blue-500 focus:outline-none bg-white font-medium"
-              />
-            </div>
-
-            {/* Campos de Texto Adicionales (agregables) */}
-            {(form.custom_fields || []).map((cf: any, i: number) => (
-              <div key={i} className="mt-4 group relative">
-                <div className="text-[14px] font-black text-gray-700 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                  <div className="h-[1px] flex-1 bg-gray-200"></div>
-                  <input
-                    value={cf.title || ""}
-                    onChange={e => updateCustomField(i, "title", e.target.value)}
-                    placeholder="TÍTULO DEL CAMPO"
-                    className="text-center bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none font-black tracking-[0.2em] uppercase min-w-[260px] px-2"
-                  />
-                  <div className="h-[1px] flex-1 bg-gray-200"></div>
-                  <button
-                    type="button"
-                    onClick={() => removeCustomField(i)}
-                    className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-opacity ml-1"
-                    title="Eliminar este campo"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-                <textarea
-                  value={cf.content || ""}
-                  onChange={e => updateCustomField(i, "content", e.target.value)}
-                  placeholder="Ingrese información adicional aquí..."
-                  rows={4}
-                  className="w-full text-[12px] p-3 border border-gray-300 rounded focus:border-blue-500 focus:outline-none bg-white font-medium"
-                />
-              </div>
-            ))}
-
-            {/* Botón para agregar nuevo Campo de Texto */}
-            <div className="mt-3 flex justify-center">
-              <button
-                type="button"
-                onClick={addCustomField}
-                className="text-[12px] font-black text-blue-600 hover:text-blue-800 flex items-center gap-1 px-3 py-1.5 border border-dashed border-blue-300 hover:border-blue-500 rounded transition-colors"
-              >
-                <Plus className="h-3 w-3" /> Agregar Campo de Texto
-              </button>
-            </div>
-
             {/* Checklist (Interactive) */}
             <div className="border border-gray-400 rounded p-3 bg-gray-50/30">
               <div className="flex justify-between items-center border-b border-gray-300 pb-1 mb-2">
@@ -549,12 +540,27 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
               </div>
               <div className="text-[12px] mt-3 pt-2 border-t border-gray-200 text-gray-600 flex items-center gap-2">
                 <span className="font-black whitespace-nowrap">Método de Aprobación:</span>
-                <input
+                <select
                   value={form.approval_method || ""}
                   onChange={e => set("approval_method", e.target.value)}
-                  placeholder="Escribe el método de aprobación..."
                   className="flex-1 bg-transparent border-b border-gray-200 focus:border-blue-400 focus:outline-none text-[12px] text-gray-600"
-                />
+                >
+                  {approvalOptions.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const val = window.prompt("Nueva opción de método de aprobación:")?.trim()
+                    if (!val) return
+                    if (!approvalOptions.includes(val)) setApprovalOptions(p => [...p, val])
+                    set("approval_method", val)
+                  }}
+                  className="text-blue-600 hover:text-blue-800 flex items-center gap-0.5 text-[12px] font-black whitespace-nowrap"
+                >
+                  <Plus className="h-3 w-3" /> Agregar
+                </button>
               </div>
 
             </div>
@@ -573,13 +579,6 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
         {/* ── PACKING SPECS ── */}
         <div className="border border-gray-400 rounded p-3 bg-gray-50">
           <div className="font-black text-[12px] mb-2">Especificaciones de Empaque (Packing Dept)</div>
-          <div className="flex items-start gap-2 mb-3">
-            <span className="text-[13px] font-bold whitespace-nowrap mt-1">Instrucciones:</span>
-            <textarea value={form.finishing_notes} onChange={e => set("finishing_notes", e.target.value)}
-              placeholder="Instrucciones de doblado, cajas y empaque..."
-              rows={2}
-              className="flex-1 text-[13px] border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-blue-400 bg-white resize-none" />
-          </div>
 
           <div className="mb-2">
             <div className="text-[12px] font-black text-gray-500 uppercase mb-1">Adjuntos de Empaque (Guías, Etiquetas, PDF)</div>
@@ -589,7 +588,78 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
               onRemove={removePackingAttachment}
               onSelect={setSelectedImage}
               isUploading={isUploading}
+              title={null}
             />
+          </div>
+
+          {/* Packing Checklist (Interactive) */}
+          <div className="border border-gray-400 rounded p-3 bg-gray-50/30 mt-3">
+            <div className="flex justify-between items-center border-b border-gray-300 pb-1 mb-2">
+              <div className="font-black text-[14px]">Checklist de Empaque</div>
+              <button onClick={addPackingChecklistItem} className="text-[12px] font-black text-blue-600 hover:text-blue-800 flex items-center gap-0.5">
+                <Plus className="h-2.5 w-2.5" /> Agregar Item
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-1.5">
+              {(form.packing_checklist_items || []).map((it: any, i: number) => (
+                <div key={i} className="flex items-start gap-1.5 text-[13px] group">
+                  <input
+                    type="checkbox"
+                    checked={it.checked}
+                    onChange={() => togglePackingChecklist(i)}
+                    className="w-3.5 h-3.5 border border-gray-500 rounded-sm mt-0.5 cursor-pointer accent-blue-600"
+                  />
+                  <div className="flex-1">
+                    <input
+                      value={it.label}
+                      onChange={e => updatePackingChecklistItem(i, "label", e.target.value)}
+                      className="font-black bg-transparent border-b border-transparent focus:border-gray-300 focus:outline-none uppercase w-full"
+                    />
+                    <input
+                      value={it.note}
+                      onChange={e => updatePackingChecklistItem(i, "note", e.target.value)}
+                      placeholder="(Nota...)"
+                      className="text-gray-500 bg-transparent border-b border-transparent focus:border-gray-300 focus:outline-none text-[12px] w-full"
+                    />
+                  </div>
+                  <button onClick={() => removePackingChecklistItem(i)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-opacity">
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Empaque por Grupo (Store PO) */}
+          <div className="border border-gray-400 rounded p-3 bg-gray-50/30 mt-3">
+            <div className="flex justify-between items-center border-b border-gray-300 pb-1 mb-2">
+              <div className="font-black text-[14px]">Empaque por Grupo (Store PO)</div>
+              <button onClick={addPackingGroup} className="text-[12px] font-black text-blue-600 hover:text-blue-800 flex items-center gap-0.5">
+                <Plus className="h-2.5 w-2.5" /> Agregar Grupo
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {(form.packing_groups || []).map((g: any, i: number) => (
+                <div key={i} className="relative border border-gray-200 rounded p-2 bg-white group">
+                  <input
+                    value={g.po}
+                    onChange={e => updatePackingGroup(i, "po", e.target.value)}
+                    placeholder="STORE / PO #"
+                    className="font-black text-[12px] uppercase bg-transparent border-b border-gray-200 focus:border-blue-400 focus:outline-none w-full mb-1.5 pr-5"
+                  />
+                  <textarea
+                    value={g.content}
+                    onChange={e => updatePackingGroup(i, "content", e.target.value)}
+                    placeholder="Instrucciones de empaque para este grupo..."
+                    rows={3}
+                    className="w-full text-[13px] border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-blue-400 bg-white resize-none"
+                  />
+                  <button onClick={() => removePackingGroup(i)} className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-opacity">
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
 
         </div>

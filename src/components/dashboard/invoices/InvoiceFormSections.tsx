@@ -46,6 +46,17 @@ export function ArtLinksPanel({ artLinks, onChange }: { artLinks: { label: strin
   )
 }
 
+// Tallas estándar del mercado de serigrafía / impresión (DTF, DTG, vinilo)
+const SIZE_GROUPS: { label: string; sizes: string[] }[] = [
+  { label: "Adulto", sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"] },
+  { label: "Tall (Alto)", sizes: ["LT", "XLT", "2XLT", "3XLT", "4XLT"] },
+  { label: "Juvenil (Youth)", sizes: ["YXS", "YS", "YM", "YL", "YXL"] },
+  { label: "Infantil (Toddler)", sizes: ["2T", "3T", "4T", "5T", "6T"] },
+  { label: "Bebé (Infant)", sizes: ["NB", "6M", "12M", "18M", "24M"] },
+  { label: "Mujer (Ladies)", sizes: ["WXS", "WS", "WM", "WL", "WXL", "W2XL", "W3XL"] },
+  { label: "Talla Única", sizes: ["OS"] },
+]
+
 // ─── Size Matrix Row ────────────────────────────────────────────────────────
 export function SizeMatrixTable({
   items, sizeColumns, onUpdateSize, onUpdateItem, onUpdateQuantity, onToggleSizes, onAddSize, onRemoveSize, onAddItem, onRemoveItem
@@ -55,7 +66,7 @@ export function SizeMatrixTable({
   onUpdateItem: (idx: number, field: string, val: any) => void;
   onUpdateQuantity: (idx: number, val: string) => void;
   onToggleSizes: (idx: number) => void;
-  onAddSize: () => void; onRemoveSize: (s: string) => void;
+  onAddSize: (size: string) => void; onRemoveSize: (s: string) => void;
   onAddItem: () => void; onRemoveItem: (i: number) => void;
 }) {
   return (
@@ -77,8 +88,24 @@ export function SizeMatrixTable({
             <th className="border border-gray-400 py-1 px-2 text-center font-black w-12">Total</th>
             <th className="border border-gray-400 py-1 px-2 text-center font-black w-16">Price</th>
             <th className="border border-gray-400 py-1 px-2 text-center font-black w-16">Amount</th>
-            <th className="border border-gray-300 py-1 px-1 w-6 bg-blue-50">
-              <button onClick={onAddSize} title="Add size" className="text-blue-600 hover:text-blue-800 font-black text-[13px]">+S</button>
+            <th className="border border-gray-300 py-1 px-1 w-10 bg-blue-50">
+              <select
+                value=""
+                onChange={e => { if (e.target.value) onAddSize(e.target.value); e.currentTarget.value = "" }}
+                title="Agregar talla"
+                className="text-blue-600 hover:text-blue-800 font-black text-[13px] bg-transparent border-none focus:outline-none cursor-pointer"
+              >
+                <option value="">+S</option>
+                {SIZE_GROUPS.map(g => {
+                  const available = g.sizes.filter(s => !sizeColumns.includes(s))
+                  if (available.length === 0) return null
+                  return (
+                    <optgroup key={g.label} label={g.label}>
+                      {available.map(s => <option key={s} value={s}>{s}</option>)}
+                    </optgroup>
+                  )
+                })}
+              </select>
             </th>
           </tr>
         </thead>
@@ -188,17 +215,18 @@ export function SizeMatrixTable({
 
 // ─── Attachment Uploader ────────────────────────────────────────────────────
 export function AttachmentUploader({
-  attachments, onAdd, onRemove, onSelect, isUploading
+  attachments, onAdd, onRemove, onSelect, isUploading, title = "MOCKUPS / CADS"
 }: {
   attachments: any[]; onAdd: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemove: (i: number) => void; onSelect: (f: any) => void; isUploading: boolean;
+  title?: string | null;
 }) {
   const images = attachments.filter(a => a?.type === 'image' || a?.mime?.startsWith('image/'))
   const docs = attachments.filter(a => !(a?.type === 'image' || a?.mime?.startsWith('image/')))
 
   return (
     <div className="border border-gray-300 rounded p-3 bg-gray-50">
-      <div className="font-black text-[14px] border-b border-gray-200 pb-1 mb-2">Adjuntos Visuales / Visual Attachments</div>
+      {title && <div className="font-black text-[14px] border-b border-gray-200 pb-1 mb-2">{title}</div>}
       <div className="flex flex-wrap gap-3 mb-2">
         {images.map((f, i) => (
           <div key={i} className="relative group cursor-pointer" onClick={() => onSelect(f)}>

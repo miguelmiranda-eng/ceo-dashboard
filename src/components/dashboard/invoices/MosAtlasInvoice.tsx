@@ -316,7 +316,7 @@ export function MosAtlasInvoice({ invoice, showFinancials = false }: MosAtlasInv
         {/* ── VISUAL ATTACHMENTS ── */}
         {visualAttachments.length > 0 && (
           <div className="border border-gray-300 rounded p-3 bg-gray-50/30">
-            <div className="font-black text-[11px] border-b border-gray-200 pb-1 mb-2 uppercase tracking-widest">Adjuntos Visuales / Visual Attachments</div>
+            <div className="font-black text-[11px] border-b border-gray-200 pb-1 mb-2 uppercase tracking-widest">MOCKUPS / CADS</div>
             <div className="flex flex-wrap gap-4">
               {visualAttachments.map((file: any, i: number) => {
                 const isPdf = file.mime === 'application/pdf' || file.name?.toLowerCase().endsWith('.pdf');
