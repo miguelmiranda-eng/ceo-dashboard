@@ -34,6 +34,14 @@ import {
 } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/lib/i18n"
+import {
+  INVOICE_STATUSES,
+  getStatusDef,
+  deriveStatus,
+  canTransition,
+} from "@/lib/invoice-status"
+import { inRange } from "@/lib/date-range"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -60,13 +68,20 @@ import {
 } from "@tanstack/react-table"
 
 export default function InvoicesPage() {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const [search, setSearch] = useState("")
   const [sorting, setSorting] = useState<SortingState>([])
   const [isCreating, setIsCreating] = useState<any>(false)
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null)
   const [previewShowFinancials, setPreviewShowFinancials] = useState(false)
   const [showDeleted, setShowDeleted] = useState(false)
+  // ── Advanced filters: Status · Client · Company · Dates (Invoice Date) ──
+  const [showFilters, setShowFilters] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [clientFilter, setClientFilter] = useState<string>("all")
+  const [companyFilter, setCompanyFilter] = useState<string>("all")
+  const [dateFrom, setDateFrom] = useState("")
+  const [dateTo, setDateTo] = useState("")
 
   const handlePrint = () => {
     const printContent = document.getElementById('prosper-invoice');
@@ -185,17 +200,10 @@ export default function InvoicesPage() {
       cell: ({ row }: any) => {
         const status = row.getValue("status") as string
         const invoiceId = row.original.invoice_id
-        
-        const STATUS_OPTIONS = [
-          { id: 'draft', label: 'Quote', color: 'bg-slate-100 text-slate-500 border-slate-200', icon: FileText },
-          { id: 'sent', label: 'Invoiced', color: 'bg-blue-50 text-blue-600 border-blue-100', icon: Clock },
-          { id: 'artwork_pending', label: 'Art Pending', color: 'bg-amber-50 text-amber-600 border-amber-200', icon: AlertCircle },
-          { id: 'paid', label: 'Paid / Ready', color: 'bg-emerald-50 text-emerald-600 border-emerald-100', icon: CheckCircle2 },
-          { id: 'overdue', label: 'Overdue', color: 'bg-rose-50 text-rose-600 border-rose-100', icon: AlertCircle },
-          { id: 'cancelled', label: 'Cancelled', color: 'bg-red-50 text-red-500 border-red-100', icon: XCircle },
-        ]
 
-        const currentStatus = STATUS_OPTIONS.find(s => s.id === status) || STATUS_OPTIONS[0]
+        // Surface derived overdue (billed + past due) without a manual mark.
+        const effective = deriveStatus(row.original)
+        const currentStatus = getStatusDef(effective)
         const Icon = currentStatus.icon
 
         const handleStatusChange = async (newStatus: string) => {
@@ -205,36 +213,57 @@ export default function InvoicesPage() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ status: newStatus })
             })
+            // Automation: moving to "invoice" emails the PDF to the client (dry-run until Resend is configured).
+            if (newStatus === 'invoice') {
+              try {
+                const r = await fetch(`/api/invoices/${invoiceId}/send`, { method: 'POST' })
+                const j = await r.json().catch(() => ({}))
+                if (j?.dryRun) toast.info(`Borrador de Invoice generado (no enviado) → ${j.to || 'sin email'}`)
+                else if (j?.sent) toast.success(`Invoice enviada a ${j.to}`)
+                else if (j?.skipped) toast.message('Invoice ya se había enviado antes')
+                else if (j?.error === 'no_recipient') toast.warning('El cliente no tiene email: no se envió')
+                else if (j?.error) toast.error(`No se pudo enviar: ${j.error}`)
+              } catch { /* non-blocking */ }
+            }
             mutate()
           } catch (err) {
             console.error(err)
           }
         }
-        
+
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className={cn("h-auto p-0 hover:bg-transparent group")}>
                 <Badge variant="outline" className={cn(
-                  currentStatus.color, 
+                  currentStatus.badge,
                   "uppercase text-[9px] font-black px-2 py-1 flex items-center gap-1.5 w-fit border rounded-full cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm"
                 )}>
                   <Icon className="h-3 w-3" />
-                  {currentStatus.label}
+                  {currentStatus.label[language]}
                 </Badge>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="bg-white border-slate-200 shadow-xl min-w-[160px] p-1">
-              {STATUS_OPTIONS.map((opt) => (
-                <DropdownMenuItem 
-                  key={opt.id}
-                  onClick={() => handleStatusChange(opt.id)}
-                  className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-50 rounded-md transition-colors"
-                >
-                  <div className={cn("w-2 h-2 rounded-full", opt.color.split(' ')[0])} />
-                  <span className="text-[10px] font-black uppercase tracking-tight text-slate-700">{opt.label}</span>
-                </DropdownMenuItem>
-              ))}
+            <DropdownMenuContent align="start" className="bg-white border-slate-200 shadow-xl min-w-[180px] p-1">
+              {INVOICE_STATUSES.map((opt) => {
+                const isCurrent = opt.id === currentStatus.id
+                const allowed = isCurrent || canTransition(effective, opt.id)
+                return (
+                  <DropdownMenuItem
+                    key={opt.id}
+                    disabled={!allowed}
+                    onClick={() => allowed && !isCurrent && handleStatusChange(opt.id)}
+                    className={cn(
+                      "flex items-center gap-2 p-2 rounded-md transition-colors",
+                      allowed ? "cursor-pointer hover:bg-slate-50" : "opacity-40 cursor-not-allowed"
+                    )}
+                  >
+                    <div className={cn("w-2 h-2 rounded-full", opt.dot)} />
+                    <span className="text-[10px] font-black uppercase tracking-tight text-slate-700">{opt.label[language]}</span>
+                    {isCurrent && <CheckCircle2 className="h-3 w-3 ml-auto text-emerald-500" />}
+                  </DropdownMenuItem>
+                )
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
         )
@@ -314,7 +343,43 @@ export default function InvoicesPage() {
     },
   ], [showDeleted, t, mutate])
 
-  const tableData = useMemo(() => invoices || [], [invoices])
+  // Filter options derived from the data actually present.
+  const clientOptions = useMemo(
+    () => Array.from(new Set((invoices || []).map((i: any) => i.client).filter(Boolean))).sort(),
+    [invoices],
+  )
+  const companyOptions = useMemo(
+    () => Array.from(new Set((invoices || []).map((i: any) => i.branding).filter(Boolean))).sort(),
+    [invoices],
+  )
+
+  const activeFilterCount = [
+    statusFilter !== "all",
+    clientFilter !== "all",
+    companyFilter !== "all",
+    !!dateFrom,
+    !!dateTo,
+  ].filter(Boolean).length
+
+  const clearFilters = () => {
+    setStatusFilter("all"); setClientFilter("all"); setCompanyFilter("all")
+    setDateFrom(""); setDateTo("")
+  }
+
+  const tableData = useMemo(() => {
+    let rows = invoices || []
+    if (statusFilter !== "all") rows = rows.filter((i: any) => deriveStatus(i) === statusFilter)
+    if (clientFilter !== "all") rows = rows.filter((i: any) => i.client === clientFilter)
+    if (companyFilter !== "all") rows = rows.filter((i: any) => (i.branding || "") === companyFilter)
+    if (dateFrom || dateTo) {
+      const range = {
+        from: dateFrom ? new Date(`${dateFrom}T00:00:00`) : null,
+        to: dateTo ? new Date(`${dateTo}T23:59:59`) : null,
+      }
+      rows = rows.filter((i: any) => inRange(i.dates?.created, range))
+    }
+    return rows
+  }, [invoices, statusFilter, clientFilter, companyFilter, dateFrom, dateTo])
 
   const table = useReactTable({
     data: tableData,
@@ -428,11 +493,95 @@ export default function InvoicesPage() {
               <Trash2 className="mr-2 h-4 w-4" /> 
               {showDeleted ? "Viewing Trash" : "Trash"}
             </Button>
-            <Button variant="outline" className="border-slate-200 bg-white text-slate-600 hover:bg-slate-50 h-12 px-6 rounded-xl font-black text-xs uppercase tracking-widest">
-              <Filter className="mr-2 h-4 w-4" /> Advanced Filters
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters((s) => !s)}
+              className={cn(
+                "h-12 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all",
+                showFilters || activeFilterCount > 0
+                  ? "border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100"
+                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+              )}
+            >
+              <Filter className="mr-2 h-4 w-4" /> {language === "es" ? "Filtros" : "Filters"}
+              {activeFilterCount > 0 && (
+                <span className="ml-2 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-blue-600 text-white text-[10px] font-black">
+                  {activeFilterCount}
+                </span>
+              )}
             </Button>
           </div>
         </div>
+
+        {/* Advanced Filters Panel */}
+        {showFilters && (
+          <div className="px-6 py-5 border-b border-slate-100 bg-white animate-in slide-in-from-top-2 duration-300">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+              {/* Status */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t("status")}</label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full h-11 px-3 rounded-xl border-2 border-slate-200 bg-white text-xs font-bold uppercase text-slate-700 focus:outline-none focus:border-blue-400"
+                >
+                  <option value="all">{language === "es" ? "Todos" : "All"}</option>
+                  {INVOICE_STATUSES.map((s) => (
+                    <option key={s.id} value={s.id}>{s.label[language]}</option>
+                  ))}
+                </select>
+              </div>
+              {/* Client */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t("client")}</label>
+                <select
+                  value={clientFilter}
+                  onChange={(e) => setClientFilter(e.target.value)}
+                  className="w-full h-11 px-3 rounded-xl border-2 border-slate-200 bg-white text-xs font-bold uppercase text-slate-700 focus:outline-none focus:border-blue-400"
+                >
+                  <option value="all">{language === "es" ? "Todos" : "All"}</option>
+                  {clientOptions.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              {/* Company */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{language === "es" ? "Compañía" : "Company"}</label>
+                <select
+                  value={companyFilter}
+                  onChange={(e) => setCompanyFilter(e.target.value)}
+                  className="w-full h-11 px-3 rounded-xl border-2 border-slate-200 bg-white text-xs font-bold uppercase text-slate-700 focus:outline-none focus:border-blue-400 disabled:opacity-40"
+                  disabled={companyOptions.length === 0}
+                >
+                  <option value="all">{language === "es" ? "Todas" : "All"}</option>
+                  {companyOptions.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              {/* Date From (Invoice Date) */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{language === "es" ? "Desde" : "From"}</label>
+                <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+                  className="h-11 bg-white border-2 border-slate-200 text-xs font-bold rounded-xl focus:border-blue-400" />
+              </div>
+              {/* Date To */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{language === "es" ? "Hasta" : "To"}</label>
+                <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+                  className="h-11 bg-white border-2 border-slate-200 text-xs font-bold rounded-xl focus:border-blue-400" />
+              </div>
+            </div>
+            {activeFilterCount > 0 && (
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  {tableData.length} {language === "es" ? "resultados" : "results"}
+                </span>
+                <Button variant="ghost" onClick={clearFilters}
+                  className="h-8 px-4 text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 rounded-lg">
+                  <XCircle className="mr-1.5 h-3.5 w-3.5" /> {language === "es" ? "Limpiar" : "Clear"}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">

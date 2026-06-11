@@ -17,7 +17,8 @@ import {
   Globe2,
   Workflow,
   Wrench,
-  Tags
+  Tags,
+  Users
 } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -49,6 +50,7 @@ export function Sidebar() {
   const navItems = [
     { title: t("matching"), icon: Globe2, href: "/dashboard" },
     { title: t("invoices"), icon: BarChart3, href: "/dashboard/invoices" },
+    { title: language === "es" ? "Clientes" : "Clients", icon: Users, href: "/dashboard/clients" },
     { title: t("workOrders"), icon: Package, href: "/dashboard/work-orders" },
   ]
 

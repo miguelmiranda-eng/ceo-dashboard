@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { LoadingOverlay } from "@/components/ui/loading-overlay"
+import { BillingOverview } from "@/components/dashboard/billing-overview"
 import {
   Select,
   SelectContent,
@@ -270,6 +271,9 @@ export default function MatchingPage() {
 
         </div>
       </div>
+
+      {/* Executive Billing Overview — 6 lifecycle metrics derived from invoice status */}
+      <BillingOverview />
 
       {/* Error Message */}
       {error && (

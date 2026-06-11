@@ -22,15 +22,16 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { INVOICE_STATUSES } from "@/lib/invoice-status"
 
-const INITIAL_INVOICE_STATUSES = [
-  { id: 'draft', label: 'Quote', color: 'bg-slate-100', text: 'text-slate-500', icon: FileText },
-  { id: 'sent', label: 'Invoiced', color: 'bg-blue-50', text: 'text-blue-600', icon: Clock },
-  { id: 'artwork_pending', label: 'Art Pending', color: 'bg-amber-50', text: 'text-amber-600', icon: AlertCircle },
-  { id: 'paid', label: 'Paid / Ready', color: 'bg-emerald-50', text: 'text-emerald-600', icon: CheckCircle2 },
-  { id: 'overdue', label: 'Overdue', color: 'bg-rose-50', text: 'text-rose-600', icon: AlertCircle },
-  { id: 'cancelled', label: 'Cancelled', color: 'bg-red-50', text: 'text-red-500', icon: XCircle },
-]
+// Sourced from the canonical invoice lifecycle (src/lib/invoice-status.ts).
+const INITIAL_INVOICE_STATUSES = INVOICE_STATUSES.map((s) => ({
+  id: s.id,
+  label: s.label.es,
+  color: s.badge.split(" ")[0],
+  text: s.badge.split(" ").slice(1).join(" "),
+  icon: s.icon,
+}))
 
 const INITIAL_PRODUCTION_STATUSES = [
   { id: 'artwork_pending', label: 'Art Pending', color: 'bg-slate-500', text: 'text-white', icon: FileText },

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Save, X, Loader2, ZoomIn, ZoomOut, Download, Plus } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Invoice, InvoiceItem, fetchOptions, normalizeImageUrl } from "@/lib/api"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -348,6 +349,15 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
   }
 
   const handleSave = () => {
+    // Invoice Date is CRITICAL — never let an order be saved without it.
+    if (!form.dates?.created) {
+      toast.error("La Invoice Date es obligatoria.")
+      return
+    }
+    if (!form.client) {
+      toast.error("Selecciona un cliente.")
+      return
+    }
     let art_links: string[] = []
     if (Array.isArray(form.art_links)) {
       art_links = form.art_links
@@ -445,10 +455,12 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
               <td className="border border-gray-400 p-3 align-top w-[30%]">
                 <div className="space-y-2 text-[13px]">
                   <div>
-                    <div className="text-[12px] font-black text-gray-400 uppercase tracking-widest">Created</div>
-                    <input type="date" value={form.dates?.created || ""}
+                    <div className="text-[12px] font-black text-[#0091D5] uppercase tracking-widest">
+                      Invoice Date <span className="text-rose-500">*</span>
+                    </div>
+                    <input type="date" required value={form.dates?.created || ""}
                       onChange={e => set("dates", { ...form.dates, created: e.target.value })}
-                      className="border-b border-gray-300 focus:border-blue-400 focus:outline-none text-[13px] font-bold w-full bg-transparent" />
+                      className={`border-b focus:outline-none text-[13px] font-bold w-full bg-transparent ${form.dates?.created ? "border-gray-300 focus:border-blue-400" : "border-rose-400 focus:border-rose-500"}`} />
                   </div>
                   <div>
                     <div className="text-[12px] font-black text-orange-500 uppercase tracking-widest">Cancel Date</div>

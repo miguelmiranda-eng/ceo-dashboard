@@ -1,5 +1,7 @@
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+import type { InvoiceStatus } from "@/lib/invoice-status"
+
 export interface Metric {
   value: number
   delta: number
@@ -72,7 +74,8 @@ export interface Invoice {
   invoice_id: string
   order_number?: string
   type: 'quote' | 'invoice'
-  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled'
+  /** Canonical lifecycle id; legacy ids (draft/sent/artwork_pending) may persist on old records. */
+  status: InvoiceStatus | 'draft' | 'sent' | 'artwork_pending'
   client: string
   customer_po?: string
   dates: { created: string; due: string }
