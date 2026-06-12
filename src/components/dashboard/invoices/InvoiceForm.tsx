@@ -397,17 +397,10 @@ export function InvoiceForm({ initialData, onSubmit, onCancel, isLoading = false
             <tr>
               {/* Left: Logo */}
               <td className="border border-gray-400 p-3 align-top w-[28%]">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-9 h-9 bg-[#0F172A] rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg viewBox="0 0 100 100" className="w-5 h-5" fill="none" stroke="white" strokeWidth="10" strokeLinecap="round">
-                      <path d="M20 50 Q50 10 80 50 T80 90" />
-                      <circle cx="50" cy="50" r="8" fill="white" stroke="none" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="font-black text-sm leading-tight">Prosper Manufacturing</div>
-                    <div className="text-[12px] text-gray-500">prospermfg.com</div>
-                  </div>
+                <div className="mb-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/prosper_logo.jpg" alt="Prosper Manufacturing" className="h-10 w-auto max-w-full object-contain" />
+                  <div className="text-[12px] text-gray-500 mt-1">prospermfg.com</div>
                 </div>
                 {/* Priority + Status badges */}
                 <div className="flex flex-wrap gap-1">
