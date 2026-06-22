@@ -39,6 +39,7 @@ import {
   getStatusDef,
   deriveStatus,
   canTransition,
+  type InvoiceStatus,
 } from "@/lib/invoice-status"
 import { inRange } from "@/lib/date-range"
 import { toast } from "sonner"
@@ -67,7 +68,44 @@ import {
   SortingState,
 } from "@tanstack/react-table"
 
-export default function InvoicesPage() {
+// ── Submodules of "Facturas y Cotizaciones" ───────────────────────────────────
+// Each route renders this same workspace scoped to a slice of the invoice
+// lifecycle, so the list/form/PDF logic lives in one place.
+export type InvoiceScope = "invoices" | "quotes" | "closing"
+
+export const INVOICE_SCOPES: Record<
+  InvoiceScope,
+  {
+    title: { en: string; es: string }
+    statuses: InvoiceStatus[]
+    /** Status stamped on a NEW document created from this submodule. */
+    defaultStatus: InvoiceStatus
+    /** Label for the "create new" button. */
+    createLabel: { en: string; es: string }
+  }
+> = {
+  invoices: {
+    title: { en: "Invoices", es: "Facturas" },
+    statuses: ["invoice", "paid", "overdue", "cancelled"],
+    defaultStatus: "invoice",
+    createLabel: { en: "New Order", es: "Nueva Orden" },
+  },
+  quotes: {
+    title: { en: "Quotes", es: "Cotizaciones" },
+    statuses: ["quote", "scheduled"],
+    defaultStatus: "quote",
+    createLabel: { en: "New Quote", es: "Nueva Cotización" },
+  },
+  closing: {
+    title: { en: "Closing · Final Bill", es: "Cierre · Final Bill" },
+    statuses: ["to_final_bill"],
+    defaultStatus: "to_final_bill",
+    createLabel: { en: "New", es: "Nuevo" },
+  },
+}
+
+export function InvoicesWorkspace({ scope = "invoices" }: { scope?: InvoiceScope }) {
+  const scopeCfg = INVOICE_SCOPES[scope]
   const { t, language } = useI18n()
   const [search, setSearch] = useState("")
   const [sorting, setSorting] = useState<SortingState>([])
@@ -115,12 +153,19 @@ export default function InvoicesPage() {
     () => fetchInvoices({ search, show_deleted: showDeleted } as any)
   )
 
+  // Restrict everything in this view to the statuses that belong to the scope.
+  const scopedInvoices = useMemo(
+    () => (invoices || []).filter((i: Invoice) => scopeCfg.statuses.includes(deriveStatus(i))),
+    [invoices, scopeCfg]
+  )
+
   const handleCreate = async (data: Partial<Invoice>) => {
     try {
       if (data.invoice_id) {
         await updateInvoice(data.invoice_id, data)
       } else {
-        await createInvoice(data)
+        // Stamp the submodule's status on brand-new docs (e.g. a quote from Cotizaciones).
+        await createInvoice(data.status ? data : { ...data, status: scopeCfg.defaultStatus })
       }
       setIsCreating(false)
       mutate()
@@ -367,7 +412,7 @@ export default function InvoicesPage() {
   }
 
   const tableData = useMemo(() => {
-    let rows = invoices || []
+    let rows = scopedInvoices
     if (statusFilter !== "all") rows = rows.filter((i: any) => deriveStatus(i) === statusFilter)
     if (clientFilter !== "all") rows = rows.filter((i: any) => i.client === clientFilter)
     if (companyFilter !== "all") rows = rows.filter((i: any) => (i.branding || "") === companyFilter)
@@ -379,7 +424,7 @@ export default function InvoicesPage() {
       rows = rows.filter((i: any) => inRange(i.dates?.created, range))
     }
     return rows
-  }, [invoices, statusFilter, clientFilter, companyFilter, dateFrom, dateTo])
+  }, [scopedInvoices, statusFilter, clientFilter, companyFilter, dateFrom, dateTo])
 
   const table = useReactTable({
     data: tableData,
@@ -393,7 +438,7 @@ export default function InvoicesPage() {
   })
 
 
-  const totals = invoices?.reduce((acc: any, inv: any) => ({
+  const totals = scopedInvoices?.reduce((acc: any, inv: any) => ({
     count: acc.count + 1,
     amount: acc.amount + (inv.amounts?.total || 0)
   }), { count: 0, amount: 0 })
@@ -406,7 +451,7 @@ export default function InvoicesPage() {
           <div className="flex items-center gap-4">
              <div className="w-2.5 h-12 bg-[#0091D5] rounded-full shadow-[0_0_20px_rgba(0,145,213,0.4)]" />
              <h1 className="text-5xl font-black text-[#0F172A] tracking-tighter uppercase italic leading-none">
-                {t("invoices")}
+                {scopeCfg.title[language]}
              </h1>
           </div>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-6 opacity-70">
@@ -482,7 +527,13 @@ export default function InvoicesPage() {
             />
           </div>
           <div className="flex items-center gap-2">
-            <Button 
+            <Button
+              onClick={() => setIsCreating(true)}
+              className="h-12 px-6 rounded-xl font-black text-xs uppercase tracking-widest bg-[#0091D5] text-white hover:bg-[#0077b0] transition-all shadow-sm"
+            >
+              <Plus className="mr-2 h-4 w-4" /> {scopeCfg.createLabel[language]}
+            </Button>
+            <Button
               variant={showDeleted ? "destructive" : "outline"}
               onClick={() => setShowDeleted(!showDeleted)}
               className={cn(
@@ -688,4 +739,8 @@ export default function InvoicesPage() {
       </Dialog>
     </div>
   )
+}
+
+export default function InvoicesPage() {
+  return <InvoicesWorkspace scope="invoices" />
 }

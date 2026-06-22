@@ -18,7 +18,11 @@ import {
   Workflow,
   Wrench,
   Tags,
-  Users
+  Users,
+  Receipt,
+  FileText,
+  FileCheck2,
+  type LucideIcon
 } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -38,6 +42,7 @@ export function Sidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const [toolsExpanded, setToolsExpanded] = useState(false)
+  const [invoicesExpanded, setInvoicesExpanded] = useState(false)
 
   const { setTheme, theme } = useTheme()
   const { setLanguage, language } = useI18n()
@@ -47,12 +52,50 @@ export function Sidebar() {
     window.location.href = "/login"
   }
 
-  const navItems = [
+  // "Facturas y Cotizaciones" is now an expandable folder with three submodules.
+  const navTop = [
     { title: t("matching"), icon: Globe2, href: "/dashboard" },
-    { title: t("invoices"), icon: BarChart3, href: "/dashboard/invoices" },
+  ]
+  const invoiceSubItems = [
+    { title: language === "es" ? "Módulo de Facturas" : "Invoices", icon: Receipt, href: "/dashboard/invoices" },
+    { title: language === "es" ? "Módulo de Cotizaciones" : "Quotes", icon: FileText, href: "/dashboard/invoices/quotes" },
+    { title: language === "es" ? "Módulo de Cierre" : "Closing", icon: FileCheck2, href: "/dashboard/invoices/closing" },
+  ]
+  const navRest = [
     { title: language === "es" ? "Clientes" : "Clients", icon: Users, href: "/dashboard/clients" },
     { title: t("workOrders"), icon: Package, href: "/dashboard/work-orders" },
   ]
+
+  const renderNavLink = (item: { title: string; icon: LucideIcon; href: string }) => {
+    const isActive = pathname === item.href
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className={cn(
+          "flex items-center gap-4 px-4 py-3.5 rounded-[1.25rem] transition-all duration-300 group relative overflow-hidden",
+          isActive
+            ? "bg-gradient-to-br from-[#0091D5] to-[#006A9C] text-white shadow-[0_8px_30px_-4px_rgba(0,145,213,0.5)] border border-white/10 scale-[1.02]"
+            : "text-slate-400 hover:text-white hover:bg-white/5 hover:scale-[1.01]"
+        )}
+      >
+        {isActive && (
+          <div className="absolute left-0 top-0 w-1.5 h-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
+        )}
+        {isActive && (
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
+        )}
+        <item.icon className={cn(
+          "h-5 w-5 min-w-[20px] transition-transform duration-300",
+          isActive ? "text-white scale-110" : "group-hover:text-[#0091D5] group-hover:scale-110"
+        )} />
+        {!collapsed && <span className={cn(
+          "text-[11px] font-black uppercase tracking-[0.15em] transition-colors",
+          isActive ? "text-white" : "group-hover:text-white"
+        )}>{item.title}</span>}
+      </Link>
+    )
+  }
 
   const toolItems = [
     { title: t("automations"), icon: Workflow, href: "/dashboard/automations" },
@@ -101,36 +144,68 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 px-4 space-y-3 mt-8">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href
-          return (
-            <Link 
-              key={item.href} 
-              href={item.href}
-              className={cn(
-                "flex items-center gap-4 px-4 py-3.5 rounded-[1.25rem] transition-all duration-300 group relative overflow-hidden",
-                isActive 
-                  ? "bg-gradient-to-br from-[#0091D5] to-[#006A9C] text-white shadow-[0_8px_30px_-4px_rgba(0,145,213,0.5)] border border-white/10 scale-[1.02]" 
-                  : "text-slate-400 hover:text-white hover:bg-white/5 hover:scale-[1.01]"
-              )}
-            >
-              {isActive && (
-                <div className="absolute left-0 top-0 w-1.5 h-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
-              )}
-              {isActive && (
-                <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
-              )}
-              <item.icon className={cn(
-                "h-5 w-5 min-w-[20px] transition-transform duration-300",
-                isActive ? "text-white scale-110" : "group-hover:text-[#0091D5] group-hover:scale-110"
-              )} />
-              {!collapsed && <span className={cn(
-                "text-[11px] font-black uppercase tracking-[0.15em] transition-colors",
-                isActive ? "text-white" : "group-hover:text-white"
-              )}>{item.title}</span>}
-            </Link>
-          )
-        })}
+        {navTop.map(renderNavLink)}
+
+        {/* Facturas y Cotizaciones Folder */}
+        <div className="space-y-2">
+          <button
+            onClick={() => {
+              if (collapsed) { setCollapsed(false); setInvoicesExpanded(true) }
+              else { setInvoicesExpanded(!invoicesExpanded) }
+            }}
+            className={cn(
+              "w-full flex items-center gap-4 px-4 py-3.5 rounded-[1.25rem] transition-all duration-300 group relative overflow-hidden",
+              (invoicesExpanded && !collapsed)
+                ? "bg-white/5 text-white border border-white/5"
+                : "text-slate-400 hover:text-white hover:bg-white/5 hover:scale-[1.01]"
+            )}
+          >
+            <BarChart3 className={cn(
+              "h-5 w-5 min-w-[20px] transition-transform duration-300",
+              (invoicesExpanded && !collapsed) ? "text-[#0091D5] scale-110" : "group-hover:text-[#0091D5] group-hover:scale-110"
+            )} />
+            {!collapsed && (
+              <>
+                <span className="flex-1 text-left text-[11px] font-black uppercase tracking-[0.15em]">{t("invoices")}</span>
+                <ChevronDown className={cn(
+                  "h-4 w-4 transition-transform duration-300 text-slate-500",
+                  invoicesExpanded ? "rotate-180 text-white" : "group-hover:text-white"
+                )} />
+              </>
+            )}
+          </button>
+
+          {invoicesExpanded && !collapsed && (
+            <div className="ml-6 pl-4 border-l-2 border-[#0091D5]/20 space-y-2 animate-in slide-in-from-top-2 duration-300">
+              {invoiceSubItems.map((item) => {
+                const isActive = pathname === item.href
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group relative",
+                      isActive
+                        ? "bg-[#0091D5]/10 text-[#0091D5] font-black shadow-inner border border-[#0091D5]/20"
+                        : "text-slate-500 hover:text-white hover:bg-white/5"
+                    )}
+                  >
+                    <item.icon className={cn(
+                      "h-4 w-4 min-w-[16px] transition-all duration-300",
+                      isActive ? "text-[#0091D5] scale-110" : "group-hover:text-[#0091D5] group-hover:scale-110"
+                    )} />
+                    <span className={cn(
+                      "text-[10px] uppercase tracking-[0.15em] transition-colors",
+                      isActive ? "text-[#0091D5] font-black" : "font-bold group-hover:text-white"
+                    )}>{item.title}</span>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {navRest.map(renderNavLink)}
 
         {/* Tools Folder */}
         <div className="space-y-2 pt-4">
